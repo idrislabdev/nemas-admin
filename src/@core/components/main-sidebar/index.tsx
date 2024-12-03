@@ -1,6 +1,6 @@
 "use client"
 
-import { AboutOutlineIcon, BuildingOutlineIcon, UserListOutlineIcon, UserOutlineIcon } from '@/@core/my-icons'
+import { Building07, CreditCard01, CreditCard02, Tag01, UserCircle } from '@untitled-ui/icons-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -30,23 +30,23 @@ const MainSidebar = () => {
             <span className='label'>Master</span>
             <div className='list-menu'>
                 <ul>
-                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><AboutOutlineIcon />Gold</Link></li>
-                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><BuildingOutlineIcon />Address</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><Tag01 />Gold</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><Building07 />Address</Link></li>
                 </ul>
             </div>
             <hr />
             <span className='label'>Data</span>
             <div className='list-menu'>
                 <ul>
-                    <li><Link href='/data/informations/customer-service'><UserListOutlineIcon />Information</Link></li>
-                    <li><Link href=''><UserListOutlineIcon />Users</Link></li>
+                    <li><Link href='/data/informations/customer-service'><CreditCard01 />Information</Link></li>
+                    <li><Link href=''><CreditCard02 />Users</Link></li>
                     
                 </ul>
             </div>
         </div>
         <div className='info-area'>
             <div className='user-info'>
-                <span><UserOutlineIcon /></span>
+                <span><UserCircle /></span>
                 <div className='info-detail'>
                     <label>{user.name}</label>
                     <span>{user.email}</span>

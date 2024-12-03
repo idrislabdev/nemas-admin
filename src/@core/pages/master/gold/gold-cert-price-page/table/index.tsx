@@ -1,34 +1,44 @@
 "use client"
 import { IGoldCertPrice } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
-import { PencilOutlineIcon, SearchIcon, TrashOutlineIcon } from '@/@core/my-icons'
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
-import { Pagination } from 'rsuite';
-import { Message, useToaster } from 'rsuite';
+import { Pagination, Table } from 'antd'
+import { ColumnsType } from 'antd/es/table'
+import { Edit05, SearchSm, Trash01 } from '@untitled-ui/icons-react';
+import Link from 'next/link';
+import { notification } from 'antd';
 
 const GoldCertPricePageTable = () => {
     const url = `/core/gold/cert_price/`
-
     const [dataTable, setDataTable] = useState<Array<IGoldCertPrice>>([]);
-    
-    const [activePage, setActivePage] = React.useState(1);
     const [total, setTotal] = useState(0);
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);
     const [selectedId, setSelectedId] = useState(0);
+    
     const [params, setParams] = useState({
         format: 'json',
         offset: 0,
         limit: 10,
         type__icontains:"",
     });
-    const toaster = useToaster();
-    const message = (
-        <Message showIcon type={'info'}>
-          Data Gold Berhasil Dihapus
-        </Message>
-    );
+    const [api, contextHolder] = notification.useNotification();
+    const columns: ColumnsType<IGoldCertPrice>  = [
+        { title: 'No', width: 70, dataIndex: 'cert_id', key: 'cert_id', fixed: 'left', align: 'center',
+            render: (_, record, index) =>  ( index+params.offset+1 )
+        },
+        { title: 'Cert Code', dataIndex: 'cert_code', key: 'cert_code', fixed: 'left'},
+        { title: 'Gold Weight', dataIndex: 'gold_weight', key: 'gold_weight', fixed: 'left'},
+        { title: 'Cert Price', dataIndex: 'cert_price', key: 'cert_price', fixed: 'left'},
+        { title: '', key: 'action', fixed: 'right', 
+          render: (_, record) =>
+          (<div className='flex items-center gap-[5px] justify-center'>
+            <a className='btn-action' onClick={() => deleteData(record.cert_id)}><Trash01 /></a>
+            <Link href={`/master/gold/cert-price/${record.cert_id}`} className="btn-action"><Edit05 /></Link>
+        </div>)
+        },
+    ];
 
     const fetchData = useCallback(async () => {
         const resp = await axiosInstance.get(url, { params });
@@ -37,7 +47,6 @@ const GoldCertPricePageTable = () => {
     },[params, url])
 
     const onChangePage = async (val:number) => {
-        setActivePage(val)
         setParams({...params, offset:(val-1)*params.limit})
     }
 
@@ -55,27 +64,34 @@ const GoldCertPricePageTable = () => {
             setSelectedId(id)
             setOpenModalConfirm(true)
         }
+   
     }
     
     const confirmDelete = async () => {
         await axiosInstance.delete(`${url}${selectedId}/`);
-        await setOpenModalConfirm(false)
+        setOpenModalConfirm(false)
         setParams({
             ...params,
             offset: 0,
             limit: 10,
             type__icontains: "",
          });
-        await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
+        api.info({
+            message: 'Data Gold Cert Price',
+            description: "Data Gold Cert Price Berhasil Dihapus",
+            placement:'bottomRight',
+        });
     }
     
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
     return (
        <>
+            {contextHolder}
             <div className='group-input prepend-append'>
-                <span className='append'><SearchIcon /></span>
+                <span className='append'><SearchSm /></span>
                 <input 
                     type='text' 
                     className='color-1 base' 
@@ -86,53 +102,28 @@ const GoldCertPricePageTable = () => {
                     )}
                 />
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Cert Code</th>
-                        <th>Gold Weight</th>
-                        <th>Cert Price</th>
-                        <th className='text-center'>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        dataTable.map((item:IGoldCertPrice, index:number) => (
-                            <tr key={index}>
-                                <td>{index+1}</td>
-                                <td>{item.cert_code}</td>
-                                <td>{item.gold_weight}</td>
-                                <td>{item.cert_price}</td>
-                                <td className='text-center'>
-                                    <div className='flex items-center gap-[5px] justify-center'>
-                                        <a className='btn-action' onClick={() => deleteData(item.cert_id)}><TrashOutlineIcon /></a>
-                                        <a className='btn-action'><PencilOutlineIcon /></a>
-                                    </div>
-                                </td>
-                            </tr>
-                    ))
-
-                    }
-                </tbody>
-            </table>
+            <Table
+                columns={columns}
+                dataSource={dataTable}
+                size='small'
+                scroll={{ x: 'max-content', y: 570 }}
+                pagination={false}
+                className='table-basic'
+                rowKey='cert_id'
+               
+            />
             <div className='flex justify-end'>
                 <Pagination 
-                    prev={true}
-                    next={true}
-                    first={true}
-                    last={true}
+                    onChange={onChangePage} 
+                    pageSize={params.limit}  
                     total={total} 
-                    limit={params.limit} 
-                    activePage={activePage} 
-                    maxButtons={5}
-                    onChangePage={e => onChangePage(e)} 
+                    showSizeChanger={false}
                 />
             </div>
             <ModalConfirm 
                 isModalOpen={openModalConfirm} 
                 setIsModalOpen={setOpenModalConfirm} 
-                content='Delete This Data?'
+                content='Hapus Data Ini?'
                 onConfirm={confirmDelete}
             />
        </>

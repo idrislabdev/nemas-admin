@@ -4,9 +4,11 @@ import { IGoldPriceConfig } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
-import { Message, useToaster } from 'rsuite';
+import { notification } from 'antd';
 
-const GoldPriceConfigPageForm = () => {
+const GoldPriceConfigPageForm = (props: {paramsId:string}) => {
+        const { paramsId } = props
+    const url = `/core/gold/price_config`
     const [required, setRequired] = useState<IGoldPriceConfig>({} as IGoldPriceConfig);
     const [gpcCode, setGpcCode] = useState("");
     const [gpcDescription, setGpcDescription] = useState("");
@@ -16,12 +18,8 @@ const GoldPriceConfigPageForm = () => {
     const [goldPriceSettingModelBuyWeekend, setGoldPriceSettingModelBuyWeekend] = useState("");
     const [goldPriceSettingModelSellWeekend, setGoldPriceSettingModelSellWeekend] = useState("");
     const [gpcActive, setGpcActive] = useState('active');
-    const toaster = useToaster();
-    const message = (
-        <Message showIcon type={'info'}>
-          Data Gold Price Has Benn Saved
-        </Message>
-    );
+    const [api, contextHolder] = notification.useNotification();
+
     const handleChangeActive = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setGpcActive(event.target.value)
     }
@@ -42,9 +40,20 @@ const GoldPriceConfigPageForm = () => {
         }
         setRequired({})
         try {
-            await axiosInstance.post("/core/gold/price_config/create", body);
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
-            clearForm();
+            let desc = '';
+            if (paramsId == 'form') {
+                await axiosInstance.post(`${url}/create`, body);
+                desc = 'Data Gold Telah Disimpan'
+                clearForm();
+            } else {
+                await axiosInstance.patch(`${url}/${paramsId}/`, body);
+                desc = 'Data Gold Telah Diupdate'
+            }
+            api.info({
+                message: 'Data Gold',
+                description: desc,
+                placement:'bottomRight',
+            });
         } catch (error) {
             const err = error as AxiosError
             if (err.response && err.response.data) {
@@ -54,6 +63,24 @@ const GoldPriceConfigPageForm = () => {
         }
 
     }
+
+    const fetchData = async () => {
+        const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+        const { data } = resp
+        setGpcCode(data.gpc_code);
+        setGpcDescription(data.gpc_description);
+        setGoldPriceSettingModelBuyWeekday(data.gold_price_setting_model_buy_weekday);
+        setGoldPriceSettingModelSellWeekday(data.gold_price_setting_model_sell_weekday);
+        setGoldPriceSettingModelBuyWeekend(data.gold_price_setting_model_buy_weekend);
+        setGoldPriceSettingModelSellWeekend(data.gold_price_setting_model_sell_weekend);
+        setGoldPriceWeight(data.gold_price_weight);
+        setGpcActive(data.gpc_active ? "active" : "not_active")
+    }
+    
+    useState(() => {
+        if (paramsId != 'form')
+            fetchData();
+    })
 
     const clearForm = () => {
         setGpcCode("");
@@ -68,6 +95,7 @@ const GoldPriceConfigPageForm = () => {
 
     return (
         <div className='form-input'>
+            {contextHolder}
             <div className='flex items-center gap-[10px]'>
                 <div className='form-area w-1/2'>
                     <div className='input-area'>
@@ -132,13 +160,12 @@ const GoldPriceConfigPageForm = () => {
                         <label>Status {required.gpc_active && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gpc_active?.toString()})</span>}</label>
                         <select className='base' defaultValue={gpcActive} onChange={handleChangeActive}>
                             <option value={'active'}>Active</option>
-                            <option value={'false'}>Not-Active</option>
+                            <option value={'not_active'}>Not-Active</option>
                         </select>
                     </div>
                 </div>
             </div>
             <div className='form-button'>
-                <button className='btn btn-outline-secondary'>Cancel</button>
                 <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
             </div>
         </div>

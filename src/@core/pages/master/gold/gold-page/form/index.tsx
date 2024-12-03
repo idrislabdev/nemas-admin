@@ -3,21 +3,18 @@
 import { IGold } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useEffect, useState } from 'react'
-import { Message, useToaster } from 'rsuite';
-
-const GoldPageForm = () => {
+import React, { useState } from 'react'
+import { notification } from 'antd';
+const GoldPageForm = (props: {paramsId:string}) => {
+    const { paramsId } = props
+    const url = `/core/gold`
     const [goldWeight, setGoldWeight] = useState("0");
     const [type, setType] = useState("");
     const [brand, setBrand] = useState("");
     const [certificateNumber, setCertficateNumber] = useState("");
-    const toaster = useToaster();
     const [required, setRequired] = useState<IGold>({} as IGold);
-    const message = (
-        <Message showIcon type={'info'}>
-          Data Gold Price Has Benn Saved
-        </Message>
-    );
+    const [api, contextHolder] = notification.useNotification();
+
     const onSave = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}")
         const body = {
@@ -30,9 +27,20 @@ const GoldPageForm = () => {
         }
         setRequired({})
         try {
-            await axiosInstance.post("/core/gold/create", body);
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
-            clearForm();
+            let desc = '';
+            if (paramsId == 'form') {
+                await axiosInstance.post(`${url}/create`, body);
+                desc = 'Data Gold Telah Disimpan'
+                clearForm();
+            } else {
+                await axiosInstance.patch(`${url}/${paramsId}/`, body);
+                desc = 'Data Gold Telah Diupdate'
+            }
+            api.info({
+                message: 'Data Gold',
+                description: desc,
+                placement:'bottomRight',
+            });
         } catch (error) {
             const err = error as AxiosError
             if (err.response && err.response.data) {
@@ -42,10 +50,20 @@ const GoldPageForm = () => {
         }
         
     }
+
+    const fetchData = async () => {
+        const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+        const { data } = resp
+        setGoldWeight(data.gold_weight);
+        setType(data.type);
+        setBrand(data.brand);
+        setCertficateNumber(data.certificate_number);
+    }
     
-    useEffect(() => {
-        console.log(required)
-    }, [required])
+    useState(() => {
+        if (paramsId != 'form')
+            fetchData();
+    })
 
     const clearForm = () => {
         setGoldWeight("");
@@ -56,6 +74,7 @@ const GoldPageForm = () => {
 
     return (
         <div className='form-input'>
+            {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
                     <label>Gold Weight {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
@@ -75,7 +94,6 @@ const GoldPageForm = () => {
                 </div>
             </div>
             <div className='form-button'>
-                <button className='btn btn-outline-secondary'>Cancel</button>
                 <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
             </div>
         </div>

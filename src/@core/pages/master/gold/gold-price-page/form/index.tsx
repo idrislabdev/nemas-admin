@@ -4,21 +4,20 @@ import { IGoldPrice } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios'
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
-import { Message, useToaster } from 'rsuite';
+import { notification } from 'antd';
+const Context = React.createContext({ name: 'Default' });
 
-const GoldPricePageForm = () => {
+const GoldPricePageForm = (props: {paramsId:string}) => {
+    const { paramsId } = props
+    const url = `/core/gold/price`
     const [required, setRequired] = useState<IGoldPrice>({} as IGoldPrice);
     const [goldPriceSource, setGoldPriceSource] = useState("");
     const [goldPriceWeight, setGoldPriceWeight] = useState("");
     const [goldPriceBase, setGoldPriceBase] = useState("");
     const [goldPriceSell, setGoldPriceSell] = useState("");
     const [goldPriceBuy, setGoldPriceBuy] = useState("");
-    const toaster = useToaster();
-    const message = (
-        <Message showIcon type={'info'}>
-          Data Gold Price Has Benn Saved
-        </Message>
-    );
+    const [api, contextHolder] = notification.useNotification();
+
     const onSave = async () => {
         const body = {
             "gold_price_source": goldPriceSource,
@@ -29,9 +28,21 @@ const GoldPricePageForm = () => {
         }
         setRequired({})
         try {
-            await axiosInstance.post("/core/gold/price/create", body);
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
-            clearForm();
+            let message = '';
+            if (paramsId == 'form') {
+                await axiosInstance.post(`${url}/create`, body);
+                message = 'Data Gold Price Telah Disimpan'
+                clearForm();
+            } else {
+                await axiosInstance.patch(`${url}/${paramsId}/`, body);
+                message = 'Data Gold Price Telah Diupdate'
+            }
+            api.info({
+                message: message,
+                description: <Context.Consumer>{({ name }) => `Hello, ${name}!`}</Context.Consumer>,
+                placement:'bottomRight',
+            });
+
         } catch (error) {
             const err = error as AxiosError
             if (err.response && err.response.data) {
@@ -39,6 +50,16 @@ const GoldPricePageForm = () => {
                 setRequired(data)
             }
         }
+    }
+
+    const fetchData = async () => {
+        const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+        const { data } = resp
+        setGoldPriceSource(data.gold_price_source);
+        setGoldPriceWeight(data.gold_price_weight);
+        setGoldPriceBase(data.gold_price_base);
+        setGoldPriceSell(data.gold_price_sell);
+        setGoldPriceBuy(data.gold_price_buy);
     }
 
     const clearForm = () => {
@@ -49,8 +70,14 @@ const GoldPricePageForm = () => {
         setGoldPriceBuy("");
     }
 
+    useState(() => {
+        if (paramsId != 'form')
+            fetchData();
+    })
+
     return (
         <div className='form-input'>
+            {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
                     <label>Gold Price Source {required.gold_price_source && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_source?.toString()})</span>}</label>
@@ -94,7 +121,6 @@ const GoldPricePageForm = () => {
                 </div>
             </div>
             <div className='form-button'>
-                <button className='btn btn-outline-secondary'>Cancel</button>
                 <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
             </div>
         </div>

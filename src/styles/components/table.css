@@ -23,12 +23,10 @@ table {
                 a {
                     @apply flex flex-col justify-center items-center;
                     &.btn-action {
-                        @apply cursor-pointer;
+                        @apply cursor-pointer text-neutral-600;
                         svg {
                             @apply w-[20px] h-[20px];
-                            path {
-                                @apply fill-neutral-600;
-                            }
+
                         }
                     }
                 }

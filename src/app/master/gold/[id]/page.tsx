@@ -4,7 +4,8 @@ import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldPageForm from "@/@core/pages/master/gold/gold-page/form";
 import Link from "next/link";
 
-export default function GoldForm() {
+export default async function GoldForm({ params }: { params: Promise<{ id: string }>}) {
+  const paramsId = (await params).id
   return (
     <main className='xadmin-page'>
       <MainSidebar />
@@ -35,7 +36,7 @@ export default function GoldForm() {
                     <div className="flex justify-end">
                         <Link href={`/master/gold`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
                     </div>
-                    <GoldPageForm />
+                    <GoldPageForm paramsId={paramsId}/>
                 </div>
             </div>
           </div>

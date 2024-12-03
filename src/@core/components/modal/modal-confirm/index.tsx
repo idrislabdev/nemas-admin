@@ -12,7 +12,7 @@ const ModalConfirm = (props: {
     return (
         <Modal size="xs" dialogClassName="my-modal" backdropClassName="my-modal-backdrop" backdrop="static" keyboard={false} open={isModalOpen} onClose={() => setIsModalOpen(false)}>
             <Modal.Header>
-                <Modal.Title>Confirmation</Modal.Title>
+                <Modal.Title>Konfirmasi</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <p>{content}</p>

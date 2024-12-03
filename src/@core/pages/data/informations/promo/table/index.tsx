@@ -160,7 +160,7 @@ const InformationPromoPageTable = () => {
             <ModalConfirm 
                 isModalOpen={openModalConfirm} 
                 setIsModalOpen={setOpenModalConfirm} 
-                content='Delete This Data?'
+                content='Hapus Data Ini?'
                 onConfirm={confirmDelete}
             />
         </>

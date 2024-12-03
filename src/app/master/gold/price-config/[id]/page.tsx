@@ -4,7 +4,9 @@ import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldPriceConfigPageForm from "@/@core/pages/master/gold/gold-price-config/form";
 import Link from "next/link";
 
-export default function GoldCertPriceForm() {
+export default async function GoldCertPriceForm({ params }: { params: Promise<{ id: string }>}) {
+  const paramsId = (await params).id
+
   return (
     <main className='xadmin-page'>
       <MainSidebar />
@@ -36,7 +38,7 @@ export default function GoldCertPriceForm() {
                     <div className="flex justify-end">
                         <Link href={`/master/gold/price-config`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
                     </div>
-                    <GoldPriceConfigPageForm />
+                    <GoldPriceConfigPageForm paramsId={paramsId}/>
                 </div>
             </div>
           </div>

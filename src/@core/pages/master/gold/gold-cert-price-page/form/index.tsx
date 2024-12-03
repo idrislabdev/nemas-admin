@@ -3,19 +3,17 @@ import { IGoldCertPrice } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
-import { Message, useToaster } from 'rsuite';
+import { notification } from 'antd';
 
-const GoldCertPricePageForm = () => {
+const GoldCertPricePageForm = (props: {paramsId:string}) => {
+    const { paramsId } = props
+    const url = `/core/gold/cert_price`
     const [required, setRequired] = useState<IGoldCertPrice>({} as IGoldCertPrice);
     const [certCode, setCertCode] = useState("");
     const [goldWeight, setGoldWeight] = useState("");
     const [certPrice, setCertPrice] = useState("");
-    const toaster = useToaster();
-    const message = (
-        <Message showIcon type={'info'}>
-          Data Gold Cert Price Has Benn Saved
-        </Message>
-    );
+    const [api, contextHolder] = notification.useNotification();
+
     const onSave = async () => {
         const body = {
             "cert_code": certCode,
@@ -24,9 +22,21 @@ const GoldCertPricePageForm = () => {
         }
         setRequired({})
         try {
-            await axiosInstance.post("/core/gold/cert_price/create", body);
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
+            let desc = '';
+            if (paramsId == 'form') {
+                await axiosInstance.post(`${url}/create`, body);
+                desc = 'Data Gold Cert Price Telah Disimpan'
+                clearForm();
+            } else {
+                await axiosInstance.patch(`${url}/${paramsId}/`, body);
+                desc = 'Data Gold Cert Price Telah Diupdate'
+            }
             clearForm();
+            api.info({
+                message: 'Data Gold Cert Price',
+                description: desc,
+                placement:'bottomRight',
+            });
         } catch (error) {
             const err = error as AxiosError
             if (err.response && err.response.data) {
@@ -43,6 +53,7 @@ const GoldCertPricePageForm = () => {
     }
   return (
     <div className='form-input'>
+        {contextHolder}
         <div className='form-area'>
             <div className='input-area'>
                 <label>Cert Code {required.cert_code && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_code?.toString()})</span>}</label>
