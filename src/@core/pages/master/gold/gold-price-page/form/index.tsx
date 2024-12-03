@@ -28,18 +28,18 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
         }
         setRequired({})
         try {
-            let message = '';
+            let desc = '';
             if (paramsId == 'form') {
                 await axiosInstance.post(`${url}/create`, body);
-                message = 'Data Gold Price Telah Disimpan'
+                desc = 'Data Gold Price Telah Disimpan'
                 clearForm();
             } else {
                 await axiosInstance.patch(`${url}/${paramsId}/`, body);
-                message = 'Data Gold Price Telah Diupdate'
+                desc = 'Data Gold Price Telah Diupdate'
             }
             api.info({
-                message: message,
-                description: <Context.Consumer>{({ name }) => `Hello, ${name}!`}</Context.Consumer>,
+                message: 'Data Gold Price',
+                description: desc,
                 placement:'bottomRight',
             });
 

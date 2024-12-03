@@ -43,14 +43,14 @@ const GoldPriceConfigPageForm = (props: {paramsId:string}) => {
             let desc = '';
             if (paramsId == 'form') {
                 await axiosInstance.post(`${url}/create`, body);
-                desc = 'Data Gold Telah Disimpan'
+                desc = 'Data Gold Price Config Telah Disimpan'
                 clearForm();
             } else {
                 await axiosInstance.patch(`${url}/${paramsId}/`, body);
-                desc = 'Data Gold Telah Diupdate'
+                desc = 'Data Gold Price Config Telah Diupdate'
             }
             api.info({
-                message: 'Data Gold',
+                message: 'Data Gold Price Config',
                 description: desc,
                 placement:'bottomRight',
             });

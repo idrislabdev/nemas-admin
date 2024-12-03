@@ -78,8 +78,8 @@ const GoldPricePageTable = () => {
             gold_price_source__icontains: "",
          });
          api.info({
-            message: 'Data Gold',
-            description: "Data Gold Berhasil Dihapus",
+            message: 'Data Gold Price',
+            description: "Data Gold Price Berhasil Dihapus",
             placement:'bottomRight',
         });
     }
