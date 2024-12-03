@@ -1,0 +1,22 @@
+.tab-default { 
+    ul {
+        @apply flex items-center border-b border-b-neutral-200;
+        li {
+            @apply text-[14px]/[21px] text-neutral-700 font-medium ;
+            &:not(:last-child) {
+                a {
+                    @apply mr-[18px];
+                }
+            }
+            a {
+                @apply block cursor-pointer pb-[10px];
+               
+            }
+            &.active {
+               a {
+                    @apply text-primary border-b border-b-primary;
+               }
+            }
+        }
+    }
+}

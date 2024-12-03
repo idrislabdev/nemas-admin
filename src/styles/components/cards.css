@@ -1,0 +1,61 @@
+@tailwind components;
+
+.card-news {
+    @apply bg-white text-black flex flex-col gap-[10px] p-[10px];
+    img {
+        @apply w-full h-[150px] object-cover;
+    }
+   .card-body {
+        @apply flex flex-col gap-[10px];
+        .text-date {
+            label {
+                @apply text-neutral-500 font-normal text-xs;
+            }
+        }
+        .text-title {
+            h5 {
+                @apply font-semibold text-base text-neutral-800;
+            }
+        }
+        .text-content {
+            p {
+                @apply font-normal text-sm text-neutral-600;
+            }
+        }
+        .text-readmore {
+            a {
+                @apply text-blue-500 font-semibold text-sm;
+            }
+        }
+   }
+}
+
+.card-main-news {
+    @apply bg-white text-black flex p-[10px] gap-[40px];
+    img {
+        @apply h-[350px] w-1/2 object-cover;
+    }
+   .card-body {
+        @apply flex-1 flex flex-col gap-[10px];
+        .text-date {
+            label {
+                @apply text-neutral-500 font-normal text-xs;
+            }
+        }
+        .text-title {
+            h5 {
+                @apply font-bold text-2xl text-neutral-800;
+            }
+        }
+        .text-content {
+            p {
+                @apply font-normal text-base text-neutral-600 mb-[10px];
+            }
+        }
+        .text-readmore {
+            a {
+                @apply text-blue-500 font-semibold text-sm;
+            }
+        }
+   }
+}

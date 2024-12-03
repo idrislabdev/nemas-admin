@@ -1,0 +1,211 @@
+label {
+    @apply text-[13px]/[18px];
+}
+input {
+    @apply border border-neutral-200 rounded-[4px] !text-neutral-900 !font-medium text-[14px]/[21px] !px-[20px] !py-[10px] outline-none h-[41px];
+    &.base {
+        @apply text-[13px]/[18px] h-[35px];
+    }
+    &.color-1 {
+        background-color: #fafbfe;
+    }
+    &.color-2 {
+        @apply !border-[#fafbfe] bg-[#fafbfe];
+    }
+    &.error {
+        @apply border-red-500;
+    }
+}
+textarea {
+    @apply border border-neutral-200 rounded-[4px] !text-neutral-900 !font-medium text-[14px]/[21px] !px-[20px] !py-[10px] outline-none resize-none h-[100px];
+    &.color-1 {
+        background-color: #fafbfe;
+    }
+    &.color-2 {
+        @apply !border-[#fafbfe] bg-[#fafbfe];
+    }
+}
+select {
+    @apply border border-neutral-200 rounded-[4px] !text-neutral-900 !font-medium text-[14px]/[21px] !px-[20px] outline-none h-[41px];
+    &.color-1 {
+        background-color: #fafbfe;
+    }
+    &.base {
+        @apply text-[13px]/[18px] h-[35px];
+    }
+}
+
+button {
+    &.btn {
+        @apply flex items-center gap-[3px] px-[15px] py-[5px] !h-[33px] !text-[13px]/[13px] !rounded-[4px];
+        &.btn-primary {
+            @apply !bg-primary !text-white;
+            svg {
+                @apply h-[18px] w-[18px];
+                path {
+                    @apply stroke-white;
+                }
+            }
+        }
+
+        &.btn-outline-neutral {
+            @apply !bg-white !text-neutral-700 border !border-neutral-400 font-semibold;
+            &:hover {
+                @apply !text-white !bg-neutral-400;
+                svg {
+                    path {
+                        @apply !fill-white;
+                    }
+                }
+            }
+            svg {
+                @apply h-[15px] w-[15px];
+                path {
+                    @apply fill-neutral-700;
+                }
+            }
+        }
+
+        &.btn-outline-secondary {
+            @apply !bg-white !text-black border !border-black font-semibold;
+            &:hover {
+                @apply !text-white !bg-black;
+                svg {
+                    path {
+                        @apply !fill-white;
+                    }
+                }
+            }
+            svg {
+                @apply h-[15px] w-[15px];
+                path {
+                    @apply fill-black;
+                }
+            }
+        }
+
+        &.btn-outline-primary {
+            @apply !bg-white !text-primary border !border-primary font-semibold;
+            &:hover {
+                @apply !text-white !bg-primary;
+                svg {
+                    path {
+                        @apply !fill-white;
+                    }
+                }
+            }
+            svg {
+                @apply h-[15px] w-[15px];
+                path {
+                    @apply fill-primary;
+                }
+            }
+        }
+    }
+    &.rs-pagination-btn {
+        @apply !h-[24px] !text-[12px]/[11px] !rounded-[2px] !bg-neutral-100 border border-solid border-neutral-300 !text-neutral-700;
+        &.rs-pagination-btn-active {
+            @apply !bg-primary !text-white border-primary;
+        }
+    }
+}
+
+a {
+    &.btn {
+        @apply flex items-center gap-[3px] px-[15px] py-[5px] !h-[33px] !text-[13px]/[13px] rounded-[4px];
+        &.btn-primary {
+            @apply !bg-primary !text-white;
+            svg {
+                @apply h-[18px] w-[18px];
+                path {
+                    @apply stroke-white;
+                }
+            }
+        }
+
+        &.btn-outline-neutral {
+            @apply !bg-white !text-neutral-700 border !border-neutral-400 font-semibold;
+            &:hover {
+                @apply !text-white !bg-neutral-400;
+                svg {
+                    path {
+                        @apply !fill-white;
+                    }
+                }
+            }
+            svg {
+                @apply h-[15px] w-[15px];
+                path {
+                    @apply fill-neutral-700;
+                }
+            }
+        }
+
+        &.btn-outline-secondary {
+            @apply !bg-white !text-black border !border-black font-semibold;
+            &:hover {
+                @apply !text-white !bg-black;
+                svg {
+                    path {
+                        @apply !fill-white;
+                    }
+                }
+            }
+            svg {
+                @apply h-[15px] w-[15px];
+                path {
+                    @apply fill-black;
+                }
+            }
+        }
+
+
+    }
+}
+
+.group-input {
+    @apply relative;
+    input {
+        @apply w-full;
+        &::placeholder {
+            @apply font-normal text-neutral-400;
+        }
+    }
+    span {
+        @apply absolute text-[14px]/[21px] text-neutral-500 top-[9px];
+        &.prepend {
+            @apply right-[10px];
+        }
+        &.append {
+            @apply left-[10px];
+        }
+    }
+    &.prepend-append {
+        input {
+            @apply !px-[35px];
+        }
+    }
+    &.prepend{
+        input {
+            @apply !pr-[35px];
+        }
+    }
+    &.append{
+        input {
+            @apply !pl-[35px];
+        }
+    }
+}
+
+.form-input {
+    @apply flex flex-col gap-[20px] border p-[20px] border-neutral-200 rounded-[4px];
+    .form-area {
+        @apply flex flex-col gap-[10px];
+        .input-area {
+            @apply flex flex-col gap-[5px];
+        }
+    }
+    .form-button {
+        @apply flex items-center justify-end gap-[5px];
+    }
+}

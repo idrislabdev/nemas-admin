@@ -1,0 +1,38 @@
+table {
+    @apply table-auto w-full text-[14px]/[21px] text-neutral-600 font-semibold;
+    thead {
+        tr {
+            @apply bg-neutral-50 h-[30px] rounded-[4px] text-neutral-500;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 2px;
+            th {
+                @apply px-[20px] text-left font-medium;
+                &:first-child {
+                    @apply rounded-l-[4px];
+                }
+                &:last-child {
+                    @apply rounded-r-[4px];
+                }
+            }
+        }
+    }
+    tbody {
+        tr {
+            @apply h-[40px] text-[12px]/[18px];
+            td {
+                @apply px-[20px] border-b border-b-neutral-200;
+                a {
+                    @apply flex flex-col justify-center items-center;
+                    &.btn-action {
+                        @apply cursor-pointer;
+                        svg {
+                            @apply w-[20px] h-[20px];
+                            path {
+                                @apply fill-neutral-600;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

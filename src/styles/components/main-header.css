@@ -1,0 +1,214 @@
+@tailwind components;
+.main-header {
+    @apply absolute top-0 w-full flex flex-col z-[15];
+    .main-header-top {
+        @apply px-[100px] flex justify-between items-center bg-primary text-white;
+        .header-company-motto {
+            p {
+                @apply text-xs;
+            }
+        }
+        .header-company-contact {
+            @apply flex items-center gap-[20px];
+            .company-social-media {
+                ul {
+                    @apply flex gap-[10px];
+                    li {
+                        svg {
+                            @apply w-[20px] h-[20px];
+                        }
+                    }
+                }
+            }
+            .company-phone-number {
+                @apply bg-white py-[10px] px-[20px];
+                p {
+                    @apply flex gap-[4px] text-sm text-primary font-semibold items-center;
+                    span {
+                        svg {
+                            @apply w-[20px] h-[20px];
+                            path {
+                                @apply fill-primary;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .main-header-bottom {
+        @apply py-[10px] px-[100px] flex justify-between items-center border-b border-b-neutral-200 z-[10] w-full bg-white;
+        img {
+            @apply w-[128px] h-[36px];
+        }
+        .burger-menu {
+            @apply hidden;
+        }
+        .main-header-menu {
+            @apply relative flex items-center;
+            ul {
+                @apply flex items-center text-sm font-semibold gap-[30px];
+                li {
+                    @apply relative  font-medium cursor-pointer text-neutral-900;
+                    a {
+                        @apply block py-[10px];
+                    }
+                    &.active {
+                        @apply text-primary;
+                    }
+                    &:hover {
+                        @apply text-primary;
+                    }
+                    &.has-sub {
+                        a {
+                            @apply flex gap-[4px] items-center;
+                            svg {
+                                path {
+                                    @apply fill-neutral-900;
+                                }
+                            }
+                        }
+                        .submenu {
+                            @apply absolute left-0 m-0 list-none w-[150px] hidden bg-white  duration-300 transition-all z-10;
+                            box-shadow: 0px 4px 16px 0px #0000001A;
+    
+                            .submenu {
+                                position: absolute;
+                                left: 150px;
+                                top: 0px;
+                            }
+                            li {
+                                @apply text-black;
+                                a {
+                                    @apply flex justify-between px-[10px] py-[5px] items-center;
+                                    svg {
+                                        @apply -rotate-90
+                                    }
+                                }
+                            }
+                        }
+                        &:hover {
+                            @apply text-primary;
+                            > .submenu {
+                                @apply block;
+                                li {
+                                    &:hover {
+                                        @apply text-primary;
+                                        > .submenu {
+                                            @apply block;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .flags-menu {
+                @apply relative flex;
+                &::before {
+                    content: "";
+                    @apply mx-[20px] border-l border-l-neutral-300;
+                }
+                a {
+                    &.flag-button {
+                        @apply flex items-center gap-[4px] cursor-pointer;
+                        img {
+                            @apply w-[28px] h-[20px];
+                        }
+                        svg {
+                            @apply w-[13px] h-[13px];
+                            path {
+                                @apply fill-neutral-500
+                            }
+                        }
+                    }
+                }
+                ul {
+                    &.list-flags {
+                        @apply absolute top-[27px] ml-[41px] flex flex-col gap-[5px] transition-all duration-300 scale-0 origin-top z-10 ;
+                        &.show {
+                            transform: translateX(0%);
+                        }
+                        li {
+                            @apply p-0;
+                            a {
+                                @apply select-none cursor-pointer p-0;
+                                img {
+                                    @apply w-[28px] h-[20px];
+                                }
+                            }
+                            &::before {
+                                @apply !content-none;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    @layer components {
+        &.mobile-responsive {
+            @apply p-0  h-[70px];
+            .ijp-logo-header {
+                a {
+                    svg {
+                        @apply !w-[71px] !h-[20.11px];
+                    }
+                }
+            }
+            .main-header-menu,.main-header-top {
+                @apply hidden;
+            }
+            .main-header-bottom {
+                @apply px-[20px] h-[70px] bg-white; 
+                .burger-menu {
+                    @apply block;
+                }
+            }
+        }
+    }
+}
+
+.main-sidebar-overlay {
+    @apply bg-black opacity-50 h-full w-full fixed z-10;
+}
+
+.main-sidebar-menu {
+    @apply bg-white w-[300px] mr-[-300px] h-full fixed right-0 flex flex-col px-[20px] py-[15px] z-[20] justify-between transition-all duration-500 ;
+    &.show {
+        @apply mr-[0px];
+    }
+    .sidebar-menu-top {
+        @apply flex flex-col gap-[46px];
+        .sidebar-header {
+            @apply flex justify-between items-center;
+            .sidebar-header-logo {
+                svg {
+                    @apply w-[71px] h-[20.11px];
+                }
+            }
+            .sidebar-header-action {
+                @apply flex gap-[8px] items-center;
+            }
+        }
+        .sidebar-list {
+            @apply overflow-y-auto;
+            ul {
+                @apply text-black flex flex-col gap-[20px];
+                li {
+                    @apply text-[14px]/[21px] font-medium;
+                    ul {
+                        &.sidebar-submenu {
+                            @apply p-[5px] gap-[0px] transition-all duration-500;
+                            li {
+                                @apply text-[12px]/[18px] font-normal;
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

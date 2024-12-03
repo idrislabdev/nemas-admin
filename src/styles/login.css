@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.login-page {
+    @apply p-0 h-screen;
+    &.dark-theme {
+        h1, h2, h3, h4, h5 {
+            @apply text-slate-200;
+        }
+        p {
+            @apply text-slate-300;
+        }
+        a {
+            @apply text-[#737aff]
+        }
+    }
+    &.light-theme {
+        h1, h2, h3, h4, h5 {
+            @apply text-black;
+        }
+        p {
+            @apply text-neutral-700;
+        }
+    }
+    .login-container {
+        @apply flex flex-row-reverse w-full h-full relative;
+        .left-subcontainer {
+            @apply flex flex-col gap-[30px] px-[60px] py-[110px]  w-1/2 relative justify-center items-start;
+            .logo-subcontainer {
+                @apply flex-col justify-center items-center hidden;
+                svg {
+                    @apply w-[101px] h-[28px];
+                }
+            }
+            .title-subcontainer {
+                @apply flex flex-col gap-[18px];
+                h1 {
+                    @apply text-[28px]/[42px] text-primary font-bold;
+                }
+                p {
+                    @apply text-[20px]/[30px] text-neutral-800 font-medium;
+                }
+            }
+            .form-subcontainer {
+                @apply flex flex-col gap-[30px] w-full;
+                .group-input {
+                    input {
+                        @apply w-full h-[54px] !px-[40px];
+                    }
+                    .append,.prepend {
+                        @apply top-[15px];
+                    }
+                    .append {
+                        svg {
+                            @apply w-[24px] h-[24px];
+                            path {
+                                @apply stroke-neutral-400;
+                            }
+                        }
+                    }
+                }
+                .button-flex {
+                    @apply flex flex-col gap-[10px];
+                    button {
+                        @apply bg-primary text-white rounded-[14px] h-[54px] text-[18px]/[27px] w-full font-bold;
+                    }
+                    a {
+                        @apply text-primary text-right text-[20px]/[30px] font-medium;
+                    }
+                }
+                label {
+                    &.new-user {
+                        @apply text-[20px]/[30px] text-neutral-600 w-full text-center font-bold;
+                        a {
+                            @apply text-primary;
+                        }
+                    }
+                }
+            }
+        }
+        .right-subcontainer {
+            @apply flex flex-col gap-[30px] px-[60px] py-[110px] justify-center  w-1/2 relative bg-[#f2f4f87a];
+            .title-subcontainer {
+                @apply flex flex-col gap-[18px] text-center;
+                h1 {
+                    @apply text-[28px]/[42px] text-primary font-bold;
+                }
+                p {
+                    @apply text-[16px]/[24px] text-neutral-800 font-medium;
+                }
+            }
+            .image-subcontainer {
+                @apply flex flex-col justify-center items-center;
+                img {
+                    @apply w-[600px] h-[600px] object-contain;
+                }
+            }
+            .logo-subcontainer {
+                @apply flex flex-col justify-center items-center;
+                svg {
+                    @apply w-[172px] h-[54px];
+                }
+            }
+        }
+    }
+
+    
+    @layer components {
+        &.mobile-responsive {
+            .left-subcontainer {
+                @apply w-full py-[26px] px-[20px] gap-[34px];
+                .logo-subcontainer {
+                    @apply flex;
+                }
+                .title-subcontainer {
+                    h1 {
+                        @apply text-[24px]/[36px];
+                    }
+                    p {
+                        @apply text-[16px]/[24px] ;
+                    }
+                }
+                .form-subcontainer {
+                    .group-input {
+                        span {
+                            @apply top-[11px];
+                            svg {
+                                @apply w-[17px] h-[17px];
+                            }
+                        }
+                        input {
+                            @apply text-[17.02px]/[25.53px] h-[40px] rounded-[6px];
+                        }
+                    }
+                    
+                    .keepme-login {
+                        .checkbox-input {
+                            @apply text-[17.02px]/[25.53px];
+                        }
+                    }
+                    .captcha-checkbox {
+                        .checkbox-input {
+                            @apply text-[17.02px]/[25.53px];
+                        }
+                    }
+                    .button-flex {
+                        @apply flex flex-col gap-[10px];
+                        button {
+                            @apply h-[45px] rounded-[11.91px];
+                        }
+                        a {
+                            @apply text-left text-[17px]/[25px];
+                        }
+                    }
+                    label {
+                        &.new-user {
+                            @apply text-left text-[17px]/[25px];
+                        }
+                    }
+                }
+            }
+            .right-subcontainer {
+                @apply hidden;
+            }
+        }
+    }
+}

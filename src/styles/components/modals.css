@@ -1,0 +1,29 @@
+@tailwind components;
+.rs-modal-wrapper {
+    display: flex;
+    align-items: center;
+    .rs-modal {
+        margin: 0 auto 0 auto !important;
+    }
+}
+.my-modal {
+    .rs-modal-content {
+        @apply rounded-sm;
+        .rs-modal-header {
+            .rs-modal-title {
+                @apply text-neutral-700;
+            }
+        }
+        .rs-modal-body {
+            @apply text-neutral-700;
+        }
+    }  
+  }
+  
+  .my-modal-backdrop {
+    background-color: #000c !important;
+    &.rs-anim-fade {
+        -webkit-transition: opacity 0.05 ease-in  !important;
+        transition: opacity 0.05 ease-in !important;
+    }
+  }
