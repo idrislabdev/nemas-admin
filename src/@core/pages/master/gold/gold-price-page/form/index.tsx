@@ -5,7 +5,6 @@ import axiosInstance from '@/@core/utils/axios'
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
-const Context = React.createContext({ name: 'Default' });
 
 const GoldPricePageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
