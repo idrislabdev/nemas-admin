@@ -50,9 +50,11 @@ const GoldCertPricePageTable = () => {
         });
      };
      
-     const deleteData = (id:number) => {
-        setSelectedId(id)
-        setOpenModalConfirm(true)
+     const deleteData = (id:number|undefined) => {
+        if (id) {
+            setSelectedId(id)
+            setOpenModalConfirm(true)
+        }
     }
     
     const confirmDelete = async () => {
