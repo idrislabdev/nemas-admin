@@ -1,8 +1,7 @@
 import MainSidebar from "@/@core/components/main-sidebar";
-import { AboutOutlineIcon, AddOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
+import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldPriceConfigPageTable from "@/@core/pages/master/gold/gold-price-config/table";
-import Link from "next/link";
 
 export default function GoldCertPricePage() {
   return (
