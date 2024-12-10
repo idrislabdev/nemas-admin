@@ -1,21 +1,31 @@
 "use client"
 import { IAddressProvince } from '@/@core/@types/interface';
-import { SearchIcon } from '@/@core/my-icons';
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
-import Pagination from 'rsuite/Pagination';
+import { Pagination, Table } from 'antd'
+import { ColumnsType } from 'antd/es/table'
+import {  FileDownload02, SearchSm, } from '@untitled-ui/icons-react';
+import * as XLSX from "xlsx";
+import ModalLoading from '@/@core/components/modal/modal-loading';
 
 const AddressProvincePageTable = () => {
     const url = `/core/address/province/`
     const [dataTable, setDataTable] = useState<Array<IAddressProvince>>([]);
     const [total, setTotal] = useState(0);
-    const [activePage, setActivePage] = React.useState(1);
+    const [isModalLoading, setIsModalLoading] = useState(false)
     const [params, setParams] = useState({
+        format: 'json',
         offset: 0,
         limit: 10,
-        province_name__icontains:"",
-     });
+        type__icontains:"",
+    });
+    const columns: ColumnsType<IAddressProvince>  = [
+        { title: 'No', width: 70, dataIndex: 'province_id', key: 'province_id', fixed: 'left', align: 'center',
+            render: (_, record, index) =>  ( index+params.offset+1 )
+        },
+        { title: 'Name', dataIndex: 'province_name', key: 'province_name', fixed: 'left'},
+    ];
 
     const fetchData = useCallback(async () => {
         const resp = await axiosInstance.get(url, { params });
@@ -24,7 +34,6 @@ const AddressProvincePageTable = () => {
     },[params, url])
 
     const onChangePage = async (val:number) => {
-        setActivePage(val)
         setParams({...params, offset:(val-1)*params.limit})
     }
 
@@ -33,9 +42,34 @@ const AddressProvincePageTable = () => {
            ...params,
            offset: 0,
            limit: 10,
-           province_name__icontains: value,
+           type__icontains: value,
         });
      };
+     
+    const exportData = async () => {
+        setIsModalLoading(true)
+        const param = {
+            format: 'json',
+            offset: 0,
+            limit: 100000,
+            type__icontains:"",
+        }
+        const resp = await axiosInstance.get(url, { params:param });
+        const rows = resp.data.results;
+        const dataToExport = rows.map((item: IAddressProvince, index:number) => ({
+            'No' : index+1,
+            'Province Name': item.province_name,
+        }),);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+
+        worksheet["!cols"] = [ { wch: 5 }, { wch: 25 } ]; 
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'province');
+        // Save the workbook as an Excel file
+        XLSX.writeFile(workbook, `data_province.xlsx`)
+        setIsModalLoading(false)
+    }
     
     useEffect(() => {
         fetchData()
@@ -43,51 +77,46 @@ const AddressProvincePageTable = () => {
 
     return (
         <>
-            <div className='group-input prepend-append'>
-                <span className='append'><SearchIcon /></span>
-                <input 
-                    type='text' 
-                    className='color-1 base' 
-                    placeholder='cari data'
-                    onChange={debounce(
-                        (event) => handleFilter(event.target.value),
-                        1000
-                    )}
-                />
+            <div className='flex items-center justify-between'>
+                <div className='group-input prepend-append'>
+                    <span className='append'><SearchSm /></span>
+                    <input 
+                        type='text' 
+                        className='color-1 base' 
+                        placeholder='search data'
+                        onChange={debounce(
+                            (event) => handleFilter(event.target.value),
+                            1000
+                        )}
+                    />
+                </div>
+                <div className='flex items-center gap-[4px]'>
+                    <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
+                </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Province Name</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        dataTable.map((item:IAddressProvince, index:number) => (
-                            <tr key={index}>
-                                <td>{params.offset+index+1}</td>
-                                <td>{item.province_name}</td>
-                            </tr>
-                    ))
-
-                    }
-                </tbody>
-            </table>
+            <Table
+                columns={columns}
+                dataSource={dataTable}
+                size='small'
+                scroll={{ x: 'max-content', y: 570 }}
+                pagination={false}
+                className='table-basic'
+                rowKey='province_id'
+               
+            />
             <div className='flex justify-end'>
                 <Pagination 
-                    prev={true}
-                    next={true}
-                    first={true}
-                    last={true}
+                    onChange={onChangePage} 
+                    pageSize={params.limit}  
                     total={total} 
-                    limit={params.limit} 
-                    activePage={activePage} 
-                    maxButtons={5}
-                    onChangePage={e => onChangePage(e)} 
+                    showSizeChanger={false}
                 />
             </div>
-        </>
+            <ModalLoading 
+                isModalOpen={isModalLoading} 
+                textInfo='Harap tunggu, data sedang diunduh' 
+            />
+       </>
     )
 }
 

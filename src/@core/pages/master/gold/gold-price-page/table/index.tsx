@@ -10,11 +10,13 @@ import Link from 'next/link';
 import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
+import ModalLoading from '@/@core/components/modal/modal-loading';
 
 const GoldPricePageTable = () => {
     const url = `/core/gold/price/`
     const [dataTable, setDataTable] = useState<Array<IGoldPrice>>([]);
     const [total, setTotal] = useState(0);
+    const [isModalLoading, setIsModalLoading] = useState(false)
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);
     const [selectedId, setSelectedId] = useState(0);
     const [params, setParams] = useState({
@@ -85,10 +87,11 @@ const GoldPricePageTable = () => {
     }
 
     const exportData = async () => {
+        setIsModalLoading(true)
         const param = {
             format: 'json',
             offset: 0,
-            limit: 1000,
+            limit: 100000,
             type__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });
@@ -109,6 +112,7 @@ const GoldPricePageTable = () => {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'gold price');
         // Save the workbook as an Excel file
         XLSX.writeFile(workbook, `data_gold_price.xlsx`)
+        setIsModalLoading(false)
     }
     
     useEffect(() => {
@@ -158,6 +162,10 @@ const GoldPricePageTable = () => {
                 setIsModalOpen={setOpenModalConfirm} 
                 content='Hapus Data Ini?'
                 onConfirm={confirmDelete}
+            />
+            <ModalLoading 
+                isModalOpen={isModalLoading} 
+                textInfo='Harap tunggu, data sedang diunduh' 
             />
         </>
   )

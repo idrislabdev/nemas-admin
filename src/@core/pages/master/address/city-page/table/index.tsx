@@ -1,21 +1,32 @@
 "use client"
 import { IAddressCity } from '@/@core/@types/interface';
-import { SearchIcon } from '@/@core/my-icons'
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
-import { Pagination } from 'rsuite';
+import { Pagination, Table } from 'antd'
+import { ColumnsType } from 'antd/es/table'
+import {  FileDownload02, SearchSm, } from '@untitled-ui/icons-react';
+import * as XLSX from "xlsx";
+import ModalLoading from '@/@core/components/modal/modal-loading';
 
 const AddressCityPageTable = () => {
     const url = `/core/address/city/`
     const [dataTable, setDataTable] = useState<Array<IAddressCity>>([]);
     const [total, setTotal] = useState(0);
-    const [activePage, setActivePage] = React.useState(1);
+    const [isModalLoading, setIsModalLoading] = useState(false);
     const [params, setParams] = useState({
+        format: 'json',
         offset: 0,
         limit: 10,
-        city_name__icontains:"",
-     });
+        type__icontains:"",
+    });
+    const columns: ColumnsType<IAddressCity>  = [
+        { title: 'No', width: 70, dataIndex: 'city_id', key: 'city_id', fixed: 'left', align: 'center',
+            render: (_, record, index) =>  ( index+params.offset+1 )
+        },
+        { title: 'Province Name', dataIndex: 'province_name', key: 'province_name', fixed: 'left'},
+        { title: 'City Name', dataIndex: 'city_name', key: 'city_name', fixed: 'left'},
+    ];
 
     const fetchData = useCallback(async () => {
         const resp = await axiosInstance.get(url, { params });
@@ -24,7 +35,6 @@ const AddressCityPageTable = () => {
     },[params, url])
 
     const onChangePage = async (val:number) => {
-        setActivePage(val)
         setParams({...params, offset:(val-1)*params.limit})
     }
 
@@ -33,70 +43,83 @@ const AddressCityPageTable = () => {
            ...params,
            offset: 0,
            limit: 10,
-           city_name__icontains: value,
+           type__icontains: value,
         });
      };
+     
+    const exportData = async () => {
+        setIsModalLoading(true)
+        const param = {
+            format: 'json',
+            offset: 0,
+            limit: 100000,
+            type__icontains:"",
+        }
+        const resp = await axiosInstance.get(url, { params:param });
+        const rows = resp.data.results;
+        const dataToExport = rows.map((item: IAddressCity, index:number) => ({
+            'No' : index+1,
+            'Province Name': item.province_name,
+            'City Name': item.city_name,
+        }),);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+
+        worksheet["!cols"] = [ { wch: 5 }, { wch: 25 }, { wch: 25 }]; 
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'city');
+        // Save the workbook as an Excel file
+        XLSX.writeFile(workbook, `data_city.xlsx`)
+        setIsModalLoading(false);
+    }
     
     useEffect(() => {
         fetchData()
     }, [fetchData])
 
     return (
-       <>
-        <div className='group-input prepend-append'>
-            <span className='append'><SearchIcon /></span>
-            <input 
-                type='text' 
-                className='color-1 base' 
-                placeholder='cari data'
-                onChange={debounce(
-                    (event) => handleFilter(event.target.value),
-                    1000
-                )}
+        <>
+            <div className='flex items-center justify-between'>
+                <div className='group-input prepend-append'>
+                    <span className='append'><SearchSm /></span>
+                    <input 
+                        type='text' 
+                        className='color-1 base' 
+                        placeholder='search data'
+                        onChange={debounce(
+                            (event) => handleFilter(event.target.value),
+                            1000
+                        )}
+                    />
+                </div>
+                <div className='flex items-center gap-[4px]'>
+                    <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
+                </div>
+            </div>
+            <Table
+                columns={columns}
+                dataSource={dataTable}
+                size='small'
+                scroll={{ x: 'max-content', y: 570 }}
+                pagination={false}
+                className='table-basic'
+                rowKey='city_id'
+               
             />
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Province Name</th>
-                    <th>City Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                {
-                    dataTable.map((item:IAddressCity, index:number) => (
-                        <tr key={index}>
-                            <td>{index+1}</td>
-                            <td>{item.province_name}</td>
-                            <td>{item.city_name}</td>
-                            {/* <td className='text-center'>
-                                <div className='flex items-center gap-[5px] justify-center'>
-                                    <a className='btn-action'><TrashOutlineIcon /></a>
-                                    <a className='btn-action'><PencilOutlineIcon /></a>
-                                </div>
-                            </td> */}
-                        </tr>
-                ))
-
-                }
-            </tbody>
-        </table>
-        <div className='flex justify-end'>
-            <Pagination 
-                prev={true}
-                next={true}
-                first={true}
-                last={true}
-                total={total} 
-                limit={params.limit} 
-                activePage={activePage} 
-                maxButtons={5}
-                onChangePage={e => onChangePage(e)} 
+            <div className='flex justify-end'>
+                <Pagination 
+                    onChange={onChangePage} 
+                    pageSize={params.limit}  
+                    total={total} 
+                    showSizeChanger={false}
+                />
+            </div>
+            <ModalLoading 
+                isModalOpen={isModalLoading} 
+                textInfo='Harap tunggu, data sedang diunduh' 
             />
-        </div>
        </>
-  )
+    )
 }
 
 export default AddressCityPageTable
