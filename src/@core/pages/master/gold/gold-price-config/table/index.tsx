@@ -100,7 +100,7 @@ const GoldPriceConfigPageTable = () => {
         const param = {
             format: 'json',
             offset: 0,
-            limit: 100000,
+            limit: 10000,
             type__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });
