@@ -16,6 +16,7 @@ const ModalLoading = (props: {
             open={isModalOpen} 
             footer={null} width={380}
             closeIcon={false}
+            centered
         >
             <div className='content-icon'>
                 <Spin indicator={<LoadingOutlined spin />} size="large" />
