@@ -1,8 +1,7 @@
 import MainSidebar from "@/@core/components/main-sidebar";
-import { AboutOutlineIcon, AddOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
+import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldPricePageTable from "@/@core/pages/master/gold/gold-price-page/table";
-import Link from "next/link";
 
 export default function GoldPage() {
   return (
@@ -33,9 +32,6 @@ export default function GoldPage() {
             <div className='main-body'>
                 <GoldTabPage activeTab="price" />
                 <div className="flex flex-col gap-[10px]">
-                    <div className="flex justify-end">
-                        <Link href={`/master/gold/price/form`} className="btn btn-outline-neutral"><AddOutlineIcon />Add data</Link>
-                    </div>
                     <GoldPricePageTable />
                 </div>
             </div>

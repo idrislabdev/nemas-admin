@@ -1,7 +1,8 @@
 import MainSidebar from "@/@core/components/main-sidebar";
-import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon, UndoOutlineIcon } from "@/@core/my-icons";
+import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldCertPricePageForm from "@/@core/pages/master/gold/gold-cert-price-page/form";
+import { FlipBackward } from "@untitled-ui/icons-react";
 import Link from "next/link";
 
 export default async function GoldCertPriceForm({ params }: { params: Promise<{ id: string }>}) {
@@ -36,7 +37,7 @@ export default async function GoldCertPriceForm({ params }: { params: Promise<{ 
                 <GoldTabPage activeTab="price" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/master/gold/cert-price`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/master/gold/cert-price`} className="btn btn-outline-neutral"><FlipBackward />Back To</Link>
                     </div>
                     <GoldCertPricePageForm paramsId={paramsId}/>
                 </div>

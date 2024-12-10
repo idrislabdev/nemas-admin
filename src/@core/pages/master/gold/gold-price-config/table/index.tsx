@@ -6,9 +6,10 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Pagination, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
-import { Edit05, SearchSm, Trash01 } from '@untitled-ui/icons-react';
+import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import { notification } from 'antd';
+import * as XLSX from "xlsx";
 
 const GoldPriceConfigPageTable = () => {
     const url = `/core/gold/price_config/`
@@ -92,6 +93,36 @@ const GoldPriceConfigPageTable = () => {
             placement:'bottomRight',
         });
     }
+
+    const exportData = async () => {
+        const param = {
+            format: 'json',
+            offset: 0,
+            limit: 1000,
+            type__icontains:"",
+        }
+        const resp = await axiosInstance.get(url, { params:param });
+        const rows = resp.data.results;
+        const dataToExport = rows.map((item: IGoldPriceConfig, index:number) => ({
+            'No' : index+1,
+            'Code': item.gpc_code,
+            'Description': item.gpc_description,
+            'Price Weight': item.gold_price_weight,
+            'Price Buy Weekday': item.gold_price_setting_model_buy_weekday,
+            'Price Sell Weekday': item.gold_price_setting_model_sell_weekday,
+            'Price Buy Weekend': item.gold_price_setting_model_buy_weekend,
+            'Price Sell Weekend': item.gold_price_setting_model_sell_weekend,
+            'Status': item.gpc_active ? 'Active' : 'Not Active',
+        }),);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+
+        worksheet["!cols"] = [ { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 10 } ]; 
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'price config');
+        // Save the workbook as an Excel file
+        XLSX.writeFile(workbook, `data_price_config.xlsx`)
+    }
     
     useEffect(() => {
         fetchData()
@@ -100,17 +131,23 @@ const GoldPriceConfigPageTable = () => {
     return (
        <>
             {contextHolder}
-            <div className='group-input prepend-append'>
-                <span className='append'><SearchSm /></span>
-                <input 
-                    type='text' 
-                    className='color-1 base' 
-                    placeholder='cari data'
-                    onChange={debounce(
-                        (event) => handleFilter(event.target.value),
-                        1000
-                    )}
-                />
+            <div className='flex items-center justify-between'>
+                <div className='group-input prepend-append'>
+                    <span className='append'><SearchSm /></span>
+                    <input 
+                        type='text' 
+                        className='color-1 base' 
+                        placeholder='search data'
+                        onChange={debounce(
+                            (event) => handleFilter(event.target.value),
+                            1000
+                        )}
+                    />
+                </div>
+                <div className='flex items-center gap-[4px]'>
+                    <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
+                    <Link href={`/master/gold/price-config/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
+                </div>
             </div>
             <Table
                 columns={columns}

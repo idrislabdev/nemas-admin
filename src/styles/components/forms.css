@@ -37,7 +37,7 @@ select {
 
 button {
     &.btn {
-        @apply flex items-center gap-[3px] px-[15px] py-[5px] !h-[33px] !text-[13px]/[13px] !rounded-[4px];
+        @apply flex items-center gap-[4px] px-[15px] py-[5px] !h-[33px] !text-[13px]/[13px] !rounded-[4px];
         &.btn-primary {
             @apply !bg-primary !text-white;
             svg {

@@ -6,9 +6,10 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Pagination, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
-import { Edit05, SearchSm, Trash01 } from '@untitled-ui/icons-react';
+import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import { notification } from 'antd';
+import * as XLSX from "xlsx";
 
 const GoldCertPricePageTable = () => {
     const url = `/core/gold/cert_price/`
@@ -82,6 +83,31 @@ const GoldCertPricePageTable = () => {
             placement:'bottomRight',
         });
     }
+
+    const exportData = async () => {
+        const param = {
+            format: 'json',
+            offset: 0,
+            limit: 1000,
+            type__icontains:"",
+        }
+        const resp = await axiosInstance.get(url, { params:param });
+        const rows = resp.data.results;
+        const dataToExport = rows.map((item: IGoldCertPrice, index:number) => ({
+            'No' : index+1,
+            'Cert Code': item.cert_code,
+            'Gold Weight': item.gold_weight,
+            'Cert Price': item.cert_price,
+        }),);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+
+        worksheet["!cols"] = [ { wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 20 } ]; 
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'cert price');
+        // Save the workbook as an Excel file
+        XLSX.writeFile(workbook, `data_cert_price.xlsx`)
+    }
     
     useEffect(() => {
         fetchData()
@@ -90,17 +116,23 @@ const GoldCertPricePageTable = () => {
     return (
        <>
             {contextHolder}
-            <div className='group-input prepend-append'>
-                <span className='append'><SearchSm /></span>
-                <input 
-                    type='text' 
-                    className='color-1 base' 
-                    placeholder='cari data'
-                    onChange={debounce(
-                        (event) => handleFilter(event.target.value),
-                        1000
-                    )}
-                />
+            <div className='flex items-center justify-between'>
+                <div className='group-input prepend-append'>
+                    <span className='append'><SearchSm /></span>
+                    <input 
+                        type='text' 
+                        className='color-1 base' 
+                        placeholder='search data'
+                        onChange={debounce(
+                            (event) => handleFilter(event.target.value),
+                            1000
+                        )}
+                    />
+                </div>
+                <div className='flex items-center gap-[4px]'>
+                    <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
+                    <Link href={`/master/gold/cert-price/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
+                </div>
             </div>
             <Table
                 columns={columns}

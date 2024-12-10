@@ -33,9 +33,6 @@ export default function GoldCertPricePage() {
             <div className='main-body'>
                 <GoldTabPage activeTab="price_config" />
                 <div className="flex flex-col gap-[10px]">
-                    <div className="flex justify-end">
-                        <Link href={`/master/gold/price-config/form`} className="btn btn-outline-neutral"><AddOutlineIcon />Add data</Link>
-                    </div>
                     <GoldPriceConfigPageTable />
                 </div>
             </div>

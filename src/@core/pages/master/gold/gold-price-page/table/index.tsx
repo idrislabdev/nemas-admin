@@ -1,15 +1,15 @@
 "use client"
 import { IGoldPrice } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
-import { SearchIcon } from '@/@core/my-icons'
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Pagination, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
 import Link from 'next/link';
-import { Edit05, Trash01 } from '@untitled-ui/icons-react';
+import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import { notification } from 'antd';
+import * as XLSX from "xlsx";
 
 const GoldPricePageTable = () => {
     const url = `/core/gold/price/`
@@ -83,6 +83,33 @@ const GoldPricePageTable = () => {
             placement:'bottomRight',
         });
     }
+
+    const exportData = async () => {
+        const param = {
+            format: 'json',
+            offset: 0,
+            limit: 1000,
+            type__icontains:"",
+        }
+        const resp = await axiosInstance.get(url, { params:param });
+        const rows = resp.data.results;
+        const dataToExport = rows.map((item: IGoldPrice, index:number) => ({
+            'No' : index+1,
+            'Gold Price Source': item.gold_price_source,
+            'Gold Price Weight': item.gold_price_weight,
+            'Gold Price Base': item.gold_price_base,
+            'Gold Price Sell': item.gold_price_sell,
+            'Gold Price Buy	': item.gold_price_buy,
+        }),);
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+
+        worksheet["!cols"] = [ { wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 } , { wch: 20 } ]; 
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'gold price');
+        // Save the workbook as an Excel file
+        XLSX.writeFile(workbook, `data_gold_price.xlsx`)
+    }
     
     useEffect(() => {
         fetchData()
@@ -90,17 +117,23 @@ const GoldPricePageTable = () => {
     return (
         <>
             {contextHolder}
-            <div className='group-input prepend-append'>
-                <span className='append'><SearchIcon /></span>
-                <input 
-                    type='text' 
-                    className='color-1 base' 
-                    placeholder='cari data'
-                    onChange={debounce(
-                        (event) => handleFilter(event.target.value),
-                        1000
-                    )}
-                />
+            <div className='flex items-center justify-between'>
+                <div className='group-input prepend-append'>
+                    <span className='append'><SearchSm /></span>
+                    <input 
+                        type='text' 
+                        className='color-1 base' 
+                        placeholder='search data'
+                        onChange={debounce(
+                            (event) => handleFilter(event.target.value),
+                            1000
+                        )}
+                    />
+                </div>
+                <div className='flex items-center gap-[4px]'>
+                    <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
+                    <Link href={`/master/gold/price/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
+                </div>
             </div>
             <Table
                 columns={columns}
