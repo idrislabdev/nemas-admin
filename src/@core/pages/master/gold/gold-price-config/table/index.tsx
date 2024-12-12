@@ -33,7 +33,7 @@ const GoldPriceConfigPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'gpc_id', key: 'gpc_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Kode', dataIndex: 'gpc_code', key: 'gpc_code', width: 150},
+        { title: 'Kode', dataIndex: 'gpc_code', key: 'gpc_code', width: 150, fixed: 'left'},
         { title: 'Deskripsi', dataIndex: 'gpc_description', key: 'gpc_description', width: 200},
         // { title: 'Price Weight', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200},
         { title: 'Harga Beli (Hari Kerja)', dataIndex: 'gold_price_setting_model_buy_weekday', key: 'gold_price_setting_model_buy_weekday', width: 200},

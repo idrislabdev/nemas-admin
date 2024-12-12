@@ -24,8 +24,8 @@ const AddressSubDistrictPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'district_id', key: 'district_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'District Name', dataIndex: 'district_name', key: 'district_name', fixed: 'left'},
-        { title: 'Subdistrict Name', dataIndex: 'subdistrict_name', key: 'subdistrict_name', fixed: 'left'},
+        { title: 'Nama Kecamatan', dataIndex: 'district_name', key: 'district_name'},
+        { title: 'Nama Kelurahan / Desa', dataIndex: 'subdistrict_name', key: 'subdistrict_name'},
     ];
 
     const fetchData = useCallback(async () => {

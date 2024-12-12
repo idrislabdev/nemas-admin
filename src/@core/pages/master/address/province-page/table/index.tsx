@@ -24,7 +24,7 @@ const AddressProvincePageTable = () => {
         { title: 'No', width: 70, dataIndex: 'province_id', key: 'province_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Name', dataIndex: 'province_name', key: 'province_name', fixed: 'left'},
+        { title: 'Nama Provinsi', dataIndex: 'province_name', key: 'province_name'},
     ];
 
     const fetchData = useCallback(async () => {

@@ -21,14 +21,14 @@ const AddressPostalCodePageTable = () => {
         type__icontains:"",
     });
     const columns: ColumnsType<IAddressPostalCode>  = [
-        { title: 'No', width: 70, dataIndex: 'district_id', key: 'district_id', fixed: 'left', align: 'center',
+        { title: 'No', width: 70, dataIndex: 'district_id', key: 'district_id', align: 'center', fixed: 'left',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Province Name', dataIndex: 'province_name', key: 'province_name', fixed: 'left'},
-        { title: 'City Name', dataIndex: 'district_name', key: 'district_name', fixed: 'left'},
-        { title: 'District Name', dataIndex: 'district_name', key: 'district_name', fixed: 'left'},
-        { title: 'Subdistrict Name', dataIndex: 'subdistrict_name', key: 'subdistrict_name', fixed: 'left'},
-        { title: 'Postal Code', dataIndex: 'subdistrict_name', key: 'subdistrict_name', fixed: 'left'},
+        { title: 'Nama Provinsi', dataIndex: 'province_name', key: 'province_name'},
+        { title: 'Nama Kabupaten / Kota', dataIndex: 'district_name', key: 'district_name'},
+        { title: 'Nama Kecamatan', dataIndex: 'district_name', key: 'district_name'},
+        { title: 'Nama Kelurahan / Desa', dataIndex: 'subdistrict_name', key: 'subdistrict_name'},
+        { title: 'Kode Pos', dataIndex: 'subdistrict_name', key: 'subdistrict_name'},
     ];
 
     const fetchData = useCallback(async () => {

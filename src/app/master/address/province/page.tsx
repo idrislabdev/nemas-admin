@@ -25,8 +25,8 @@ export default function AddressProvincePage() {
                 <AboutOutlineIcon/>
               </div>
               <div className='text-area'>
-                <h5>Halaman Province</h5>
-                <p>Manajemen Data Province</p>
+                <h5>Halaman Provinsi</h5>
+                <p>Manajemen Data Provinsi</p>
               </div>
             </div>
             <div className='main-body'>

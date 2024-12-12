@@ -24,8 +24,8 @@ const AddressCityPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'city_id', key: 'city_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Province Name', dataIndex: 'province_name', key: 'province_name', fixed: 'left'},
-        { title: 'City Name', dataIndex: 'city_name', key: 'city_name', fixed: 'left'},
+        { title: 'Nama Provinsi', dataIndex: 'province_name', key: 'province_name'},
+        { title: 'Nama Kabupaten / Kota', dataIndex: 'city_name', key: 'city_name'},
     ];
 
     const fetchData = useCallback(async () => {
