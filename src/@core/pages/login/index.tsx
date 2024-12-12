@@ -1,6 +1,6 @@
 "use client";
 
-import { HideEyeIcon, Lock2Icon, UserIcon } from '@/@core/my-icons'
+import { Lock2Icon, UserIcon } from '@/@core/my-icons'
 import axiosInstance from '@/@core/utils/axios';
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
