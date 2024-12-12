@@ -69,7 +69,7 @@ const LoginForm = () => {
                                 {type && <Eye /> }
                             </a>
                         </span>
-                        <input type={type ? 'password' : 'text'} value={password} onChange={e => setPassword(e.target.value)} className='color-1' placeholder='Password'/>
+                        <input type={!type ? 'password' : 'text'} value={password} onChange={e => setPassword(e.target.value)} className='color-1' placeholder='Password'/>
                     </div>
                     <div className='button-flex'>
                         <button onClick={() => onLogin()} disabled={email === '' || password === ''} className='disabled:!bg-blue-300'>Log In</button>
