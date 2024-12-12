@@ -5,11 +5,13 @@ import axiosInstance from '@/@core/utils/axios';
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from '@untitled-ui/icons-react';
 
 const LoginForm = () => {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [type, setType] = useState(false)
     const [error, setError] = useState('');
 
     const onLogin = async () => {
@@ -50,8 +52,8 @@ const LoginForm = () => {
                     {/* <TrivIcon color={'#318AC6'}/> */}
                 </div>
                 <div className='title-subcontainer'>
-                    <h1>Selamat Datang</h1>
-                    <p>Silahkan Login Untuk Masuk Halaman Admin</p>
+                    <h1 className='select-none'>Selamat Datang</h1>
+                    <p className='select-none'>Silahkan Login Untuk Masuk Halaman Admin</p>
                 </div>
                 <div className='form-subcontainer'>
                     {error !== '' &&  <label className='bg-red-500 text-white text-[14px]/[17px] h-[40px] flex flex-col justify-center items-center rounded-[4px]'>{error}</label>}
@@ -61,8 +63,13 @@ const LoginForm = () => {
                     </div>
                     <div className='group-input prepend-append'>
                         <span className='append'><Lock2Icon /></span>
-                        <span className='prepend'><HideEyeIcon color={'#838899'} /></span>
-                        <input type='password' value={password} onChange={e => setPassword(e.target.value)} className='color-1' placeholder='Password'/>
+                        <span className='prepend'>
+                            <a className='cursor-pointer' onClick={() => setType(!type)}>
+                                {!type && <EyeOff /> }
+                                {type && <Eye /> }
+                            </a>
+                        </span>
+                        <input type={type ? 'password' : 'text'} value={password} onChange={e => setPassword(e.target.value)} className='color-1' placeholder='Password'/>
                     </div>
                     <div className='button-flex'>
                         <button onClick={() => onLogin()} disabled={email === '' || password === ''} className='disabled:!bg-blue-300'>Log In</button>
