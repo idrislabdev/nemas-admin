@@ -43,7 +43,7 @@ const GoldPriceConfigPageTable = () => {
         },
         { title: 'Created By', dataIndex: 'create_user', key: 'create_user', width: 150},
         { title: 'Updated By', dataIndex: 'upd_user', key: 'upd_user', width: 150},
-        { title: '', key: 'action', fixed: 'right', 
+        { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
             <Link href={`/master/gold/price-config/${record.gpc_id}`} className="btn-action"><Edit05 /></Link>

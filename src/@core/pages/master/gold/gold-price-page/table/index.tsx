@@ -35,7 +35,7 @@ const GoldPricePageTable = () => {
         { title: 'Gold Price Base', dataIndex: 'gold_price_base', key: 'gold_price_base', width: 200},
         { title: 'Gold Price Sell', dataIndex: 'gold_price_sell', key: 'gold_price_sell', width: 200},
         { title: 'Gold Price Buy', dataIndex: 'gold_price_buy', key: 'gold_price_buy', width: 200},
-        { title: '', key: 'action', fixed: 'right', 
+        { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
             <Link href={`/master/gold/price/${record.gold_price_id}`} className="btn-action"><Edit05 /></Link>

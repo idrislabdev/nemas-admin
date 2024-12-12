@@ -36,7 +36,7 @@ const GoldPageTable = () => {
         { title: 'Certificate Number', dataIndex: 'certificate_number', key: 'certificate_number', fixed: 'left'},
         { title: 'Created By', dataIndex: 'create_user', key: 'create_user', fixed: 'left'},
         { title: 'Updated By', dataIndex: 'upd_user', key: 'upd_user', fixed: 'left'},
-        { title: '', key: 'action', fixed: 'right', 
+        { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
             <Link href={`/master/gold/${record.gold_id}`} className="btn-action"><Edit05 /></Link>

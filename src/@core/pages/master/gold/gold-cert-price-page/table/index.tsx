@@ -33,7 +33,7 @@ const GoldCertPricePageTable = () => {
         { title: 'Cert Code', dataIndex: 'cert_code', key: 'cert_code', fixed: 'left'},
         { title: 'Gold Weight', dataIndex: 'gold_weight', key: 'gold_weight', fixed: 'left'},
         { title: 'Cert Price', dataIndex: 'cert_price', key: 'cert_price', fixed: 'left'},
-        { title: '', key: 'action', fixed: 'right', 
+        { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
             <Link href={`/master/gold/cert-price/${record.cert_id}`} className="btn-action"><Edit05 /></Link>
