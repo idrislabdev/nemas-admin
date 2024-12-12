@@ -26,7 +26,7 @@ const GoldPriceConfigPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 10,
-        type__icontains:"",
+        gpc_code__icontains:"",
     });
     const [api, contextHolder] = notification.useNotification();
     const columns: ColumnsType<IGoldPriceConfig>  = [
@@ -75,7 +75,7 @@ const GoldPriceConfigPageTable = () => {
            ...params,
            offset: 0,
            limit: 10,
-           type__icontains: value,
+           gpc_code__icontains:value
         });
      };
      
@@ -94,7 +94,7 @@ const GoldPriceConfigPageTable = () => {
             ...params,
             offset: 0,
             limit: 10,
-            type__icontains: "",
+            gpc_code__icontains:"",
          });
         api.info({
             message: 'Data Gold Cert Price',
@@ -109,7 +109,7 @@ const GoldPriceConfigPageTable = () => {
             format: 'json',
             offset: 0,
             limit: 10000,
-            type__icontains:"",
+            gpc_code__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });
         const rows = resp.data.results;
