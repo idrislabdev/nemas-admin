@@ -34,7 +34,7 @@ export default function AddressDistrictForm() {
                 <AddressTabPage activeTab="district" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/master/address/district`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/master/address/district`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <AddressDistrictPageForm />
                 </div>

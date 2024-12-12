@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id')
 
 const GoldPriceConfigPageTable = () => {
     const url = `/core/gold/price_config/`
@@ -30,19 +33,24 @@ const GoldPriceConfigPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'gpc_id', key: 'gpc_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Code', dataIndex: 'gpc_code', key: 'gpc_code', width: 150},
-        { title: 'Description', dataIndex: 'gpc_description', key: 'gpc_description', width: 150},
-        { title: 'Price Weight', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 150},
-        { title: 'Price Buy Weekday', dataIndex: 'gold_price_setting_model_buy_weekday', key: 'gold_price_setting_model_buy_weekday', width: 150},
-        { title: 'Price Sell Weekday', dataIndex: 'gold_price_setting_model_sell_weekday', key: 'gold_price_setting_model_sell_weekday', width: 150},
-        { title: 'Price Buy Weekend', dataIndex: 'gold_price_setting_model_buy_weekend', key: 'gold_price_setting_model_buy_weekend', width: 150},
-        { title: 'Price Sell Weekend', dataIndex: 'gold_price_setting_model_sell_weekend', key: 'gold_price_setting_model_sell_weekend', width: 150},
-        { title: 'Status', dataIndex: 'gpc_active', key: 'gpc_active', width: 150, 
+        { title: 'Kode', dataIndex: 'gpc_code', key: 'gpc_code', width: 150},
+        { title: 'Deskripsi', dataIndex: 'gpc_description', key: 'gpc_description', width: 200},
+        // { title: 'Price Weight', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200},
+        { title: 'Harga Beli (Hari Kerja)', dataIndex: 'gold_price_setting_model_buy_weekday', key: 'gold_price_setting_model_buy_weekday', width: 200},
+        { title: 'Harga Jual (Hari Kerja)', dataIndex: 'gold_price_setting_model_sell_weekday', key: 'gold_price_setting_model_sell_weekday', width: 200},
+        { title: 'Harga Beli (Hari Libur)', dataIndex: 'gold_price_setting_model_buy_weekend', key: 'gold_price_setting_model_buy_weekend', width: 200},
+        { title: 'Harga Jual (Hari Libur)', dataIndex: 'gold_price_setting_model_sell_weekend', key: 'gold_price_setting_model_sell_weekend', width: 200},
+        { title: 'Status', dataIndex: 'gpc_active', key: 'gpc_active', width: 100, 
             render: (_, record) =>
-                (record.gpc_active ? 'Active' : 'Not Active')
+                (record.gpc_active ? 'Aktif' : 'Tidak Aktif')
         },
-        { title: 'Created By', dataIndex: 'create_user', key: 'create_user', width: 150},
-        { title: 'Updated By', dataIndex: 'upd_user', key: 'upd_user', width: 150},
+        { title: 'Dibuat Oleh', dataIndex: 'create_user', key: 'create_user', width: 150},
+        { title: 'Diupdate Oleh', dataIndex: 'upd_user', key: 'upd_user', width: 150},
+        { title: 'Terakhir Update', dataIndex: 'upd_time', key: 'upd_time',
+            render: (_, record) => (
+                moment(record.upd_time).format("DD MMM YYYY, HH:mm")
+            )
+        },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
@@ -140,7 +148,7 @@ const GoldPriceConfigPageTable = () => {
                     <input 
                         type='text' 
                         className='color-1 base' 
-                        placeholder='search data'
+                        placeholder='cari data'
                         onChange={debounce(
                             (event) => handleFilter(event.target.value),
                             1000

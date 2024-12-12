@@ -30,8 +30,8 @@ const MainSidebar = () => {
             <span className='label'>Master</span>
             <div className='list-menu'>
                 <ul>
-                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><Tag01 />Gold</Link></li>
-                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><Building07 />Address</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><Tag01 />Data Emas</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><Building07 />Data Alamat</Link></li>
                 </ul>
             </div>
             <hr />

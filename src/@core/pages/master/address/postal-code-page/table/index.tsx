@@ -91,7 +91,7 @@ const AddressPostalCodePageTable = () => {
                     <input 
                         type='text' 
                         className='color-1 base' 
-                        placeholder='search data'
+                        placeholder='cari data'
                         onChange={debounce(
                             (event) => handleFilter(event.target.value),
                             1000

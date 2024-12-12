@@ -5,7 +5,8 @@ export interface IGold {
     brand?: string,
     certificate_number?: string,
     create_user?: string,
-    upd_user?: string
+    upd_user?: string,
+    upd_time?: string,
 }
 
 export interface IGoldPrice {
@@ -36,6 +37,7 @@ export interface IGoldPriceConfig {
     gpc_active?: boolean,
     create_user?: string,
     upd_user?: string
+    upd_time?: string
 }
 
 export interface IAddressProvince {

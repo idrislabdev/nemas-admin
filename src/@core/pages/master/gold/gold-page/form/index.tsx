@@ -77,24 +77,24 @@ const GoldPageForm = (props: {paramsId:string}) => {
             {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
-                    <label>Gold Weight {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
+                    <label>Berat Emas {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
                     <input value={goldWeight} onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} className={`base ${required.gold_weight ? 'error' : ''}`} />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Type {required.type && <span className='text-red-500 text-[10px]/[14px] italic'>({required.type?.toString()})</span>}</label>
+                    <label>Tipe Emas {required.type && <span className='text-red-500 text-[10px]/[14px] italic'>({required.type?.toString()})</span>}</label>
                     <input value={type} onChange={e => setType(e.target.value)} className={`base ${required.type ? 'error' : ''}`}  />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Brand {required.brand && <span className='text-red-500 text-[10px]/[14px] italic'>({required.brand?.toString()})</span>}</label>
+                    <label>Merek Emas {required.brand && <span className='text-red-500 text-[10px]/[14px] italic'>({required.brand?.toString()})</span>}</label>
                     <input value={brand} onChange={e => setBrand(e.target.value)} className={`base ${required.brand ? 'error' : ''}`} />
                 </div>
                 <div className='input-area'>
-                    <label>Certificate Number {required.certificate_number && <span className='text-red-500 text-[10px]/[14px] italic'>({required.certificate_number?.toString()})</span>}</label>
+                    <label>Nomor Sertifikat {required.certificate_number && <span className='text-red-500 text-[10px]/[14px] italic'>({required.certificate_number?.toString()})</span>}</label>
                     <input value={certificateNumber} onChange={e => setCertficateNumber(e.target.value)}  className={`base ${required.certificate_number ? 'error' : ''}`} />
                 </div>
             </div>
             <div className='form-button'>
-                <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
+                <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
             </div>
         </div>
   )

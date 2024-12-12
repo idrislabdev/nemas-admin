@@ -11,7 +11,7 @@ const AddressProvincePageForm = () => {
         </div>
         <div className='form-button'>
             <button className='btn btn-outline-secondary'>Cancel</button>
-            <button className='btn'>Save</button>
+            <button className='btn'>Simpan</button>
         </div>
     </div>
   )

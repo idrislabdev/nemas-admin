@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id')
 
 const GoldPageTable = () => {
     const url = `/core/gold/`
@@ -30,12 +33,17 @@ const GoldPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'gold_id', key: 'gold_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Gold Weight', dataIndex: 'gold_weight', key: 'gold_weight', width: 100, fixed: 'left'},
-        { title: 'Type', dataIndex: 'type', key: 'type', fixed: 'left'},
-        { title: 'Brand', dataIndex: 'brand', key: 'brand', fixed: 'left'},
-        { title: 'Certificate Number', dataIndex: 'certificate_number', key: 'certificate_number', fixed: 'left'},
-        { title: 'Created By', dataIndex: 'create_user', key: 'create_user', fixed: 'left'},
-        { title: 'Updated By', dataIndex: 'upd_user', key: 'upd_user', fixed: 'left'},
+        { title: 'Berat Emas', dataIndex: 'gold_weight', key: 'gold_weight', width: 100, fixed: 'left'},
+        { title: 'Tipe Emas', dataIndex: 'type', key: 'type'},
+        { title: 'Merek', dataIndex: 'brand', key: 'brand'},
+        { title: 'Nomor Sertifikat', dataIndex: 'certificate_number', key: 'certificate_number'},
+        { title: 'Dibuat Oleh', dataIndex: 'create_user', key: 'create_user'},
+        { title: 'Diupdate Oleh', dataIndex: 'upd_user', key: 'upd_user'},
+        { title: 'Terakhir Update', dataIndex: 'upd_time', key: 'upd_time',
+            render: (_, record) => (
+                moment(record.upd_time).format("DD MMM YYYY, HH:mm")
+            )
+        },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
@@ -135,7 +143,7 @@ const GoldPageTable = () => {
                     <input 
                         type='text' 
                         className='color-1 base' 
-                        placeholder='search data'
+                        placeholder='cari data'
                         onChange={debounce(
                             (event) => handleFilter(event.target.value),
                             1000

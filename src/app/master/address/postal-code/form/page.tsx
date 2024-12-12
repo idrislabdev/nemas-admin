@@ -34,7 +34,7 @@ export default function AddressPostalCodeForm() {
                 <AddressTabPage activeTab="postal_code" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/master/address/postal-code`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/master/address/postal-code`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <AddressPostalCodePageForm />
                 </div>

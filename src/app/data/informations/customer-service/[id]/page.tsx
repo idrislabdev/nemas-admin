@@ -35,7 +35,7 @@ export default async function InformationCustomerServiceForm({ params }: { param
                 <InformationsTabPage activeTab="customer_service" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/data/informations/customer-service`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/data/informations/customer-service`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <InformationCustomerServicePageForm paramsId={paramsId} />
                 </div>

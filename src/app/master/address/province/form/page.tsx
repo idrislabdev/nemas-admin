@@ -34,7 +34,7 @@ export default function AddressProvinceForm() {
                 <AddressTabPage activeTab="province" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/master/address/province`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/master/address/province`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <AddressProvincePageForm />
                 </div>

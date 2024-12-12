@@ -35,7 +35,7 @@ export default async function InformationEducationalForm({ params }: { params: P
                 <InformationsTabPage activeTab="educational" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/data/informations/educational`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/data/informations/educational`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <InformationEducationalPageForm paramsId={paramsId} />
                 </div>

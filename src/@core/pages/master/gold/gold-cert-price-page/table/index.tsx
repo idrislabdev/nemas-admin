@@ -30,9 +30,9 @@ const GoldCertPricePageTable = () => {
         { title: 'No', width: 70, dataIndex: 'cert_id', key: 'cert_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Cert Code', dataIndex: 'cert_code', key: 'cert_code', fixed: 'left'},
-        { title: 'Gold Weight', dataIndex: 'gold_weight', key: 'gold_weight', fixed: 'left'},
-        { title: 'Cert Price', dataIndex: 'cert_price', key: 'cert_price', fixed: 'left'},
+        { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code', fixed: 'left'},
+        { title: 'Satuan (gr)', dataIndex: 'gold_weight', key: 'gold_weight', fixed: 'left'},
+        { title: 'Harga Sertifikat', dataIndex: 'cert_price', key: 'cert_price', fixed: 'left'},
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
@@ -125,7 +125,7 @@ const GoldCertPricePageTable = () => {
                     <input 
                         type='text' 
                         className='color-1 base' 
-                        placeholder='search data'
+                        placeholder='cari data'
                         onChange={debounce(
                             (event) => handleFilter(event.target.value),
                             1000

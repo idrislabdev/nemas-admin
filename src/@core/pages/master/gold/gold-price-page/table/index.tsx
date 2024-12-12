@@ -30,11 +30,11 @@ const GoldPricePageTable = () => {
         { title: 'No', width: 70, dataIndex: 'gold_price_id', key: 'gold_price_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Gold Price Source', dataIndex: 'gold_price_source', key: 'gold_price_source', width: 200},
-        { title: 'Gold Price Weight', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200},
-        { title: 'Gold Price Base', dataIndex: 'gold_price_base', key: 'gold_price_base', width: 200},
-        { title: 'Gold Price Sell', dataIndex: 'gold_price_sell', key: 'gold_price_sell', width: 200},
-        { title: 'Gold Price Buy', dataIndex: 'gold_price_buy', key: 'gold_price_buy', width: 200},
+        { title: 'Asal Harga emas', dataIndex: 'gold_price_source', key: 'gold_price_source', width: 200},
+        { title: 'Satuan (gr)', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200},
+        { title: 'Harga Dasar', dataIndex: 'gold_price_base', key: 'gold_price_base', width: 200},
+        { title: 'Harga Jual', dataIndex: 'gold_price_sell', key: 'gold_price_sell', width: 200},
+        { title: 'Harga Beli', dataIndex: 'gold_price_buy', key: 'gold_price_buy', width: 200},
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
@@ -127,7 +127,7 @@ const GoldPricePageTable = () => {
                     <input 
                         type='text' 
                         className='color-1 base' 
-                        placeholder='search data'
+                        placeholder='cari data'
                         onChange={debounce(
                             (event) => handleFilter(event.target.value),
                             1000

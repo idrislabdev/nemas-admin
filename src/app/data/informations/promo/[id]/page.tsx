@@ -36,7 +36,7 @@ export default async function InformationPromoForm({ params }: { params: Promise
                 <InformationsTabPage activeTab="promo" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/data/informations/promo`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/data/informations/promo`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <InformationPromoPageForm paramsId={paramsId} />
                 </div>

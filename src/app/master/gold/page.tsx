@@ -24,8 +24,8 @@ export default function GoldPage() {
                 <AboutOutlineIcon/>
               </div>
               <div className='text-area'>
-                <h5>Halaman Gold</h5>
-                <p>Manajemen Data Gold</p>
+                <h5>Halaman Data Emas</h5>
+                <p>Manajemen Data Emas</p>
               </div>
             </div>
             <div className='main-body'>

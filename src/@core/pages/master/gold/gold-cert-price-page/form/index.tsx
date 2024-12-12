@@ -56,7 +56,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         {contextHolder}
         <div className='form-area'>
             <div className='input-area'>
-                <label>Cert Code {required.cert_code && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_code?.toString()})</span>}</label>
+                <label>Kode Sertifikat {required.cert_code && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_code?.toString()})</span>}</label>
                 <input 
                     value={certCode} 
                     onChange={e => setCertCode(e.target.value)} 
@@ -64,7 +64,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                 />
             </div>
             <div className='input-area'>
-                <label>Gold Weight {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
+                <label>Satuan (gr) {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
                 <input 
                     value={goldWeight} 
                     onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} 
@@ -72,7 +72,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                 />
             </div>
             <div className='input-area'>
-                <label>Cert Price {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>
+                <label>Harga Sertifikat {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>
                 <input 
                     value={certPrice} 
                     onChange={e => setCertPrice(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} 
@@ -82,7 +82,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         </div>
         <div className='form-button'>
             <button className='btn btn-outline-secondary'>Cancel</button>
-            <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
+            <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
         </div>
     </div>
   )

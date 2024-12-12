@@ -66,7 +66,7 @@ const InformationCustomerServicePageForm = (props: {paramsId:string}) => {
             </div>
             <div className='form-button'>
                 <Link href={`/ data/informations/customer-service`} className='btn btn-outline-secondary'>Cancel</Link>
-                <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
+                <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
             </div>
         </div>
   )

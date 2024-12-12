@@ -36,7 +36,7 @@ export default async function InformationRatingForm({ params }: { params: Promis
                 <InformationsTabPage activeTab="rating" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/data/informations/rating`} className="btn btn-outline-neutral"><UndoOutlineIcon />Back To</Link>
+                        <Link href={`/data/informations/rating`} className="btn btn-outline-neutral"><UndoOutlineIcon />Kembali</Link>
                     </div>
                     <InformationRatingPageForm paramsId={paramsId} />
                 </div>

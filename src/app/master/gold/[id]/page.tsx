@@ -27,7 +27,7 @@ export default async function GoldForm({ params }: { params: Promise<{ id: strin
                 <AboutOutlineIcon/>
               </div>
               <div className='text-area'>
-                <h5>Halaman Gold</h5>
+                <h5>Halaman Data Emas</h5>
                 <p>Manajemen Data Gold</p>
               </div>
             </div>
@@ -35,7 +35,7 @@ export default async function GoldForm({ params }: { params: Promise<{ id: strin
                 <GoldTabPage activeTab="gold" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
-                        <Link href={`/master/gold`} className="btn btn-outline-neutral"><FlipBackward />Back To</Link>
+                        <Link href={`/master/gold`} className="btn btn-outline-neutral"><FlipBackward /> Kembali</Link>
                     </div>
                     <GoldPageForm paramsId={paramsId}/>
                 </div>

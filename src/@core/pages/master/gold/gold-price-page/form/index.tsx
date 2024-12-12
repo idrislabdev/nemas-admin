@@ -79,7 +79,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
             {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
-                    <label>Gold Price Source {required.gold_price_source && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_source?.toString()})</span>}</label>
+                    <label>Asal Harga Emas {required.gold_price_source && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_source?.toString()})</span>}</label>
                     <input 
                         value={goldPriceSource} 
                         onChange={e => setGoldPriceSource(e.target.value)} 
@@ -87,7 +87,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Price Weight {required.gold_price_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_weight?.toString()})</span>}</label>
+                    <label>Satuan (gr) {required.gold_price_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_weight?.toString()})</span>}</label>
                     <input 
                         value={goldPriceWeight} 
                         onChange={e => setGoldPriceWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
@@ -95,7 +95,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Price Base {required.gold_price_base && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_base?.toString()})</span>}</label>
+                    <label>Harga Dasar {required.gold_price_base && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_base?.toString()})</span>}</label>
                     <input 
                         value={goldPriceBase} 
                         onChange={e => setGoldPriceBase(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
@@ -103,7 +103,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Price Sell {required.gold_price_sell && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_sell?.toString()})</span>}</label>
+                    <label>Harga Jual {required.gold_price_sell && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_sell?.toString()})</span>}</label>
                     <input 
                         value={goldPriceSell} 
                         onChange={e => setGoldPriceSell(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
@@ -111,7 +111,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     />
                 </div>
                 <div className='input-area'>
-                    <label>Gold Price Buy {required.gold_price_buy && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_buy?.toString()})</span>}</label>
+                    <label>Harga Beli {required.gold_price_buy && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_buy?.toString()})</span>}</label>
                     <input 
                         value={goldPriceBuy} 
                         onChange={e => setGoldPriceBuy(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
@@ -120,7 +120,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                 </div>
             </div>
             <div className='form-button'>
-                <button className='btn btn-primary' onClick={() => onSave()}>Save</button>
+                <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
             </div>
         </div>
     )
