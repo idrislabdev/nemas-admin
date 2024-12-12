@@ -65,11 +65,14 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
             </div>
             <div className='input-area'>
                 <label>Satuan (gr) {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
-                <input 
-                    value={goldWeight} 
-                    onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} 
-                    className={`base ${required.gold_weight ? 'error' : ''}`}  
-                />
+                <div className='group-input prepend'>
+                    <span className='prepend !top-[5px]'>gr</span>
+                    <input 
+                        value={goldWeight} 
+                        onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                        className={`base ${required.gold_weight ? 'error' : ''}`} 
+                    />
+                </div>
             </div>
             <div className='input-area'>
                 <label>Harga Sertifikat {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import { formatterNumber } from '@/@core/utils/general';
 
 const GoldCertPricePageTable = () => {
     const url = `/core/gold/cert_price/`
@@ -30,9 +31,13 @@ const GoldCertPricePageTable = () => {
         { title: 'No', width: 70, dataIndex: 'cert_id', key: 'cert_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code', fixed: 'left'},
-        { title: 'Satuan (gr)', dataIndex: 'gold_weight', key: 'gold_weight', fixed: 'left'},
-        { title: 'Harga Sertifikat', dataIndex: 'cert_price', key: 'cert_price', fixed: 'left'},
+        { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code'},
+        { title: 'Satuan (gr)', dataIndex: 'gold_weight', key: 'gold_weight',
+            render: (_, record) => (`${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`) 
+        },
+        { title: 'Harga Sertifikat', dataIndex: 'cert_price', key: 'cert_price',
+            render: (_, record) => (`Rp${formatterNumber(record.gold_weight ? record.gold_weight : 0)}`) 
+        },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>

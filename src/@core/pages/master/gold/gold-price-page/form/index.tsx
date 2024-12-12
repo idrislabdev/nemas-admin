@@ -88,11 +88,14 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                 </div>
                 <div className='input-area'>
                     <label>Satuan (gr) {required.gold_price_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_weight?.toString()})</span>}</label>
-                    <input 
-                        value={goldPriceWeight} 
-                        onChange={e => setGoldPriceWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
-                        className={`base ${required.gold_price_weight ? 'error' : ''}`} 
-                    />
+                    <div className='group-input prepend'>
+                        <span className='prepend !top-[5px]'>gr</span>
+                        <input 
+                            value={goldPriceWeight} 
+                            onChange={e => setGoldPriceWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                            className={`base ${required.gold_price_weight ? 'error' : ''}`} 
+                        />
+                    </div>
                 </div>
                 <div className='input-area'>
                     <label>Harga Dasar {required.gold_price_base && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_base?.toString()})</span>}</label>

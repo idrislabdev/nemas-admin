@@ -13,6 +13,7 @@ import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
+import { formatterNumber } from '@/@core/utils/general';
 moment.locale('id')
 
 const GoldPageTable = () => {
@@ -33,7 +34,9 @@ const GoldPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'gold_id', key: 'gold_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Berat Emas', dataIndex: 'gold_weight', key: 'gold_weight', width: 100, fixed: 'left'},
+        { title: 'Berat Emas (gr)', dataIndex: 'gold_weight', key: 'gold_weight', width: 150, fixed: 'left',
+            render: (_, record) => (`${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`)
+        },
         { title: 'Tipe Emas', dataIndex: 'type', key: 'type'},
         { title: 'Merek', dataIndex: 'brand', key: 'brand'},
         { title: 'Nomor Sertifikat', dataIndex: 'certificate_number', key: 'certificate_number'},

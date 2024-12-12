@@ -77,8 +77,15 @@ const GoldPageForm = (props: {paramsId:string}) => {
             {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
-                    <label>Berat Emas {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
-                    <input value={goldWeight} onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} className={`base ${required.gold_weight ? 'error' : ''}`} />
+                    <label>Berat Emas (gr) {required.gold_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_weight?.toString()})</span>}</label>
+                    <div className='group-input prepend'>
+                        <span className='prepend !top-[5px]'>gr</span>
+                        <input 
+                            value={goldWeight} 
+                            onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                            className={`base ${required.gold_weight ? 'error' : ''}`} 
+                        />
+                    </div>
                 </div>
                 <div className='input-area'>
                     <label>Tipe Emas {required.type && <span className='text-red-500 text-[10px]/[14px] italic'>({required.type?.toString()})</span>}</label>

@@ -34,7 +34,7 @@ export default async function GoldCertPriceForm({ params }: { params: Promise<{ 
               </div>
             </div>
             <div className='main-body'>
-                <GoldTabPage activeTab="price" />
+                <GoldTabPage activeTab="cert_price" />
                 <div className="flex flex-col gap-[10px]">
                     <div className="flex justify-end">
                         <Link href={`/master/gold/cert-price`} className="btn btn-outline-neutral"><FlipBackward />Kembali</Link>

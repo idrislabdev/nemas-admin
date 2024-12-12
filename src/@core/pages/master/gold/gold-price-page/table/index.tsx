@@ -11,6 +11,7 @@ import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/ic
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import { formatterNumber } from '@/@core/utils/general';
 
 const GoldPricePageTable = () => {
     const url = `/core/gold/price/`
@@ -31,10 +32,18 @@ const GoldPricePageTable = () => {
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
         { title: 'Asal Harga emas', dataIndex: 'gold_price_source', key: 'gold_price_source', width: 200},
-        { title: 'Satuan (gr)', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200},
-        { title: 'Harga Dasar', dataIndex: 'gold_price_base', key: 'gold_price_base', width: 200},
-        { title: 'Harga Jual', dataIndex: 'gold_price_sell', key: 'gold_price_sell', width: 200},
-        { title: 'Harga Beli', dataIndex: 'gold_price_buy', key: 'gold_price_buy', width: 200},
+        { title: 'Satuan (gr)', dataIndex: 'gold_price_weight', key: 'gold_price_weight', width: 200,
+             render: (_, record) => (`${formatterNumber(record.gold_price_weight ? record.gold_price_weight : 0)} gr`)
+        },
+        { title: 'Harga Dasar', dataIndex: 'gold_price_base', key: 'gold_price_base', width: 200,
+            render: (_, record) => (`Rp${formatterNumber(record.gold_price_base ? record.gold_price_base : 0)}`)
+        },
+        { title: 'Harga Jual', dataIndex: 'gold_price_sell', key: 'gold_price_sell', width: 200,
+            render: (_, record) => (`Rp${formatterNumber(record.gold_price_sell ? record.gold_price_sell : 0)}`)
+        },
+        { title: 'Harga Beli', dataIndex: 'gold_price_buy', key: 'gold_price_buy', width: 200,
+            render: (_, record) => (`Rp${formatterNumber(record.gold_price_buy ? record.gold_price_buy : 0)}`)
+        },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
