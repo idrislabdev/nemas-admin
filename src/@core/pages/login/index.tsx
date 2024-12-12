@@ -57,7 +57,6 @@ const LoginForm = () => {
                     {error !== '' &&  <label className='bg-red-500 text-white text-[14px]/[17px] h-[40px] flex flex-col justify-center items-center rounded-[4px]'>{error}</label>}
                     <div className='group-input prepend-append'>
                         <span className='append'><UserIcon /></span>
-                        <span className='prepend'><HideEyeIcon color={'#838899'} /></span>
                         <input type='text' value={email} onChange={e => setEmail(e.target.value)} className='color-1' placeholder='email'/>
                     </div>
                     <div className='group-input prepend-append'>
