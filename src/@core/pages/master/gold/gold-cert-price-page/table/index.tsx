@@ -23,7 +23,7 @@ const GoldCertPricePageTable = () => {
         format: 'json',
         offset: 0,
         limit: 10,
-        type__icontains:"",
+        cert_code__icontains:"",
     });
     const [api, contextHolder] = notification.useNotification();
     const columns: ColumnsType<IGoldCertPrice>  = [
@@ -36,8 +36,8 @@ const GoldCertPricePageTable = () => {
         { title: '', key: 'action', fixed: 'right', 
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
-            <a className='btn-action' onClick={() => deleteData(record.cert_id)}><Trash01 /></a>
             <Link href={`/master/gold/cert-price/${record.cert_id}`} className="btn-action"><Edit05 /></Link>
+            <a className='btn-action' onClick={() => deleteData(record.cert_id)}><Trash01 /></a>
         </div>)
         },
     ];
@@ -57,7 +57,7 @@ const GoldCertPricePageTable = () => {
            ...params,
            offset: 0,
            limit: 10,
-           type__icontains: value,
+           cert_code__icontains: value,
         });
      };
      
@@ -76,7 +76,7 @@ const GoldCertPricePageTable = () => {
             ...params,
             offset: 0,
             limit: 10,
-            type__icontains: "",
+            cert_code__icontains: "",
          });
         api.info({
             message: 'Data Gold Cert Price',
@@ -91,7 +91,7 @@ const GoldCertPricePageTable = () => {
             format: 'json',
             offset: 0,
             limit: 10000,
-            type__icontains:"",
+            cert_code__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });
         const rows = resp.data.results;

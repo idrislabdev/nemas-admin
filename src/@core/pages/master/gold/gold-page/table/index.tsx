@@ -39,8 +39,9 @@ const GoldPageTable = () => {
         { title: '', key: 'action', fixed: 'right', 
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
-            <a className='btn-action' onClick={() => deleteData(record.gold_id)}><Trash01 /></a>
             <Link href={`/master/gold/${record.gold_id}`} className="btn-action"><Edit05 /></Link>
+            <a className='btn-action' onClick={() => deleteData(record.gold_id)}><Trash01 /></a>
+
         </div>)
         },
     ];
