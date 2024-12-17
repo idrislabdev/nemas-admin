@@ -83,6 +83,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
                         <input 
                             value={goldWeight} 
                             onChange={e => setGoldWeight(e.target.value
+                                .replace(/(?!\,)\D/g, '')
                                 .replace(/(?<=\,,*)\,/g, '')
                                 .replace(/(?<=\,\d\d).*/g, '')
                                 .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 

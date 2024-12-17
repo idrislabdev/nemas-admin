@@ -83,6 +83,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                     <input 
                         value={goldWeight} 
                         onChange={e => setGoldWeight(e.target.value
+                            .replace(/(?!\,)\D/g, '')
                             .replace(/(?<=\,,*)\,/g, '')
                             .replace(/(?<=\,\d\d).*/g, '')
                             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
@@ -94,7 +95,8 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                 <label>Harga Sertifikat {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>
                 <input 
                     value={certPrice} 
-                    onChange={e => setCertPrice(e.target.value.replace(/(?!\,)\D/g, '')
+                    onChange={e => setCertPrice(e.target.value
+                        .replace(/(?!\,)\D/g, '')
                         .replace(/(?<=\,,*)\,/g, '')
                         .replace(/(?<=\,\d\d).*/g, '')
                         .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 

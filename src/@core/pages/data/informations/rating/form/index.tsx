@@ -68,9 +68,10 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
                     <label>Rate</label>
                     <input value={rate} 
                         onChange={e => setRate(e.target.value
-                        .replace(/(?<=\,,*)\,/g, '')
-                        .replace(/(?<=\,\d\d).*/g, '')
-                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                            .replace(/(?!\,)\D/g, '')
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                         className='base' 
                     />
                 </div>

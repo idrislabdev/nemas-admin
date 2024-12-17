@@ -118,9 +118,10 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
                         <label>Promo Diskon</label>
                         <input value={promoDiskon} 
                             onChange={e => setPromoDiskon(e.target.value
-                            .replace(/(?<=\,,*)\,/g, '')
-                            .replace(/(?<=\,\d\d).*/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                                .replace(/(?!\,)\D/g, '')
+                                .replace(/(?<=\,,*)\,/g, '')
+                                .replace(/(?<=\,\d\d).*/g, '')
+                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                             type='text' 
                             className='base' 
                         />
@@ -130,6 +131,7 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
                         <input 
                             value={promoCashback} 
                             onChange={e => setPromoCashback(e.target.value
+                                .replace(/(?!\,)\D/g, '')
                                 .replace(/(?<=\,,*)\,/g, '')
                                 .replace(/(?<=\,\d\d).*/g, '')
                                 .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 

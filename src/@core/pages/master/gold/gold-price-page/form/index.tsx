@@ -93,6 +93,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                         <input 
                             value={goldPriceWeight} 
                             onChange={e => setGoldPriceWeight(e.target.value
+                                .replace(/(?!\,)\D/g, '')
                                 .replace(/(?<=\,,*)\,/g, '')
                                 .replace(/(?<=\,\d\d).*/g, '')
                                 .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
@@ -105,6 +106,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <input 
                         value={goldPriceBase} 
                         onChange={e => setGoldPriceBase(e.target.value
+                            .replace(/(?!\,)\D/g, '')
                             .replace(/(?<=\,,*)\,/g, '')
                             .replace(/(?<=\,\d\d).*/g, '')
                             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
@@ -116,6 +118,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <input 
                         value={goldPriceSell} 
                         onChange={e => setGoldPriceSell(e.target.value
+                            .replace(/(?!\,)\D/g, '')
                             .replace(/(?<=\,,*)\,/g, '')
                             .replace(/(?<=\,\d\d).*/g, '')
                             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
@@ -127,6 +130,7 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <input 
                         value={goldPriceBuy} 
                         onChange={e => setGoldPriceBuy(e.target.value
+                            .replace(/(?!\,)\D/g, '')
                             .replace(/(?<=\,,*)\,/g, '')
                             .replace(/(?<=\,\d\d).*/g, '')
                             .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
