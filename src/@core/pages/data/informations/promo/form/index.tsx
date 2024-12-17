@@ -40,8 +40,8 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
             "promo_end_date": promoEndDate,
             "promo_tag": promoTag,
             "promo_url_background": promoUrlBackground,
-            "promo_diskon": promoDiskon,
-            "promo_cashback": promoCashback,
+            "promo_diskon": parseFloat(promoDiskon.toString().replace('.', '').replace(',', '.')),
+            "promo_cashback": parseFloat(promoCashback.toString().replace('.', '').replace(',', '.')),
             "promo_cashback_tipe_user": promoCashbackTipeUser,
             "merchant_cashback": merchantCashback,
             "create_user": user.name,
@@ -116,11 +116,26 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
                     </div>
                     <div className='input-area'>
                         <label>Promo Diskon</label>
-                        <input value={promoDiskon} onChange={e => setPromoDiskon(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} type='text' className='base' />
+                        <input value={promoDiskon} 
+                            onChange={e => setPromoDiskon(e.target.value
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                            type='text' 
+                            className='base' 
+                        />
                     </div>
                     <div className='input-area'>
                         <label>Promo Cashback</label>
-                        <input value={promoCashback} onChange={e => setPromoCashback(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} type='text' className='base' />
+                        <input 
+                            value={promoCashback} 
+                            onChange={e => setPromoCashback(e.target.value
+                                .replace(/(?<=\,,*)\,/g, '')
+                                .replace(/(?<=\,\d\d).*/g, '')
+                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                            type='text' 
+                            className='base' 
+                        />
                     </div>
                     <div className='input-area'>
                         <label>Promo Cashback Tipe User</label>

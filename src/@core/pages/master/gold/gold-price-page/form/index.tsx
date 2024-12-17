@@ -20,10 +20,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
     const onSave = async () => {
         const body = {
             "gold_price_source": goldPriceSource,
-            "gold_price_weight": parseInt(goldPriceWeight.toString().replace(/\./g, '')),
-            "gold_price_base": parseInt(goldPriceBase.toString().replace(/\./g, '')),
-            "gold_price_sell": parseInt(goldPriceSell.toString().replace(/\./g, '')),
-            "gold_price_buy": parseInt(goldPriceBuy.toString().replace(/\./g, ''))
+            "gold_price_weight": parseFloat(goldPriceWeight.toString().replace('.', '').replace(',', '.')),
+            "gold_price_base": parseFloat(goldPriceBase.toString().replace('.', '').replace(',', '.')),
+            "gold_price_sell": parseFloat(goldPriceSell.toString().replace('.', '').replace(',', '.')),
+            "gold_price_buy": parseFloat(goldPriceBuy.toString().replace('.', '').replace(',', '.'))
         }
         setRequired({})
         try {
@@ -55,10 +55,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
         setGoldPriceSource(data.gold_price_source);
-        setGoldPriceWeight(data.gold_price_weight);
-        setGoldPriceBase(data.gold_price_base);
-        setGoldPriceSell(data.gold_price_sell);
-        setGoldPriceBuy(data.gold_price_buy);
+        setGoldPriceWeight(data.gold_price_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldPriceBase(data.gold_price_base.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldPriceSell(data.gold_price_sell.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldPriceBuy(data.gold_price_buy.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
     }
 
     const clearForm = () => {
@@ -92,7 +92,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                         <span className='prepend !top-[5px]'>gr</span>
                         <input 
                             value={goldPriceWeight} 
-                            onChange={e => setGoldPriceWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                            onChange={e => setGoldPriceWeight(e.target.value
+                                .replace(/(?<=\,,*)\,/g, '')
+                                .replace(/(?<=\,\d\d).*/g, '')
+                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                             className={`base ${required.gold_price_weight ? 'error' : ''}`} 
                         />
                     </div>
@@ -101,7 +104,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <label>Harga Dasar {required.gold_price_base && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_base?.toString()})</span>}</label>
                     <input 
                         value={goldPriceBase} 
-                        onChange={e => setGoldPriceBase(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
+                        onChange={e => setGoldPriceBase(e.target.value
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
                         className={`base ${required.gold_price_base ? 'error' : ''}`}  
                     />
                 </div>
@@ -109,7 +115,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <label>Harga Jual {required.gold_price_sell && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_sell?.toString()})</span>}</label>
                     <input 
                         value={goldPriceSell} 
-                        onChange={e => setGoldPriceSell(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
+                        onChange={e => setGoldPriceSell(e.target.value
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
                         className={`base ${required.gold_price_sell ? 'error' : ''}`} 
                     />
                 </div>
@@ -117,7 +126,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <label>Harga Beli {required.gold_price_buy && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_buy?.toString()})</span>}</label>
                     <input 
                         value={goldPriceBuy} 
-                        onChange={e => setGoldPriceBuy(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))}  
+                        onChange={e => setGoldPriceBuy(e.target.value
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
                         className={`base ${required.gold_price_buy ? 'error' : ''}`} 
                     />
                 </div>

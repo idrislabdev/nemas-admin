@@ -18,7 +18,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const onSave = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}")
         const body = {
-            "gold_weight": parseInt(goldWeight.toString().replace(/\./g, '')),
+            "gold_weight": parseFloat(goldWeight.toString().replace('.', '').replace(',', '.')),
             "type": type,
             "brand": brand,
             "certificate_number": certificateNumber,
@@ -54,7 +54,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const fetchData = async () => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
-        setGoldWeight(data.gold_weight);
+        setGoldWeight(data.gold_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
         setType(data.type);
         setBrand(data.brand);
         setCertficateNumber(data.certificate_number);
@@ -82,7 +82,10 @@ const GoldPageForm = (props: {paramsId:string}) => {
                         <span className='prepend !top-[5px]'>gr</span>
                         <input 
                             value={goldWeight} 
-                            onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                            onChange={e => setGoldWeight(e.target.value
+                                .replace(/(?<=\,,*)\,/g, '')
+                                .replace(/(?<=\,\d\d).*/g, '')
+                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                             className={`base ${required.gold_weight ? 'error' : ''}`} 
                         />
                     </div>

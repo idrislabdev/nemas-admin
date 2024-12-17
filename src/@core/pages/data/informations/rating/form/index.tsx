@@ -22,7 +22,7 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
     const onSave = async () => {
         const body = {
             "information_rate_name": informationRateName,
-            "rate": parseInt(rate.toString().replace(/\./g, '')),
+            "rate": parseFloat(rate.toString().replace('.', '').replace(',', '.')),
             "message": message,
             "publish": publish
         }
@@ -43,7 +43,7 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}`);
         const { data } = resp
         setInformationRateName(data.information_rate_name)
-        setRate(data.rate)
+        setRate(data.rate.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'))
         setMessage(data.message)
     }
 
@@ -66,7 +66,13 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
                 </div>
                 <div className='input-area'>
                     <label>Rate</label>
-                    <input value={rate} onChange={e => setRate(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} className='base' />
+                    <input value={rate} 
+                        onChange={e => setRate(e.target.value
+                        .replace(/(?<=\,,*)\,/g, '')
+                        .replace(/(?<=\,\d\d).*/g, '')
+                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                        className='base' 
+                    />
                 </div>
                 <div className='input-area'>
                     <label>Message</label>

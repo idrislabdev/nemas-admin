@@ -17,8 +17,8 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
     const onSave = async () => {
         const body = {
             "cert_code": certCode,
-            "gold_weight": parseInt(goldWeight.toString().replace(/\./g, '')),
-            "cert_price": parseInt(certPrice.toString().replace(/\./g, '')),
+            "gold_weight": parseInt(goldWeight.toString().replace('.', '').replace(',', '.')),
+            "cert_price": parseFloat(certPrice.toString().replace('.', '').replace(',', '.')),
         }
         setRequired({})
         try {
@@ -44,8 +44,21 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                 setRequired(data)
             }
         }
-
     }
+
+    const fetchData = async () => {
+        const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+        const { data } = resp
+        setCertCode(data.cert_code);
+        setGoldWeight(data.gold_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setCertPrice(data.cert_price.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+    }
+    
+    useState(() => {
+        if (paramsId != 'form')
+            fetchData();
+    })
+
     const clearForm = () => {
         setCertCode("");
         setGoldWeight("");
@@ -69,7 +82,10 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                     <span className='prepend !top-[5px]'>gr</span>
                     <input 
                         value={goldWeight} 
-                        onChange={e => setGoldWeight(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, "."))} 
+                        onChange={e => setGoldWeight(e.target.value
+                            .replace(/(?<=\,,*)\,/g, '')
+                            .replace(/(?<=\,\d\d).*/g, '')
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                         className={`base ${required.gold_weight ? 'error' : ''}`} 
                     />
                 </div>
@@ -78,7 +94,10 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                 <label>Harga Sertifikat {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>
                 <input 
                     value={certPrice} 
-                    onChange={e => setCertPrice(e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","))} 
+                    onChange={e => setCertPrice(e.target.value.replace(/(?!\,)\D/g, '')
+                        .replace(/(?<=\,,*)\,/g, '')
+                        .replace(/(?<=\,\d\d).*/g, '')
+                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
                     className={`base ${required.cert_price ? 'error' : ''}`}  
                 />
             </div>

@@ -32,7 +32,7 @@ const LoginForm = () => {
         .catch((error) => {
             console.log(error)
             // setError(error.response.data.error);
-            setError("Email Or Password Not Valid");
+            setError("Email Atau Password Tidak Valid");
         });
     }
 

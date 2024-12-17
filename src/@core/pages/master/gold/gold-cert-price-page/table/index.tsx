@@ -36,7 +36,7 @@ const GoldCertPricePageTable = () => {
             render: (_, record) => (`${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`) 
         },
         { title: 'Harga Sertifikat', dataIndex: 'cert_price', key: 'cert_price',
-            render: (_, record) => (`Rp${formatterNumber(record.gold_weight ? record.gold_weight : 0)}`) 
+            render: (_, record) => (`Rp${formatterNumber(record.cert_price ? record.cert_price : 0)}`) 
         },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
