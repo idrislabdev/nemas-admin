@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon, UndoOutlineIcon } from "@/@core/my-icons";
 import InformationsTabPage from "@/@core/pages/data/informations/components/tab-page";
 import InformationPromoPageForm from "@/@core/pages/data/informations/promo/form";
@@ -21,6 +22,7 @@ export default async function InformationPromoForm({ params }: { params: Promise
                 <li><FolderOpenIcon /> Promo</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

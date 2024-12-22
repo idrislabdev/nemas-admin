@@ -1,27 +1,21 @@
 .main-sidebar {
-    @apply bg-neutral-50 w-[200px] h-full flex flex-col;
+    @apply bg-[#f9fafc] w-[260px] h-full flex flex-col;
     /* box-shadow: 0 2px 4px rgba(15,34,58,.12); */
     .header-area {
-        @apply h-[70px] border-b border-b-neutral-200 p-[10px] flex flex-col justify-center;
+        @apply h-[70px] p-[10px] flex flex-col justify-center;
         .header-info {
             @apply flex gap-[8px] items-center;
             img {
-                @apply w-[36px] h-[36px] border border-neutral-200 rounded-sm;
+                @apply w-[36px] h-[36px];
             }
-            .info-detail {
-                @apply flex flex-col;
-                label {
-                    @apply text-[12px]/[14px] text-neutral-800 font-semibold;
-                }
-                span {
-                    @apply text-[11px]/[14px] text-neutral-600
-                }
+            label {
+                @apply text-[18px]/[24px] text-neutral-800 font-medium;
             }
         }
 
     }
     .menu-area {
-        @apply flex flex-col py-[20px] gap-[10px] border-b border-b-neutral-200 flex-1 ;
+        @apply flex flex-col gap-[10px] flex-1 ;
         span {
             @apply px-[10px];
             &.label {
@@ -31,36 +25,21 @@
         .list-menu {
             @apply px-[10px];
             ul {
-                @apply flex flex-col gap-[10px];
+                @apply flex flex-col gap-[6px];
                 li {
-                    @apply text-sm text-neutral-700 px-[10px] py-[5px];
+                    @apply text-md text-gray-500 px-[10px] py-[6px];
                     &.active {
-                        @apply bg-blue-400 rounded text-white;
-                        a {
-                            svg {
-                                path {
-                                    @apply stroke-white;
-                                }
-                            }
-                        }
+                        @apply bg-white rounded text-gray-900;
+                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
                     }
                     &:hover {
-                        @apply bg-blue-50 rounded text-primary;
-                        a {
-                            svg {
-                                path {
-                                    @apply stroke-primary;
-                                }
-                            }
-                        }
+                        @apply bg-white rounded text-gray-900;
+                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
                     }
                     a {
                         @apply flex items-center gap-[8px];
                         svg {
-                            @apply w-[15px] h-[15px];
-                            path {
-                                @apply stroke-neutral-600;
-                            }
+                            @apply w-[20px] h-[20px];
                         }
                     }
                 }
@@ -68,21 +47,26 @@
         }
     }
     .info-area {
-        @apply h-[70px] p-[10px] flex flex-col justify-center;
-        .user-info {
-            @apply flex gap-[8px] items-center;
-            span {
-                svg {
-                    @apply w-[36px] h-[36px];
-                }
-            }
-            .info-detail {
-                @apply flex flex-col;
-                label {
-                    @apply text-[12px]/[14px] text-neutral-800 font-semibold;
-                }
-                span {
-                    @apply text-[10px]/[14px] text-neutral-600
+        @apply h-[170px] p-[10px] flex flex-col justify-end;
+        .list-menu {
+            ul {
+                @apply flex flex-col gap-[6px];
+                li {
+                    @apply text-md text-gray-500 px-[10px] py-[6px];
+                    &.active {
+                        @apply bg-white rounded text-gray-900;
+                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+                    }
+                    &:hover {
+                        @apply bg-white rounded text-gray-900;
+                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+                    }
+                    a {
+                        @apply flex items-center gap-[8px] cursor-pointer w-full;
+                        svg {
+                            @apply w-[20px] h-[20px];
+                        }
+                    }
                 }
             }
         }

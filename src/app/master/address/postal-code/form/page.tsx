@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon, UndoOutlineIcon } from "@/@core/my-icons";
 import AddressTabPage from "@/@core/pages/master/address/components/tab-page";
 import AddressPostalCodePageForm from "@/@core/pages/master/address/postal-code-page/form";
@@ -19,6 +20,7 @@ export default function AddressPostalCodeForm() {
                 <li><FolderOpenIcon /> Postal Code</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

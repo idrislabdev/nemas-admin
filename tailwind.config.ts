@@ -25,6 +25,11 @@ const config: Config = {
         md: { max: "767px" },  
         sm: { max: "639px" },
       },
+      fontSize: {
+        'xs': ['12px', '16px'],
+        'sm': ['14px', '20px'],
+        'md': ['16px', '24px'],
+      }
     },
   },
   plugins: [],

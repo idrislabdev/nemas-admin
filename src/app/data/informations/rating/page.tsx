@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, AddOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import InformationsTabPage from "@/@core/pages/data/informations/components/tab-page";
 import InformationRatingPageTable from "@/@core/pages/data/informations/rating/table";
@@ -19,6 +20,7 @@ export default function InformationRatingPage() {
                 <li><FolderOpenIcon /> Rating</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

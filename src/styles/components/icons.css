@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+span {
+    &.my-icon {
+        svg {
+            @apply w-[24px] h-[24px];
+        }
+        &.icon-sm {
+            svg {
+                @apply w-[18px] h-[18px];
+            }
+        }
+        &.icon-xl {
+            svg {
+                @apply w-[48px] h-[48px];
+            }
+        }
+    }
+}

@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon, UndoOutlineIcon } from "@/@core/my-icons";
 import InformationsTabPage from "@/@core/pages/data/informations/components/tab-page";
 import InformationEducationalPageForm from "@/@core/pages/data/informations/educational/form";
@@ -20,6 +21,7 @@ export default async function InformationEducationalForm({ params }: { params: P
                 <li><FolderOpenIcon /> Customer Service</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

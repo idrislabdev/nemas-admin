@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
 import GoldPriceConfigPageForm from "@/@core/pages/master/gold/gold-price-config/form";
@@ -22,6 +23,7 @@ export default async function GoldCertPriceForm({ params }: { params: Promise<{ 
                 <li><FolderOpenIcon /> Price Config</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

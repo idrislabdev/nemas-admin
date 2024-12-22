@@ -1,4 +1,5 @@
 import MainSidebar from "@/@core/components/main-sidebar";
+import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import AddressCityPageTable from "@/@core/pages/master/address/city-page/table";
 import AddressTabPage from "@/@core/pages/master/address/components/tab-page";
@@ -18,6 +19,7 @@ export default function AddressCityPage() {
                 <li><FolderOpenIcon /> City</li>
               </ul>
             </div>
+            <ProfileDropdown />
           </div>
           <div className='container-body'>
             <div className='title-body'>

@@ -2,6 +2,7 @@ import '@/styles/xadmin.css'
 import '@/styles/components/main-sidebar.css'
 import '@/styles/components/table.css'
 import '@/styles/components/tab.css'
+import '@/styles/components/icons.css'
 import '@/styles/components/forms.css'
 import "@/styles/components/modals.css";
 import 'rsuite/useToaster/styles/index.css';
