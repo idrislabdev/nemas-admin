@@ -72,7 +72,6 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
                         decimalsLimit={2}
                         decimalSeparator="," groupSeparator="." 
                         onValueChange={(value) => setRate(value ? value : "0")}
-                        className={`base ${required.rate ? 'error' : ''}`}  
                     />
                 </div>
                 <div className='input-area'>

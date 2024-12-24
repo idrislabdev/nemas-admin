@@ -1,4 +1,3 @@
-import MainSidebar from "@/@core/components/main-sidebar";
 import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
