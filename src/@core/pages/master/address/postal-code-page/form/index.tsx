@@ -5,7 +5,7 @@ const AddressPostalCodePageForm = () => {
     <div className='form-input'>
         <div className='form-area'>
             <div className='input-area'>
-                <label>Sub District Name</label>
+                <label>Kelurahan Name</label>
                 <input className='base' />
             </div>
         </div>

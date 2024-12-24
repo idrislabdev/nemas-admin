@@ -66,14 +66,14 @@ const AddressPostalCodePageTable = () => {
             'City Name': item.city_name,
             'District Name': item.district_name,
             'Subdistrict Name': item.subdistrict_name,
-            'Postal Code': item.post_code,
+            'Kode Pos': item.post_code,
         }),);
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
 
         worksheet["!cols"] = [ { wch: 5 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }]; 
 
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'postal code');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Kode Pos');
         // Save the workbook as an Excel file
         XLSX.writeFile(workbook, `data_postal_code.xlsx`)
         setIsModalLoading(false)

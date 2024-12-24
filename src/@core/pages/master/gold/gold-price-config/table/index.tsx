@@ -170,7 +170,7 @@ const GoldPriceConfigPageTable = () => {
                     className='table-basic'
                     rowKey="gpc_id"
                 />
-                <div className='flex justify-end'>
+                <div className='flex justify-end p-[12px]'>
                     <Pagination 
                         onChange={onChangePage} 
                         pageSize={params.limit}  
