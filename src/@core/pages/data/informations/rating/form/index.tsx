@@ -3,6 +3,7 @@
 import axiosInstance from '@/@core/utils/axios';
 import Link from 'next/link';
 import React, { useState } from 'react'
+import CurrencyInput from 'react-currency-input-field';
 import { Message, useToaster } from 'rsuite';
 
 const InformationRatingPageForm = (props: {paramsId:string}) => {
@@ -43,7 +44,7 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}`);
         const { data } = resp
         setInformationRateName(data.information_rate_name)
-        setRate(data.rate.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'))
+        setRate(data.rate.toString())
         setMessage(data.message)
     }
 
@@ -66,13 +67,12 @@ const InformationRatingPageForm = (props: {paramsId:string}) => {
                 </div>
                 <div className='input-area'>
                     <label>Rate</label>
-                    <input value={rate} 
-                        onChange={e => setRate(e.target.value
-                            .replace(/(?!\,)\D/g, '')
-                            .replace(/(?<=\,,*)\,/g, '')
-                            .replace(/(?<=\,\d\d).*/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
-                        className='base' 
+                    <CurrencyInput
+                        value={rate}
+                        decimalsLimit={2}
+                        decimalSeparator="," groupSeparator="." 
+                        onValueChange={(value) => setRate(value ? value : "0")}
+                        className={`base ${required.rate ? 'error' : ''}`}  
                     />
                 </div>
                 <div className='input-area'>

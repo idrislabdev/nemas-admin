@@ -4,6 +4,7 @@ import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
+import CurrencyInput from 'react-currency-input-field';
 
 const GoldCertPricePageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
@@ -50,8 +51,8 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
         setCertCode(data.cert_code);
-        setGoldWeight(data.gold_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
-        setCertPrice(data.cert_price.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldWeight(data.gold_weight.toString());
+        setCertPrice(data.cert_price.toString());
     }
     
     useState(() => {
@@ -93,13 +94,11 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
             </div>
             <div className='input-area'>
                 <label>Harga Sertifikat {required.cert_price && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_price?.toString()})</span>}</label>
-                <input 
-                    value={certPrice} 
-                    onChange={e => setCertPrice(e.target.value
-                        .replace(/(?!\,)\D/g, '')
-                        .replace(/(?<=\,,*)\,/g, '')
-                        .replace(/(?<=\,\d\d).*/g, '')
-                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
+                <CurrencyInput
+                    value={certPrice}
+                    decimalsLimit={2}
+                    decimalSeparator="," groupSeparator="." 
+                    onValueChange={(value) => setCertPrice(value ? value : "0")}
                     className={`base ${required.cert_price ? 'error' : ''}`}  
                 />
             </div>

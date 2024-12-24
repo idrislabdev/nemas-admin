@@ -5,6 +5,7 @@ import axiosInstance from '@/@core/utils/axios'
 import { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
+import CurrencyInput from 'react-currency-input-field';
 
 const GoldPricePageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
@@ -55,10 +56,10 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
         setGoldPriceSource(data.gold_price_source);
-        setGoldPriceWeight(data.gold_price_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
-        setGoldPriceBase(data.gold_price_base.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
-        setGoldPriceSell(data.gold_price_sell.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
-        setGoldPriceBuy(data.gold_price_buy.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldPriceWeight(data.gold_price_weight);
+        setGoldPriceBase(data.gold_price_base);
+        setGoldPriceSell(data.gold_price_sell);
+        setGoldPriceBuy(data.gold_price_buy);
     }
 
     const clearForm = () => {
@@ -90,51 +91,43 @@ const GoldPricePageForm = (props: {paramsId:string}) => {
                     <label>Satuan (gr) {required.gold_price_weight && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_weight?.toString()})</span>}</label>
                     <div className='group-input prepend'>
                         <span className='prepend !top-[5px]'>gr</span>
-                        <input 
-                            value={goldPriceWeight} 
-                            onChange={e => setGoldPriceWeight(e.target.value
-                                .replace(/(?!\,)\D/g, '')
-                                .replace(/(?<=\,,*)\,/g, '')
-                                .replace(/(?<=\,\d\d).*/g, '')
-                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
-                            className={`base ${required.gold_price_weight ? 'error' : ''}`} 
+                        <CurrencyInput
+                            value={goldPriceWeight}
+                            decimalsLimit={2}
+                            decimalSeparator="," groupSeparator="." 
+                            onValueChange={(value) => setGoldPriceWeight(value ? value : "0")}
+                            className={`base ${required.gold_price_weight ? 'error' : ''}`}  
                         />
                     </div>
                 </div>
                 <div className='input-area'>
                     <label>Harga Dasar {required.gold_price_base && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_base?.toString()})</span>}</label>
-                    <input 
-                        value={goldPriceBase} 
-                        onChange={e => setGoldPriceBase(e.target.value
-                            .replace(/(?!\,)\D/g, '')
-                            .replace(/(?<=\,,*)\,/g, '')
-                            .replace(/(?<=\,\d\d).*/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
+                    <CurrencyInput
+                        value={goldPriceBase}
+                        decimalsLimit={2}
+                        decimalSeparator="," groupSeparator="." 
+                        onValueChange={(value) => setGoldPriceBase(value ? value : "0")}
                         className={`base ${required.gold_price_base ? 'error' : ''}`}  
                     />
                 </div>
                 <div className='input-area'>
                     <label>Harga Jual {required.gold_price_sell && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_sell?.toString()})</span>}</label>
-                    <input 
-                        value={goldPriceSell} 
-                        onChange={e => setGoldPriceSell(e.target.value
-                            .replace(/(?!\,)\D/g, '')
-                            .replace(/(?<=\,,*)\,/g, '')
-                            .replace(/(?<=\,\d\d).*/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
-                        className={`base ${required.gold_price_sell ? 'error' : ''}`} 
+                    <CurrencyInput
+                        value={goldPriceSell}
+                        decimalsLimit={2}
+                        decimalSeparator="," groupSeparator="." 
+                        onValueChange={(value) => setGoldPriceSell(value ? value : "0")}
+                        className={`base ${required.gold_price_sell ? 'error' : ''}`}  
                     />
                 </div>
                 <div className='input-area'>
                     <label>Harga Beli {required.gold_price_buy && <span className='text-red-500 text-[10px]/[14px] italic'>({required.gold_price_buy?.toString()})</span>}</label>
-                    <input 
-                        value={goldPriceBuy} 
-                        onChange={e => setGoldPriceBuy(e.target.value
-                            .replace(/(?!\,)\D/g, '')
-                            .replace(/(?<=\,,*)\,/g, '')
-                            .replace(/(?<=\,\d\d).*/g, '')
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))}  
-                        className={`base ${required.gold_price_buy ? 'error' : ''}`} 
+                    <CurrencyInput
+                        value={goldPriceBuy}
+                        decimalsLimit={2}
+                        decimalSeparator="," groupSeparator="." 
+                        onValueChange={(value) => setGoldPriceBuy(value ? value : "0")}
+                        className={`base ${required.gold_price_buy ? 'error' : ''}`}  
                     />
                 </div>
             </div>

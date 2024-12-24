@@ -3,6 +3,7 @@
 import axiosInstance from '@/@core/utils/axios';
 import Link from 'next/link';
 import React, { useState } from 'react'
+import CurrencyInput from 'react-currency-input-field';
 import { Message, useToaster } from 'rsuite';
 
 const InformationPromoPageForm = (props: {paramsId:string}) => {
@@ -116,27 +117,20 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
                     </div>
                     <div className='input-area'>
                         <label>Promo Diskon</label>
-                        <input value={promoDiskon} 
-                            onChange={e => setPromoDiskon(e.target.value
-                                .replace(/(?!\,)\D/g, '')
-                                .replace(/(?<=\,,*)\,/g, '')
-                                .replace(/(?<=\,\d\d).*/g, '')
-                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
-                            type='text' 
-                            className='base' 
+                        <CurrencyInput
+                            value={promoDiskon}
+                            decimalsLimit={2}
+                            decimalSeparator="," groupSeparator="." 
+                            onValueChange={(value) => setPromoDiskon(value ? value : "0")}
                         />
                     </div>
                     <div className='input-area'>
                         <label>Promo Cashback</label>
-                        <input 
-                            value={promoCashback} 
-                            onChange={e => setPromoCashback(e.target.value
-                                .replace(/(?!\,)\D/g, '')
-                                .replace(/(?<=\,,*)\,/g, '')
-                                .replace(/(?<=\,\d\d).*/g, '')
-                                .replace(/\B(?=(\d{3})+(?!\d))/g, '.'))} 
-                            type='text' 
-                            className='base' 
+                        <CurrencyInput
+                            value={promoCashback}
+                            decimalsLimit={2}
+                            decimalSeparator="," groupSeparator="." 
+                            onValueChange={(value) => setPromoCashback(value ? value : "0")}
                         />
                     </div>
                     <div className='input-area'>
