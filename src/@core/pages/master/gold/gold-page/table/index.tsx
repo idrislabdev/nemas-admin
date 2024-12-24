@@ -158,23 +158,25 @@ const GoldPageTable = () => {
                     <Link href={`/master/gold/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
                 </div>
             </div>
-            <Table
-                columns={columns}
-                dataSource={dataTable}
-                size='small'
-                scroll={{ x: 'max-content', y: 570 }}
-                pagination={false}
-                className='table-basic'
-                rowKey="gold_id"
-               
-            />
-            <div className='flex justify-end'>
-                <Pagination 
-                    onChange={onChangePage} 
-                    pageSize={params.limit}  
-                    total={total} 
-                    showSizeChanger={false}
+            <div className='flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]'>
+                <Table
+                    columns={columns}
+                    dataSource={dataTable}
+                    size='small'
+                    scroll={{ x: 'max-content'}}
+                    pagination={false}
+                    className='table-basic'
+                    rowKey="gold_id"
+                
                 />
+                <div className='flex justify-end p-[12px]'>
+                    <Pagination 
+                        onChange={onChangePage} 
+                        pageSize={params.limit}  
+                        total={total} 
+                        showSizeChanger={false}
+                    />
+                </div>
             </div>
             <ModalConfirm 
                 isModalOpen={openModalConfirm} 

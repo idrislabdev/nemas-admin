@@ -160,22 +160,24 @@ const GoldPriceConfigPageTable = () => {
                     <Link href={`/master/gold/price-config/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
                 </div>
             </div>
-            <Table
-                columns={columns}
-                dataSource={dataTable}
-                size='small'
-                scroll={{ x: 'max-content', y: 570 }}
-                pagination={false}
-                className='table-basic'
-                rowKey="gpc_id"
-            />
-            <div className='flex justify-end'>
-                <Pagination 
-                    onChange={onChangePage} 
-                    pageSize={params.limit}  
-                    total={total} 
-                    showSizeChanger={false}
+            <div className='flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]'>
+                <Table
+                    columns={columns}
+                    dataSource={dataTable}
+                    size='small'
+                    scroll={{ x: 'max-content'}}
+                    pagination={false}
+                    className='table-basic'
+                    rowKey="gpc_id"
                 />
+                <div className='flex justify-end'>
+                    <Pagination 
+                        onChange={onChangePage} 
+                        pageSize={params.limit}  
+                        total={total} 
+                        showSizeChanger={false}
+                    />
+                </div>
             </div>
             <ModalConfirm 
                 isModalOpen={openModalConfirm} 

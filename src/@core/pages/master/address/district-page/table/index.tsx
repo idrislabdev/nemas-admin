@@ -101,7 +101,7 @@ const AddressDistrictPageTable = () => {
                     columns={columns}
                     dataSource={dataTable}
                     size='small'
-                    scroll={{ x: 'max-content', y: 570 }}
+                    scroll={{ x: 'max-content'}}
                     pagination={false}
                     className='table-basic'
                     rowKey='city_id'
