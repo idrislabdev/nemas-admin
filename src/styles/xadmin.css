@@ -69,23 +69,23 @@
                 }
             }
             .container-body {
-                @apply p-[20px] flex flex-col gap-[20px] w-full overflow-y-auto;
+                @apply px-[20px] py-[10px] flex flex-col gap-[10px] w-full overflow-y-auto;
                 height: calc(100% - 50px);
                 .title-body {
-                    @apply flex items-center gap-[12px] w-full;
+                    @apply flex items-center gap-[8px] w-full;
                     .logo-area {
                         @apply flex flex-col border border-neutral-300 rounded-[8px] bg-neutral-100;
                         svg {
-                            @apply w-[50px] h-[50px];
+                            @apply w-[40px] h-[40px];
                         }
                     }
                     .text-area {
                         @apply flex flex-col;
                         h5 {
-                            @apply text-[24px]/[14px] text-neutral-800 font-semibold;
+                            @apply text-[20px]/[12px] text-neutral-800 font-semibold;
                         }
                         p {
-                            @apply text-[18px]/[25px] text-neutral-400;
+                            @apply text-[16px]/[20px] text-neutral-400;
                         }
                     }
                 }

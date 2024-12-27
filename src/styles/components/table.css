@@ -21,6 +21,7 @@
                     table {
                         tbody {
                             tr {
+                                @apply h-[35px];
                                 td {
                                     @apply px-[20px];
                                 }
