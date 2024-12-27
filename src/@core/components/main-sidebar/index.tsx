@@ -3,11 +3,10 @@
 import { Building07, CreditCard01, CreditCard02, LogOut03, Settings01, Tag01 } from '@untitled-ui/icons-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import React from 'react'
 
 const MainSidebar = () => {
-    const router = useRouter();
     const pathname = usePathname();
     // const [user, setUser] = useState({name: "", email: ""});
 

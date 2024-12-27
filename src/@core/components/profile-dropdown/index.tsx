@@ -2,11 +2,9 @@
 
 import { ChevronDown, LogOut03, User01 } from '@untitled-ui/icons-react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 
 const ProfileDropdown = () => {
-    const router = useRouter();
     const [show, setShow] = useState(false)
     const profileMenu = useRef<HTMLAnchorElement>(null);
 
