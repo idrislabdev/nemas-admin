@@ -12,7 +12,7 @@ const ProfileDropdown = () => {
 
     const logOut = () => {
         localStorage.clear();
-        router.push("/")
+        window.location.reload();
     }
 
     useEffect(() => {

@@ -13,7 +13,7 @@ const MainSidebar = () => {
 
     const logOut = () => {
         localStorage.clear();
-        router.push("/")
+        window.location.reload();
     }
 
 //   useEffect(() => {
