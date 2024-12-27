@@ -55,7 +55,7 @@ const AddressPostalCodePageTable = () => {
         const param = {
             format: 'json',
             offset: 0,
-            limit: 10000,
+            limit: 50,
             type__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });

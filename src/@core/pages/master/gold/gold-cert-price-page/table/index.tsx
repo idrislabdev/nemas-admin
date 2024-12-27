@@ -95,7 +95,7 @@ const GoldCertPricePageTable = () => {
         const param = {
             format: 'json',
             offset: 0,
-            limit: 10000,
+            limit: 50,
             cert_code__icontains:"",
         }
         const resp = await axiosInstance.get(url, { params:param });
