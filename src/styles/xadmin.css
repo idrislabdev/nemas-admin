@@ -69,18 +69,18 @@
                 }
             }
             .container-body {
-                @apply px-[20px] py-[10px] flex flex-col gap-[10px] w-full overflow-y-auto;
+                @apply px-[20px] py-[10px] flex flex-col gap-[12px] w-full overflow-y-auto;
                 height: calc(100% - 50px);
                 .title-body {
                     @apply flex items-center gap-[8px] w-full;
                     .logo-area {
                         @apply flex flex-col border border-neutral-300 rounded-[8px] bg-neutral-100;
                         svg {
-                            @apply w-[40px] h-[40px];
+                            @apply w-[50px] h-[50px];
                         }
                     }
                     .text-area {
-                        @apply flex flex-col;
+                        @apply flex flex-col gap-[4px];
                         h5 {
                             @apply text-[20px]/[12px] text-neutral-800 font-semibold;
                         }
