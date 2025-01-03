@@ -39,7 +39,7 @@ const GoldPageTable = () => {
         },
         { title: 'Tipe Emas', dataIndex: 'type', key: 'type'},
         { title: 'Merek', dataIndex: 'brand', key: 'brand'},
-        { title: 'Nomor Sertifikat', dataIndex: 'certificate_number', key: 'certificate_number'},
+        { title: 'Nomor Sertifikat', dataIndex: 'certificate_number', key: 'certificate_number', width: 150},
         { title: 'Dibuat Oleh', dataIndex: 'create_user', key: 'create_user'},
         { title: 'Diupdate Oleh', dataIndex: 'upd_user', key: 'upd_user'},
         { title: 'Terakhir Update', dataIndex: 'upd_time', key: 'upd_time',
