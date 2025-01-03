@@ -1,37 +1,48 @@
 "use client"
 
+import { ICustomerService } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import Link from 'next/link';
 import React, { useState } from 'react'
-import { Message, useToaster } from 'rsuite';
+import { notification } from 'antd';
+import { AxiosError } from 'axios';
 
 const InformationCustomerServicePageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
     const url = `/core/information/customer_service`
     const [informationName, setInformationName] = useState("");
     const [informationPhone, setInformationPhone] = useState("");
-    const toaster = useToaster();
-    const [messageString, setMessageString] = useState("");
-    const message = (
-        <Message showIcon type={'info'}>
-          {messageString}
-        </Message>
-    );
+    const [required, setRequired] = useState<ICustomerService>({} as ICustomerService);
+    const [api, contextHolder] = notification.useNotification();
+
     const onSave = async () => {
         const body = {
             "information_name": informationName,
             "information_phone": informationPhone,
         }
       
-        if (paramsId == 'form') {
-            await axiosInstance.post(`${url}/create`, body);
-            await setMessageString("Data Information Has Ben Saved")
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
-            clearForm();
-        } else {
-            await axiosInstance.patch(`${url}/${paramsId}`, body);
-            await setMessageString("Data Information Has Ben Update")
-            await toaster.push(message, { placement:'bottomEnd', duration: 5000 })
+        setRequired({})
+        try {
+            let desc = "";
+            if (paramsId == 'form') {
+                await axiosInstance.post(`${url}/create`, body);                
+                desc = 'Data Pelayanan Pelanggan Telah Disimpan'
+                clearForm();
+            } else {
+                desc = 'Data Pelayanan Pelanggan Telah Diupdate'
+                await axiosInstance.patch(`${url}/${paramsId}/`, body);
+            }
+            api.info({
+                message: 'Data Pelayanan Pelanggan',
+                description: desc,
+                placement:'bottomRight',
+            });
+        } catch (error) {
+            const err = error as AxiosError
+            if (err.response && err.response.data) {
+                const data: ICustomerService = err.response.data;
+                setRequired(data)
+            }
         }
     }
 
@@ -54,14 +65,23 @@ const InformationCustomerServicePageForm = (props: {paramsId:string}) => {
 
     return (
         <div className='form-input'>
+            {contextHolder}
             <div className='form-area'>
                 <div className='input-area'>
-                    <label>Information Name</label>
-                    <input value={informationName} onChange={e => setInformationName(e.target.value)} className='base' />
+                    <label>Nama Informasi {required.information_name && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_name?.toString()})</span>}</label>
+                    <input 
+                        value={informationName} 
+                        onChange={e => setInformationName(e.target.value)} 
+                        className={`base ${required.information_name ? 'error' : ''}`}  
+                    />
                 </div>
                 <div className='input-area'>
-                    <label>Information Phone</label>
-                    <input value={informationPhone} onChange={e => setInformationPhone(e.target.value)} className='base' />
+                    <label>No. Telepon Informasi {required.information_phone && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_phone?.toString()})</span>}</label>
+                    <input 
+                        value={informationPhone} 
+                        onChange={e => setInformationPhone(e.target.value)} 
+                        className={`base ${required.information_phone ? 'error' : ''}`}   
+                    />
                 </div>
             </div>
             <div className='form-button'>

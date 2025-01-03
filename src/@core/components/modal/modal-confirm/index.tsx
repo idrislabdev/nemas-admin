@@ -19,8 +19,8 @@ const ModalConfirm = (props: {
             </Modal.Body>
             <Modal.Footer>
                 <div className='flex gap-2 justify-end'>
-                    <button className='btn btn-outline-primary' onClick={() => setIsModalOpen(false)}>No</button>
-                    <button className='btn btn-primary' onClick={onConfirm}>Yes, Delete</button>
+                    <button className='btn btn-outline-primary' onClick={() => setIsModalOpen(false)}>Tidak</button>
+                    <button className='btn btn-primary' onClick={onConfirm}>Ya, Hapus</button>
                 </div>
             </Modal.Footer>
       </Modal>

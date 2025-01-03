@@ -76,17 +76,17 @@ export interface IAddressPostalCode {
 }
 
 export interface ICustomerService {
-    information_customer_service_id: number,
-    information_phone: string,
-    information_name: string
+    information_customer_service_id?: number,
+    information_phone?: string,
+    information_name?: string
 }
 
 export interface IEducational {
-    information_educational_id: number,
-    information_name: string,
-    information_notes: string,
-    information_url: string,
-    information_background: string
+    information_educational_id?: number,
+    information_name?: string,
+    information_notes?: string,
+    information_url?: string,
+    information_background?: string
 }
 
 export interface IPromo {
