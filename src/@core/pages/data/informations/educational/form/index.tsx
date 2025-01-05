@@ -111,7 +111,7 @@ const InformationEducationalPageForm = (props: {paramsId:string}) => {
                     </div>
                     <div className='input-area'>
                         <label>
-                            Nama Informasi {required.information_name && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_name?.toString()})</span>}
+                            Pertanyaan {required.information_name && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_name?.toString()})</span>}
                         </label>
                         <input 
                             value={informationName} 
@@ -121,7 +121,7 @@ const InformationEducationalPageForm = (props: {paramsId:string}) => {
                     </div>
                     <div className='input-area'>
                         <label>
-                            Catatan {required.information_notes && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_notes?.toString()})</span>}
+                            Jawaban {required.information_notes && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_notes?.toString()})</span>}
                         </label>
                         <textarea 
                             value={informationNotes} 

@@ -34,8 +34,8 @@ const InformationEducataionalPageTable = () => {
         { title: 'No', width: 70, dataIndex: 'educational_id', key: 'educational_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Nama', dataIndex: 'information_name', key: 'information_name', width: 200},
-        { title: 'Catatan', dataIndex: 'information_notes', key: 'information_notes', width: 500},
+        { title: 'Pertanyaan', dataIndex: 'information_name', key: 'information_name', width: 200},
+        { title: 'Jawaban', dataIndex: 'information_notes', key: 'information_notes', width: 500},
         { title: 'Link / URL', dataIndex: 'information_url', key: 'information_url',
             render: (_, record) => <a href={record.information_url} target='_blank' className='block'>{record.information_url}</a>
         },
@@ -117,8 +117,8 @@ const InformationEducataionalPageTable = () => {
         const rows = resp.data.results;
         const dataToExport = rows.map((item: IEducational, index:number) => ({
             'No' : index+1,
-            'Nama': item.information_name,
-            'Catatan': item.information_notes,
+            'Pertanyaan': item.information_name,
+            'Jawaban': item.information_notes,
         }),);
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
