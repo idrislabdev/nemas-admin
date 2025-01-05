@@ -113,9 +113,9 @@ const InformationCustomerServicePageTable = () => {
 
         worksheet["!cols"] = [ { wch: colA }, { wch: colB }, { wch: colC }, { wch: colD }, { wch: 20 }  ]; 
 
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'data informasi');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Pelayanan pelanggan');
         // Save the workbook as an Excel file
-        XLSX.writeFile(workbook, `data_informasi.xlsx`)
+        XLSX.writeFile(workbook, `data_pelayanan_pelanggan.xlsx`)
         setIsModalLoading(false)
     }
     

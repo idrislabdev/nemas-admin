@@ -129,9 +129,9 @@ const InformationEducataionalPageTable = () => {
 
         worksheet["!cols"] = [ { wch: colA }, { wch: colB }, { wch: colC }, { wch: colD }, { wch: 20 }  ]; 
 
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Educational');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'faq');
         // Save the workbook as an Excel file
-        XLSX.writeFile(workbook, `data_educational.xlsx`)
+        XLSX.writeFile(workbook, `data_faq.xlsx`)
         setIsModalLoading(false)
     }
     

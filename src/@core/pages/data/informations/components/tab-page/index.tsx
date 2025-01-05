@@ -7,7 +7,7 @@ const InformationsTabPage = (props: {activeTab:string}) => {
     <div className='tab-default'>
         <ul>
             <li className={`${activeTab === 'customer_service' ? 'active' : ''}`}><Link href={`/data/informations/customer-service`}>Pelayanan Pelanggan</Link></li>
-            <li className={`${activeTab === 'educational' ? 'active' : ''}`}><Link href={`/data/informations/educational`}>Educational</Link></li>
+            <li className={`${activeTab === 'educational' ? 'active' : ''}`}><Link href={`/data/informations/educational`}>FaQ</Link></li>
             <li className={`${activeTab === 'promo' ? 'active' : ''}`}><Link href={`/data/informations/promo`}>Promo</Link></li>
             <li className={`${activeTab === 'rating' ? 'active' : ''}`}><Link href={`/data/informations/rating`}>Rating</Link></li>
         </ul>

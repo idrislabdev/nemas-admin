@@ -11,7 +11,7 @@ export default function InformationCustomerServicePage() {
           <ul>
             <li><ArrowLeftIcon /></li>
             <li><FolderIcon /> Home</li>
-            <li><FolderIcon /> Information</li>
+            <li><FolderIcon /> Informasi</li>
             <li><FolderOpenIcon /> Pelayanan Pelanggan</li>
           </ul>
         </div>

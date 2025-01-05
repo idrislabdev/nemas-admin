@@ -90,30 +90,30 @@ export interface IEducational {
 }
 
 export interface IPromo {
-    information_promo_id: number,
-    promo_code: string,
-    leveling_user: string,
-    promo_name: string,
-    promo_url: string,
-    promo_start_date: Date,
-    promo_end_date: Date,
-    promo_tag: string,
-    promo_url_background: string,
-    promo_diskon: number,
-    promo_cashback: number,
-    promo_cashback_tipe_user: string,
-    merchant_cashback: string,
-    createtime: Date,
-    createuser: string,
-    updtime: Date,
-    upduser: string
+    promo_id?: number,
+    promo_code?: string,
+    leveling_user?: string,
+    promo_name?: string,
+    promo_url?: string,
+    promo_start_date?: Date,
+    promo_end_date?: Date,
+    promo_tag?: string,
+    promo_url_background?: string,
+    promo_diskon?: number,
+    promo_cashback?: number,
+    promo_cashback_tipe_user?: string,
+    merchant_cashback?: string,
+    createtime?: Date,
+    createuser?: string,
+    updtime?: Date,
+    upduser?: string
 }
 export interface IRating {
-    information_rate_id: number,
-    information_rate_name: string,
-    rate: number,
-    message: string,
-    publish: boolean
+    information_rate_id?: number,
+    information_rate_name?: string,
+    rate?: number,
+    message?: string,
+    publish?: boolean
 }
 
 export interface IErrorResponse {

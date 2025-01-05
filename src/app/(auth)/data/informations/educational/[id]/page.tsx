@@ -15,7 +15,7 @@ export default async function InformationEducationalForm({ params }: { params: P
             <li><ArrowLeftIcon /></li>
             <li><FolderIcon /> Home</li>
             <li><FolderIcon /> Information</li>
-            <li><FolderOpenIcon /> Educational</li>
+            <li><FolderOpenIcon /> FaQ</li>
           </ul>
         </div>
         <ProfileDropdown />
@@ -26,8 +26,8 @@ export default async function InformationEducationalForm({ params }: { params: P
             <AboutOutlineIcon/>
           </div>
           <div className='text-area'>
-            <h5>Halaman Educational</h5>
-            <p>Manajemen Data Educational</p>
+            <h5>Halaman FaQ</h5>
+            <p>Manajemen Data FaQ</p>
           </div>
         </div>
         <div className='main-body'>

@@ -34,7 +34,7 @@ const MainSidebar = () => {
                 <ul>
                     <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><Tag01 />Data Emas</Link></li>
                     <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><Building07 />Data Alamat</Link></li>
-                    <li><Link href='/data/informations/customer-service'><CreditCard01 />Informasi</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'data' && pathname.split("/")[2] == 'informations' ? 'active' : ''}`}><Link href='/data/informations/customer-service'><CreditCard01 />Informasi</Link></li>
                     <li><Link href=''><CreditCard02 />Pengguna</Link></li>
                 </ul>
             </div>

@@ -123,7 +123,7 @@ const InformationEducationalPageForm = (props: {paramsId:string}) => {
                         <label>
                             Catatan {required.information_notes && <span className='text-red-500 text-[10px]/[14px] italic'>({required.information_notes?.toString()})</span>}
                         </label>
-                        <input 
+                        <textarea 
                             value={informationNotes} 
                             onChange={e => setInformationNotes(e.target.value)} 
                             className={`base ${required.information_notes ? 'error' : ''}`}   
