@@ -1,8 +1,8 @@
 import ProfileDropdown from "@/@core/components/profile-dropdown";
-import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
-import InformationsTabPage from "@/@core/pages/data/informations/components/tab-page";
+import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import PaymentBankPageForm from "@/@core/pages/payment/bank/form";
-import { FlipBackward } from "@untitled-ui/icons-react";
+import PaymentTabPage from "@/@core/pages/payment/components/tab-page";
+import { BankNote01, FlipBackward } from "@untitled-ui/icons-react";
 import Link from "next/link";
 
 export default async function InformationEducationalForm({ params }: { params: Promise<{ id: string }>}) {
@@ -23,7 +23,7 @@ export default async function InformationEducationalForm({ params }: { params: P
       <div className='container-body'>
         <div className='title-body'>
           <div className='logo-area'>
-            <AboutOutlineIcon/>
+            <BankNote01/>
           </div>
           <div className='text-area'>
             <h5>Halaman Bank</h5>
@@ -31,7 +31,7 @@ export default async function InformationEducationalForm({ params }: { params: P
           </div>
         </div>
         <div className='main-body'>
-            <InformationsTabPage activeTab="educational" />
+            <PaymentTabPage activeTab="bank" />
             <div className="flex flex-col gap-[10px]">
                 <div className="flex justify-end">
                     <Link href={`/payment/bank`} className="btn btn-outline-neutral"><FlipBackward />Kembali</Link>

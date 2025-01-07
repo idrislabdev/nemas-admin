@@ -1,7 +1,8 @@
 import ProfileDropdown from "@/@core/components/profile-dropdown";
-import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
+import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import PaymentBankgPageTable from "@/@core/pages/payment/bank/table";
 import PaymentTabPage from "@/@core/pages/payment/components/tab-page";
+import { BankNote01 } from "@untitled-ui/icons-react";
 
 export default function PaymentBanksPage() {
   return (
@@ -20,7 +21,7 @@ export default function PaymentBanksPage() {
       <div className='container-body'>
         <div className='title-body'>
           <div className='logo-area'>
-            <AboutOutlineIcon/>
+            <BankNote01/>
           </div>
           <div className='text-area'>
             <h5>Halaman Bank</h5>
