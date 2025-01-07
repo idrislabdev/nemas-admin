@@ -1,6 +1,6 @@
 "use client"
 
-import { Building07, CreditCard01, CreditCard02, LogOut03, Settings01, Tag01 } from '@untitled-ui/icons-react'
+import { BankNote01, Building07, CreditCard01, CreditCard02, LogOut03, Settings01, Tag01 } from '@untitled-ui/icons-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -34,6 +34,7 @@ const MainSidebar = () => {
                 <ul>
                     <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'gold' ? 'active' : ''}`}><Link href='/master/gold'><Tag01 />Data Emas</Link></li>
                     <li className={`${pathname.split("/")[1] === 'master' && pathname.split("/")[2] == 'address' ? 'active' : ''}`}><Link href='/master/address/province'><Building07 />Data Alamat</Link></li>
+                    <li className={`${pathname.split("/")[1] === 'payment' && pathname.split("/")[2] == 'bank' ? 'active' : ''}`}><Link href='/payment/bank'><BankNote01 />Data Payment</Link></li>
                     <li className={`${pathname.split("/")[1] === 'data' && pathname.split("/")[2] == 'informations' ? 'active' : ''}`}><Link href='/data/informations/customer-service'><CreditCard01 />Informasi</Link></li>
                     <li><Link href=''><CreditCard02 />Pengguna</Link></li>
                 </ul>

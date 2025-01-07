@@ -89,6 +89,19 @@ export interface IEducational {
     information_background?: string
 }
 
+export interface IBank {
+    bank_id?: number,
+    bank_name?: string,
+    bank_code?: string,
+    bank_logo_url?: string,
+    bank_merchant_code?: string,
+    bank_active?: string,
+    create_time?: string,
+    create_user?: string,
+    upd_time?: string,
+    upd_user?: string,
+}
+
 export interface IPromo {
     promo_id?: number,
     promo_code?: string,
