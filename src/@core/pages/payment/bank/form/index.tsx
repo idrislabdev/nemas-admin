@@ -1,13 +1,13 @@
 "use client"
 
 import { IBank } from '@/@core/@types/interface';
-// import UploadForm from '@/@core/components/forms/upload-form';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
 import React, { useState } from 'react'
 import { notification } from 'antd';
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import UploadForm from '@/@core/components/forms/upload-form';
 
 const PaymentBankPageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
@@ -16,7 +16,7 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
     const [bankCode, setBankCode] = useState("");
     const [bankMerchantCode, setBankMerchantCode] = useState("");
     const [bankActive, setBankActive] = useState(true);
-    // const [bankBackground, setBankBackground] = useState("");
+    const [bankLogoUrl, setBankLogoUrl] = useState("");
     
     const [fileData, setFileData] = useState<File | null>(null)
     const [required, setRequired] = useState<IBank>({} as IBank);
@@ -27,7 +27,7 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
         const body = {
             "bank_name": bankName,
             "bank_code": bankCode,
-            "bank_logo_url": "-",
+            // "bank_logo_url": "-",
             "bank_merchant_code": bankMerchantCode,
             "bank_active": bankActive
             // "information_background": informationBackground,
@@ -82,6 +82,7 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
         setBankCode(data.bank_code)
         setBankMerchantCode(data.bank_merchant_code)
         setBankActive(data.bank_active)
+        setBankLogoUrl(data.bank_logo_url)
     }
 
     const clearForm = () => {
@@ -89,6 +90,7 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
         setBankCode("")
         setBankMerchantCode("")
         setBankActive(true)
+        setBankLogoUrl("");
         setFileData(null);
     }
 
@@ -101,7 +103,7 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
             {contextHolder}
             <div className='form-input'>
                 <div className='form-area'>
-                    {/* <div className='input-area'>
+                    <div className='input-area'>
                         <label>Gambar / Background</label>
                         <UploadForm 
                             index={1}
@@ -109,10 +111,10 @@ const PaymentBankPageForm = (props: {paramsId:string}) => {
                             label='' 
                             isOptional={true}  
                             initFile={fileData}
-                            initUrl={informationBackground}
+                            initUrl={bankLogoUrl}
                             onChange={val => setFileData(val)} 
                         />
-                    </div> */}
+                    </div>
                     <div className='input-area'>
                         <label>
                             Nama Bank {required.bank_name && <span className='text-red-500 text-[10px]/[14px] italic'>({required.bank_name?.toString()})</span>}

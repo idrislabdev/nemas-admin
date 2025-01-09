@@ -4,7 +4,7 @@ import { Trash01, UploadCloud01, UploadCloud02 } from '@untitled-ui/icons-react'
 import Image from 'next/image';
 import React, {  useEffect, useRef, useState } from 'react'
 
-const UploadForm = (props: {
+const UploadGoldForm = (props: {
         index:number, 
         withFile:boolean, 
         label:string, 
@@ -64,14 +64,14 @@ const UploadForm = (props: {
                         <label className='border border-gray-200 rounded-[8px] w-[40px] h-[40px] flex flex-col justify-center items-center'>
                             <span className='text-gray-600'><UploadCloud02 /></span>
                         </label>
-                        <div className='flex flex-col justify-center items-center gap-[4px]'>
+                        <div className='flex flex-col text-center justify-center items-center gap-[4px]'>
                             <h6 className='text-sm font-normal text-gray-600'><span className='text-brand-600 font-semibold'>Klik untuk mengunggah</span> atau tarik dan lepas</h6>
-                            <p className='text-xs text-gray-600'>{withFile ? 'PDF, ' : ''} PNG atau JPG (max. 500 KB)</p>
+                            <p className='text-xs text-gray-600'>PNG atau JPG</p>
                         </div>
                     </label>
                 }
                 {photoUrl != '' &&
-                    <div className='flex items-center gap-[12px]'>
+                    <div className='flex flex-col items-center gap-[12px]'>
                         <Image 
                             src={photoUrl} 
                             width={0} 
@@ -81,10 +81,6 @@ const UploadForm = (props: {
                         />
                         
                         <div className='flex flex-col gap-[12px]'>
-                            <div className='flex flex-col gap-[4px]'>
-                                <label className='text-sm text-brand-600'>file.jpg</label>
-                                <span className='text-xs text-gray-600'>178 Kb</span>
-                            </div>
                             <div className='flex items-center gap-[6px]'>
                                 <label className='w-[28px] h-[28px] border border-gray-300 flex flex-col justify-center items-center rounded-[6px] text-gray-400 cursor-pointer' htmlFor={`file-upload-${index}`}>
                                     <span className='my-icon icon-xs'><UploadCloud01 /></span>
@@ -102,4 +98,4 @@ const UploadForm = (props: {
     )
 }
 
-export default UploadForm
+export default UploadGoldForm
