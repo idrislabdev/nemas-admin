@@ -78,6 +78,7 @@ const UploadGoldForm = (props: {
                             height={0} 
                             alt='image' 
                             className='w-[96px] h-[96px] rounded-[12px] border border-gray-100 object-cover'
+                            unoptimized={true} 
                         />
                         
                         <div className='flex flex-col gap-[12px]'>
