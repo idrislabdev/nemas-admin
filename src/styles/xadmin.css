@@ -92,7 +92,7 @@
                 .main-body {
                     @apply flex flex-col gap-[20px] w-full h-full;
                     .form-input {
-                        @apply h-[560px] overflow-y-auto;
+                        @apply h-full overflow-y-auto;
                     }
                 }
             }
