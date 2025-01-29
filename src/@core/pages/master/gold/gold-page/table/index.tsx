@@ -6,7 +6,7 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Pagination, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
-import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
+import { FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
@@ -50,7 +50,7 @@ const GoldPageTable = () => {
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
-            <Link href={`/master/gold/${record.gold_id}`} className="btn-action"><Edit05 /></Link>
+            {/* <Link href={`/master/gold/${record.gold_id}`} className="btn-action"><Edit05 /></Link> */}
             <a className='btn-action' onClick={() => deleteData(record.gold_id)}><Trash01 /></a>
 
         </div>)
