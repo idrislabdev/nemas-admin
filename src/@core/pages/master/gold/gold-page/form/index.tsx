@@ -12,8 +12,8 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
     const url = `/core/gold`
     const [goldWeight, setGoldWeight] = useState("0");
-    const [type, setType] = useState("");
-    const [brand, setBrand] = useState("");
+    const [type, setType] = useState("Bar");
+    const [brand, setBrand] = useState("Marga Gold");
     const [certificateNumber, setCertficateNumber] = useState("");
     const [required, setRequired] = useState<IGold>({} as IGold);
     const [api, contextHolder] = notification.useNotification();
