@@ -1,8 +1,8 @@
 "use client"
 
 import { IGold } from '@/@core/@types/interface';
-import axiosInstance from '@/@core/utils/axios';
-import { AxiosError } from 'axios';
+// import axiosInstance from '@/@core/utils/axios';
+import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
@@ -31,7 +31,11 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const [image4, setImage4] = useState<File | null>(null)
     const [image5, setImage5] = useState<File | null>(null)
     
-
+    const axiosInstance = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+        timeout: 200000
+    })
+    
     const onSave = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}")
         const body = {
