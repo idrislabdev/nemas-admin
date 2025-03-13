@@ -25,6 +25,26 @@ export interface IGoldCertPrice {
     cert_price?: number
 }
 
+export interface IGoldCert {
+    cert_id?: number,
+    cert_name?: string,
+    cert_code?: string,
+    gold_weight?: number,
+    cert_price?: number,
+    create_time?: string,
+    create_user?: string
+}
+
+export interface IGoldCertPriceDetail {
+    id?: string,
+    gold?: number,
+    gold_cert?: number,
+    gold_cert_code?: string,
+    gold_weight?: number,
+    include_stock?: boolean,
+    create_user?: string
+}
+
 export interface IGoldPriceConfig {
     gpc_id?: number,
     gpc_code?: string,

@@ -1,25 +1,33 @@
 "use client"
-import { IGoldCertPrice } from '@/@core/@types/interface';
+import { IGoldCert } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
 
-const GoldCertPricePageForm = (props: {paramsId:string}) => {
+const GoldCertPageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
-    const url = `/core/gold/cert_price`
-    const [required, setRequired] = useState<IGoldCertPrice>({} as IGoldCertPrice);
+    const url = `/core/gold/cert`
+    const [required, setRequired] = useState<IGoldCert>({} as IGoldCert);
     const [certCode, setCertCode] = useState("");
+    const [certName, setCertName] = useState("");
     const [goldWeight, setGoldWeight] = useState("");
     const [certPrice, setCertPrice] = useState("");
     const [api, contextHolder] = notification.useNotification();
 
     const onSave = async () => {
+        const user = JSON.parse(localStorage.getItem("user") || "{}")
+        const axiosInstance = axios.create({
+            baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+            timeout: 200000
+        })
         const body = {
             "cert_code": certCode,
+            "cert_name": certName,
             "gold_weight": parseInt(goldWeight.toString().replace('.', '').replace(',', '.')),
             "cert_price": parseFloat(certPrice.toString().replace('.', '').replace(',', '.')),
+            "create_user": user.name
         }
         setRequired({})
         try {
@@ -41,7 +49,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         } catch (error) {
             const err = error as AxiosError
             if (err.response && err.response.data) {
-                const data: IGoldCertPrice = err.response.data;
+                const data: IGoldCert = err.response.data;
                 setRequired(data)
             }
         }
@@ -51,6 +59,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
         setCertCode(data.cert_code);
+        setCertName(data.cert_name);
         setGoldWeight(data.gold_weight.toString());
         setCertPrice(data.cert_price.toString());
     }
@@ -64,6 +73,7 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
         setCertCode("");
         setGoldWeight("");
         setCertPrice("");
+        setCertName("");
     }
   return (
     <div className='form-input'>
@@ -75,6 +85,14 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
                     value={certCode} 
                     onChange={e => setCertCode(e.target.value)} 
                     className={`base ${required.cert_code ? 'error' : ''}`} 
+                />
+            </div>
+            <div className='input-area'>
+                <label>Nama Sertifikat {required.cert_code && <span className='text-red-500 text-[10px]/[14px] italic'>({required.cert_code?.toString()})</span>}</label>
+                <input 
+                    value={certName} 
+                    onChange={e => setCertName(e.target.value)} 
+                    className={`base ${required.cert_name ? 'error' : ''}`} 
                 />
             </div>
             <div className='input-area'>
@@ -111,4 +129,4 @@ const GoldCertPricePageForm = (props: {paramsId:string}) => {
   )
 }
 
-export default GoldCertPricePageForm
+export default GoldCertPageForm

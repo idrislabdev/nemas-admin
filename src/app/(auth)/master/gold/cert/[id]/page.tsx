@@ -1,11 +1,11 @@
 import ProfileDropdown from "@/@core/components/profile-dropdown";
 import { AboutOutlineIcon, ArrowLeftIcon, FolderIcon, FolderOpenIcon } from "@/@core/my-icons";
 import GoldTabPage from "@/@core/pages/master/gold/components/tab-page";
-import GoldCertPricePageForm from "@/@core/pages/master/gold/gold-cert-price-page/form";
+import GoldCertPageForm from "@/@core/pages/master/gold/gold-cert-page/form";
 import { FlipBackward } from "@untitled-ui/icons-react";
 import Link from "next/link";
 
-export default async function GoldCertPriceForm({ params }: { params: Promise<{ id: string }>}) {
+export default async function GoldCertForm({ params }: { params: Promise<{ id: string }>}) {
   const paramsId = (await params).id
 
   return (
@@ -32,12 +32,12 @@ export default async function GoldCertPriceForm({ params }: { params: Promise<{ 
           </div>
         </div>
         <div className='main-body'>
-            <GoldTabPage activeTab="cert_price" />
+            <GoldTabPage activeTab="cert" />
             <div className="flex flex-col gap-[10px]">
                 <div className="flex justify-end">
-                    <Link href={`/master/gold/cert-price`} className="btn btn-outline-neutral"><FlipBackward />Kembali</Link>
+                    <Link href={`/master/gold/cert`} className="btn btn-outline-neutral"><FlipBackward />Kembali</Link>
                 </div>
-                <GoldCertPricePageForm paramsId={paramsId}/>
+                <GoldCertPageForm paramsId={paramsId}/>
             </div>
         </div>
       </div>

@@ -13,8 +13,8 @@ import * as XLSX from "xlsx";
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import { formatterNumber } from '@/@core/utils/general';
 
-const GoldCertPricePageTable = () => {
-    const url = `/core/gold/cert_price/`
+const GoldCertPageTable = () => {
+    const url = `/core/gold/cert/`
     const [dataTable, setDataTable] = useState<Array<IGoldCertPrice>>([]);
     const [total, setTotal] = useState(0);
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);
@@ -32,6 +32,7 @@ const GoldCertPricePageTable = () => {
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
         { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code'},
+        { title: 'Nama Sertifikat', dataIndex: 'cert_name', key: 'cert_name'},
         { title: 'Satuan (gr)', dataIndex: 'gold_weight', key: 'gold_weight',
             render: (_, record) => (`${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`) 
         },
@@ -41,7 +42,7 @@ const GoldCertPricePageTable = () => {
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
-            <Link href={`/master/gold/cert-price/${record.cert_id}`} className="btn-action"><Edit05 /></Link>
+            <Link href={`/master/gold/cert/${record.cert_id}`} className="btn-action"><Edit05 /></Link>
             <a className='btn-action' onClick={() => deleteData(record.cert_id)}><Trash01 /></a>
         </div>)
         },
@@ -139,7 +140,7 @@ const GoldCertPricePageTable = () => {
                 </div>
                 <div className='flex items-center gap-[4px]'>
                     <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
-                    <Link href={`/master/gold/cert-price/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
+                    <Link href={`/master/gold/cert/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
                 </div>
             </div>
             <div className='flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]'>
@@ -176,4 +177,4 @@ const GoldCertPricePageTable = () => {
   )
 }
 
-export default GoldCertPricePageTable
+export default GoldCertPageTable
