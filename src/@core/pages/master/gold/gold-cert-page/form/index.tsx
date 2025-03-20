@@ -1,10 +1,10 @@
 "use client"
 import { IGoldCert } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react'
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
+import { AxiosError } from 'axios';
 
 const GoldCertPageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
@@ -18,16 +18,16 @@ const GoldCertPageForm = (props: {paramsId:string}) => {
 
     const onSave = async () => {
         const user = JSON.parse(localStorage.getItem("user") || "{}")
-        const axiosInstance = axios.create({
-            baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-            timeout: 200000
-        })
+        // const axiosInstance = axios.create({
+        //     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+        //     timeout: 200000
+        // })
         const body = {
             "cert_code": certCode,
             "cert_name": certName,
             "gold_weight": parseInt(goldWeight.toString().replace('.', '').replace(',', '.')),
             "cert_price": parseFloat(certPrice.toString().replace('.', '').replace(',', '.')),
-            "create_user": user.name
+            "create_user": user.id
         }
         setRequired({})
         try {

@@ -141,6 +141,25 @@ export interface IPromo {
     updtime?: Date,
     upduser?: string
 }
+
+export interface IGoldPromo {
+    gold_promo_id?: number,
+    gold_promo_code?: string,
+    gold_promo_description?: string,
+    gold_promo_weight?: string,
+    gold_promo_amt_pct?: string,
+    gold_promo_amt?: string,
+    gold_promo_min_weight?: string,
+    gold_promo_max_weight?: string,
+    gold_promo_min_amt?: string,
+    gold_promo_max_amt?: string,
+    gold_promo_start_date?: string,
+    gold_promo_end_date?: string,
+    gold_promo_active?: boolean,
+    create_user?: string,
+    upd_user?: string
+}
+
 export interface IRating {
     information_rate_id?: number,
     information_rate_name?: string,
@@ -161,4 +180,11 @@ export interface IUser {
     password: string,
     name: string, 
     id: string
+}
+
+export interface IPaymentMethod {
+    payment_method_id?: number,
+    payment_method_name?: string,
+    payment_method_description?: string,
+    is_active?: boolean
 }

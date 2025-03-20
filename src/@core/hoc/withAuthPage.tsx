@@ -22,7 +22,8 @@ const withAuthPage = (Pages: any) => {
         const data = resp.data
         const obj = {
           "email" : data.email,
-          "name" : data.name
+          "name" : data.name,
+          "id" : data.id
         }
         localStorage.setItem("user", JSON.stringify(obj))
         setLoading(true)  

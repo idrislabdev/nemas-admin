@@ -143,7 +143,7 @@ const InformationPromoPageForm = (props: {paramsId:string}) => {
     return (
         <>
             {contextHolder}
-            {isModalLoading == false && paramsId != 'form' &&
+            {isModalLoading == false &&
              <div className='form-input'>
                 <div className='flex items-start gap-[10px]'>
                     <div className='form-area w-1/2'>
