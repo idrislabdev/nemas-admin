@@ -1,7 +1,7 @@
 "use client"
 import { IGold, IGoldCert, IGoldCertPriceDetail } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import React, { useCallback, useEffect, useState } from 'react'
 import { notification } from 'antd';
 
@@ -19,18 +19,14 @@ const GoldCertDetailPageForm = (props: {paramsId:string}) => {
     const [api, contextHolder] = notification.useNotification();
 
     const onSave = async () => {
-        const user = JSON.parse(localStorage.getItem("user") || "{}")
-        const axiosInstance = axios.create({
-            baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-            timeout: 200000
-        })
+        // const user = JSON.parse(localStorage.getItem("user") || "{}")
         const body = {
             "gold" : gold,
             "gold_cert" : goldCert,
             "gold_cert_code": goldCertCode,
             "gold_weight": parseInt(goldWeight.toString().replace('.', '').replace(',', '.')),
             "include_stock": includeStock,
-            "create_user": user.name
+            // "create_user": user.id
         }
         setRequired({})
         try {
