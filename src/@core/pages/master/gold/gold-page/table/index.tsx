@@ -17,7 +17,7 @@ import { formatterNumber } from '@/@core/utils/general';
 moment.locale('id')
 
 const GoldPageTable = () => {
-    const url = `/core/gold/`
+    const url = `/core/gold/list/product-show`
     const [dataTable, setDataTable] = useState<Array<IGold>>([]);
     const [total, setTotal] = useState(0);
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);
@@ -35,18 +35,18 @@ const GoldPageTable = () => {
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
         { title: 'Berat Emas (gr)', dataIndex: 'gold_weight', key: 'gold_weight', width: 150, fixed: 'left',
-            render: (_, record) => (`${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`)
+            render: (_, record) => (`${parseFloat(record.gold_weight ? record.gold_weight.toString() : '')} gr`)
+        },
+        { title: 'Berat Sertifikat (gr)', dataIndex: 'certificate_weight', key: 'certificate_weight', width: 170, fixed: 'left',
+            render: (_, record) => (`${parseFloat(record.certificate_weight ? record.certificate_weight.toString() : '')} gr`)
         },
         { title: 'Tipe Emas', dataIndex: 'type', key: 'type'},
         { title: 'Merek', dataIndex: 'brand', key: 'brand'},
-        { title: 'Nomor Sertifikat', dataIndex: 'certificate_number', key: 'certificate_number', width: 150},
-        { title: 'Dibuat Oleh', dataIndex: 'create_user', key: 'create_user'},
-        { title: 'Diupdate Oleh', dataIndex: 'upd_user', key: 'upd_user'},
-        { title: 'Terakhir Update', dataIndex: 'upd_time', key: 'upd_time',
-            render: (_, record) => (
-                moment(record.upd_time).format("DD MMM YYYY, HH:mm")
-            )
+        { title: 'Harga', dataIndex: 'certificate_number', key: 'certificate_number', width: 150, 
+            render: (_, record) => (`Rp${formatterNumber(record.gold_price_summary_roundup ? parseInt(record.gold_price_summary_roundup) : 0)}`)
         },
+        { title: 'Stok', dataIndex: 'stock', key: 'stock', width: 100},
+       
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>

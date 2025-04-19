@@ -4,6 +4,8 @@ export interface IGold {
     type?: string,
     brand?: string,
     certificate_number?: string,
+    certificate_weight?: string,
+    gold_price_summary_roundup? : string,
     create_user?: string,
     upd_user?: string,
     upd_time?: string,
