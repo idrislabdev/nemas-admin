@@ -190,3 +190,10 @@ export interface IPaymentMethod {
     payment_method_description?: string,
     is_active?: boolean
 }
+
+export interface IDeliveryPartner {
+    delivery_partner_name?: string,
+    delivery_partner_code?: string,
+    delivery_partner_description?: string
+    delivery_partner_id?: number
+}
