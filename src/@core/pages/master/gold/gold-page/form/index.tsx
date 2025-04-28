@@ -1,17 +1,22 @@
 "use client"
 
-import { IGold } from '@/@core/@types/interface';
+import { IGold, IGoldCert } from '@/@core/@types/interface';
 // import axiosInstance from '@/@core/utils/axios';
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
 import UploadGoldForm from '@/@core/components/forms/upload-gold-form';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
+import Link from 'next/link';
+import { FlipBackward } from '@untitled-ui/icons-react';
+import GoldCertDetailTable from '../cert-detail';
+import { useRouter } from 'next/navigation';
 const GoldPageForm = (props: {paramsId:string}) => {
     const { paramsId } = props
     const url = `/core/gold`
+    const router = useRouter()
     const [goldWeight, setGoldWeight] = useState("0");
     const [type, setType] = useState("Bar");
     const [brand, setBrand] = useState("Marga Gold");
@@ -19,6 +24,8 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const [required, setRequired] = useState<IGold>({} as IGold);
     const [api, contextHolder] = notification.useNotification();
     const [isModalLoading, setIsModalLoading] = useState(false)
+    const [certificateId, setCertificateId] = useState(0);
+    const [certs, setCerts] = useState<IGoldCert[]>([] as IGoldCert[]);
 
     const [goldImage1, setGoldImage1] = useState("");
     const [goldImage2, setGoldImage2] = useState("");
@@ -45,17 +52,19 @@ const GoldPageForm = (props: {paramsId:string}) => {
             "brand": brand,
             "certificate_number": certificateNumber,
             "create_user": user.name,
-            "upd_user": user.name
+            "upd_user": user.name,
+            "certificate_id" : certificateId
         }
         setIsModalLoading(true)
         setRequired({})
+        let tempGoldId = ''
         try {
             let desc = '';
             if (paramsId == 'form') {
                 const resp = await axiosInstance.post(`${url}/create`, body);
                 const { data } = resp
                 desc = 'Data Gold Telah Disimpan'
-
+                tempGoldId = data.gold_id
                 if (image1 != null)
                     await uploadFile1(data.gold_id)
                 if (image2 != null)
@@ -88,6 +97,8 @@ const GoldPageForm = (props: {paramsId:string}) => {
                 description: desc,
                 placement:'bottomRight',
             });
+            if (paramsId == 'form')
+                router.replace(`/master/gold/${tempGoldId}`)
         } catch (error) {
             setIsModalLoading(false)
             const err = error as AxiosError
@@ -102,7 +113,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const fetchData = async () => {
         const resp = await axiosInstance.get(`${url}/${paramsId}/`);
         const { data } = resp
-        setGoldWeight(data.gold_weight.toString().replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
+        setGoldWeight(data.gold_weight.toString().replace('.', ','));
         setType(data.type);
         setBrand(data.brand);
         setGoldImage1(data.gold_image_1);
@@ -112,6 +123,13 @@ const GoldPageForm = (props: {paramsId:string}) => {
         setGoldImage5(data.gold_image_5);
         setCertficateNumber(data.certificate_number);
     }
+
+    const fetchDataCerts = useCallback(async () => {
+        const resp = await axiosInstance.get(`/core/gold/cert/?offset=0&limit=100`);
+        const { results } = resp.data
+        setCerts(results)
+        setCertificateId(results[0].cert_id)
+    }, [setCerts])
 
     const uploadFile1 = async(id:string) => {
         if (image1 != null) {
@@ -163,6 +181,10 @@ const GoldPageForm = (props: {paramsId:string}) => {
             fetchData();
     })
 
+    useEffect(() => {
+        fetchDataCerts();
+    }, [fetchDataCerts])
+
     const clearForm = () => {
         setGoldWeight("");
         setType("");
@@ -174,6 +196,10 @@ const GoldPageForm = (props: {paramsId:string}) => {
         <>
             <div className='form-input'>
                 {contextHolder}
+                <div className="flex gap-[4px] items-center justify-end">
+                        <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
+                      <Link href={`/master/gold`} className="btn btn-outline-neutral"><FlipBackward /> Kembali</Link>
+                  </div>
                 <div className='form-area'>
                     <div className='flex gap-[20px]'>
                         <div className='input-area w-1/5'>
@@ -264,15 +290,23 @@ const GoldPageForm = (props: {paramsId:string}) => {
                             <option value={'Antam'}>Antam</option>
                         </select>
                     </div>
-                    <div className='input-area'>
-                        <label>Nomor Sertifikat {required.certificate_number && <span className='text-red-500 text-[10px]/[14px] italic'>({required.certificate_number?.toString()})</span>}</label>
-                        <input value={certificateNumber} onChange={e => setCertficateNumber(e.target.value)}  className={`base ${required.certificate_number ? 'error' : ''}`} />
+                    <div className='flex flex-col gap-[4px]'>
+                        <label>Sertifikat {required.certificate_id && <span className='text-red-500 text-[10px]/[14px] italic'>({required.certificate_id?.toString()})</span>}</label>
+                        <select 
+                            defaultValue={certificateId} 
+                            onChange={e => setCertificateId(parseInt(e.target.value))}
+                        >
+                            {certs.map((item, index:number) => (
+                                <option value={item.cert_id} key={index}>{item.cert_code} - {item.cert_name}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
-                <div className='form-button'>
-                    <button className='btn btn-primary' onClick={() => onSave()}>Simpan</button>
-                </div>
             </div>
+            <hr />
+            {paramsId != 'form' &&
+                <GoldCertDetailTable goldId={paramsId} certificateId={certificateId.toString()} />
+            }
             <ModalLoading 
                 isModalOpen={isModalLoading} 
                 textInfo='Harap tunggu, data sedang diproses' 

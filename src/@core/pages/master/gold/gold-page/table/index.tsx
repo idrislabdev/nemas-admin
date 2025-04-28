@@ -40,7 +40,7 @@ const GoldPageTable = () => {
         { title: 'Berat Sertifikat (gr)', dataIndex: 'certificate_weight', key: 'certificate_weight', width: 170, fixed: 'left',
             render: (_, record) => (`${parseFloat(record.certificate_weight ? record.certificate_weight.toString() : '')} gr`)
         },
-        { title: 'Tipe Emas', dataIndex: 'type', key: 'type'},
+        { title: 'Tipe Emas', dataIndex: 'type', key: 'type', width:120},
         { title: 'Merek', dataIndex: 'brand', key: 'brand'},
         { title: 'Harga', dataIndex: 'certificate_number', key: 'certificate_number', width: 150, 
             render: (_, record) => (`Rp${formatterNumber(record.gold_price_summary_roundup ? parseInt(record.gold_price_summary_roundup) : 0)}`)

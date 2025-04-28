@@ -9,6 +9,7 @@ export interface IGold {
     create_user?: string,
     upd_user?: string,
     upd_time?: string,
+    certificate_id?:string
 }
 
 export interface IGoldPrice {
