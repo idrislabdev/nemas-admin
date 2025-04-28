@@ -16,8 +16,9 @@ import 'moment/locale/id';
 // import Image from 'next/image';
 moment.locale('id')
 
-const DeliveryPartnerServicePageTable = () => {
-    const url = `/core/delivery_partner/service/`
+const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
+    const { paramsId } = props
+    const url = `/core/delivery_partner/service?delivery_partner=${paramsId}`
     const [dataTable, setDataTable] = useState<Array<IDeliveryPartner>>([]);
     const [total, setTotal] = useState(0);
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);

@@ -6,7 +6,7 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
 import { Pagination, Table } from 'antd'
 import { ColumnsType } from 'antd/es/table'
-import { Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
+import { Dotpoints01, Edit05, FileDownload02, Plus, SearchSm, Trash01 } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import { notification } from 'antd';
 import * as XLSX from "xlsx";
@@ -37,6 +37,12 @@ const DeliveryPartnerPageTable = () => {
         { title: 'Nama', dataIndex: 'delivery_partner_name', key: 'delivery_partner_name'},
         { title: 'Code', dataIndex: 'delivery_partner_code', key: 'delivery_partner_code'},
         { title: 'Deskripsi', dataIndex: 'delivery_partner_description', key: 'delivery_partner_description', width: 150},
+        { title: 'Service Partner', key: 'delivery_partner_service', align: 'center',
+            render: (_, record) =>
+                (<div className='flex items-center gap-[5px] justify-center'>
+                <Link href={`/delivery/partner/${record.delivery_partner_id}/service`} className="btn-action"><Dotpoints01 /></Link>
+            </div>)
+        },
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
