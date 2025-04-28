@@ -21,6 +21,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
     const [type, setType] = useState("Bar");
     const [brand, setBrand] = useState("Marga Gold");
     const [certificateNumber, setCertficateNumber] = useState("");
+    const [productCost, setProductCost] = useState("");
     const [required, setRequired] = useState<IGold>({} as IGold);
     const [api, contextHolder] = notification.useNotification();
     const [isModalLoading, setIsModalLoading] = useState(false)
@@ -50,6 +51,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
             "gold_weight": parseFloat(goldWeight.toString().replace('.', '').replace(',', '.')),
             "type": type,
             "brand": brand,
+            "product_cost": parseFloat(productCost.toString().replace('.', '').replace(',', '.')),
             "certificate_number": certificateNumber,
             "create_user": user.name,
             "upd_user": user.name,
@@ -116,6 +118,7 @@ const GoldPageForm = (props: {paramsId:string}) => {
         setGoldWeight(data.gold_weight.toString().replace('.', ','));
         setType(data.type);
         setBrand(data.brand);
+        setProductCost(data.product_cost.toString().replace('.', ','))
         setGoldImage1(data.gold_image_1);
         setGoldImage2(data.gold_image_2);
         setGoldImage3(data.gold_image_3);
@@ -289,6 +292,16 @@ const GoldPageForm = (props: {paramsId:string}) => {
                             <option value={'Marga Gold'}>Marva Gold</option>
                             <option value={'Antam'}>Antam</option>
                         </select>
+                    </div>
+                    <div className='input-area'>
+                        <label>Harga Produk {required.product_cost && <span className='text-red-500 text-[10px]/[14px] italic'>({required.product_cost?.toString()})</span>}</label>
+                        <CurrencyInput
+                            value={productCost}
+                            decimalsLimit={2}
+                            decimalSeparator="," groupSeparator="." 
+                            onValueChange={(value) => setProductCost(value ? value : "0")}
+                            className={`base ${required.product_cost ? 'error' : ''}`}  
+                        />
                     </div>
                     <div className='flex flex-col gap-[4px]'>
                         <label>Sertifikat {required.certificate_id && <span className='text-red-500 text-[10px]/[14px] italic'>({required.certificate_id?.toString()})</span>}</label>
