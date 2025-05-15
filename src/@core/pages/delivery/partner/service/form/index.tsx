@@ -7,14 +7,15 @@ import Link from 'next/link';
 import React, { useState } from 'react'
 import { notification } from 'antd';
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import { FlipBackward } from '@untitled-ui/icons-react';
 
-const DeliveryPartnerServicePageForm = (props: {paramsId:string}) => {
-    const { paramsId } = props
-    const url = `/core/delivery_partner`
+const DeliveryPartnerServicePageForm = (props: {paramsId:string, paramsServiceId: string}) => {
+    const { paramsId, paramsServiceId } = props
+    const url = `/core/delivery_partner/service`
     const [deliveryPartnerName, setDeliveryPartnerName] = useState("");
     const [deliveryPartnerCode, setDeliveryPartnerCode] = useState("");
     const [deliveryPartnerDescription, setDeliveryPartnerDescription] = useState("");
-    const [isActive, setIsActive] = useState(true);
+    // const [isActive, setIsActive] = useState(true);
     
     const [required, setRequired] = useState<IDeliveryPartner>({} as IDeliveryPartner);
     const [api, contextHolder] = notification.useNotification();
@@ -22,22 +23,22 @@ const DeliveryPartnerServicePageForm = (props: {paramsId:string}) => {
 
     const onSave = async () => {
         const body = {
-            "delivery_partner_name": deliveryPartnerName,
-            "delivery_partner_code": deliveryPartnerCode,
-            "delivery_partner_description": deliveryPartnerDescription,
-            "is_active": isActive
+            "delivery_partner_service_name": deliveryPartnerName,
+            "delivery_partner": paramsId,
+            "delivery_partner_service_code": deliveryPartnerCode,
+            "delivery_partner_service_description": deliveryPartnerDescription
         }
         setRequired({})
         setIsModalLoading(true)
         try {
             let desc = "";
-            if (paramsId == 'form') {
+            if (paramsServiceId == 'form') {
                 desc = 'Data method Telah Disimpan'
                 await axiosInstance.post(`${url}/create`, body);
                 clearForm();
             } else {
                 desc = 'Data method Telah Diupdate'
-                await axiosInstance.patch(`${url}/${paramsId}`, body);
+                await axiosInstance.patch(`${url}/${paramsServiceId}`, body);
             }
             setIsModalLoading(false)
             api.info({
@@ -57,28 +58,31 @@ const DeliveryPartnerServicePageForm = (props: {paramsId:string}) => {
     }
     
     const fetchData = async () => {
-        const resp = await axiosInstance.get(`${url}/${paramsId}`);
+        const resp = await axiosInstance.get(`${url}/${paramsServiceId}`);
         const { data } = resp
-        setDeliveryPartnerName(data.delivery_partner_name)
-        setDeliveryPartnerCode(data.delivery_partner_code)
-        setDeliveryPartnerDescription(data.delivery_partner_description)
-        setIsActive(data.is_active)
+        setDeliveryPartnerName(data.delivery_partner_service_name)
+        setDeliveryPartnerCode(data.delivery_partner_service_code)
+        setDeliveryPartnerDescription(data.delivery_partner_service_description)
+        // setIsActive(data.is_active)
     }
 
     const clearForm = () => {
         setDeliveryPartnerName("")
         setDeliveryPartnerCode("")
         setDeliveryPartnerDescription("")
-        setIsActive(true)
+        // setIsActive(true)
     }
 
     useState(() => {
-        if (paramsId != 'form')
+        if (paramsServiceId != 'form')
             fetchData();
     })
     return (
         <>
             {contextHolder}
+            <div className="flex gap-[4px] items-center justify-end">
+                <Link href={`/delivery/partner/${paramsId}/service`} className="btn btn-outline-neutral"><FlipBackward /> Kembali</Link>
+            </div>
             <div className='form-input'>
                 <div className='form-area'>
                     <div className='input-area'>

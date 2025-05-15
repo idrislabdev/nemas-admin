@@ -1,5 +1,5 @@
 "use client"
-import { IDeliveryPartner } from '@/@core/@types/interface';
+import { IDeliveryPartnerService } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
@@ -18,8 +18,8 @@ moment.locale('id')
 
 const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
     const { paramsId } = props
-    const url = `/core/delivery_partner/service?delivery_partner=${paramsId}`
-    const [dataTable, setDataTable] = useState<Array<IDeliveryPartner>>([]);
+    const url = `/core/delivery_partner/service/?delivery_partner=${paramsId}`
+    const [dataTable, setDataTable] = useState<Array<IDeliveryPartnerService>>([]);
     const [total, setTotal] = useState(0);
     const [openModalConfirm, setOpenModalConfirm ] = useState(false);
     const [selectedId, setSelectedId] = useState(0);
@@ -31,18 +31,18 @@ const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
         type__icontains:"",
     });
     const [api, contextHolder] = notification.useNotification();
-    const columns: ColumnsType<IDeliveryPartner>  = [
+    const columns: ColumnsType<IDeliveryPartnerService>  = [
         { title: 'No', width: 70, dataIndex: 'payment_id', key: 'payment_id', fixed: 'left', align: 'center',
             render: (_, record, index) =>  ( index+params.offset+1 )
         },
-        { title: 'Nama', dataIndex: 'delivery_partner_name', key: 'delivery_partner_name'},
-        { title: 'Code', dataIndex: 'delivery_partner_code', key: 'delivery_partner_code'},
-        { title: 'Deskripsi', dataIndex: 'delivery_partner_description', key: 'delivery_partner_description', width: 150},
+        { title: 'Nama', dataIndex: 'delivery_partner_service_name', key: 'delivery_partner_service_name'},
+        { title: 'Code', dataIndex: 'delivery_partner_service_code', key: 'delivery_partner_code'},
+        { title: 'Deskripsi', dataIndex: 'delivery_partner_service_description', key: 'delivery_partner_service_description', width: 150},
         { title: '', key: 'action', fixed: 'right', width:100,
           render: (_, record) =>
           (<div className='flex items-center gap-[5px] justify-center'>
-            <Link href={`/delivery/partner/${record.delivery_partner_id}`} className="btn-action"><Edit05 /></Link>
-            <a className='btn-action' onClick={() => deleteData(record.delivery_partner_id)}><Trash01 /></a>
+            <Link href={`/delivery/partner/${record.delivery_partner}/service/${record.delivery_partner_service_id}`} className="btn-action"><Edit05 /></Link>
+            <a className='btn-action' onClick={() => deleteData(record.delivery_partner_service_id)}><Trash01 /></a>
         </div>)
         },
     ];
@@ -75,7 +75,7 @@ const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
     }
     
     const confirmDelete = async () => {
-        await axiosInstance.delete(`${url}${selectedId}`);
+        await axiosInstance.delete(`/core/delivery_partner/service/${selectedId}`);
         setOpenModalConfirm(false)
         setParams({
             ...params,
@@ -101,19 +101,19 @@ const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
         }
         const resp = await axiosInstance.get(url, { params:param });
         const rows = resp.data.results;
-        const dataToExport = rows.map((item: IDeliveryPartner, index:number) => ({
+        const dataToExport = rows.map((item: IDeliveryPartnerService, index:number) => ({
             'No' : index+1,
-            'Nama': item.delivery_partner_name,
-            'Code': item.delivery_partner_code,
-            'Deskripsi': item.delivery_partner_description,
+            'Nama': item.delivery_partner_service_name,
+            'Code': item.delivery_partner_service_code,
+            'Deskripsi': item.delivery_partner_service_description,
         }),);
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
         const colA = 5;
         const colB = 10;
-        const colC = rows.reduce((w:number, r:IDeliveryPartner) => Math.max(w, r.delivery_partner_name ? r.delivery_partner_name.length : 10), 10);
-        const colD = rows.reduce((w:number, r:IDeliveryPartner) => Math.max(w, r.delivery_partner_code ? r.delivery_partner_code.length : 10), 10);
-        const colE = rows.reduce((w:number, r:IDeliveryPartner) => Math.max(w, r.delivery_partner_description ? r.delivery_partner_description.length : 10), 10);
+        const colC = rows.reduce((w:number, r:IDeliveryPartnerService) => Math.max(w, r.delivery_partner_service_name ? r.delivery_partner_service_name.length : 10), 10);
+        const colD = rows.reduce((w:number, r:IDeliveryPartnerService) => Math.max(w, r.delivery_partner_service_code ? r.delivery_partner_service_code.length : 10), 10);
+        const colE = rows.reduce((w:number, r:IDeliveryPartnerService) => Math.max(w, r.delivery_partner_service_description ? r.delivery_partner_service_description.length : 10), 10);
 
         worksheet["!cols"] = [ { wch: colA }, { wch: colB }, { wch: colC }, { wch: colD }, { wch: colE }, { wch: 20 }  ]; 
 
@@ -145,7 +145,7 @@ const DeliveryPartnerServicePageTable = (props: {paramsId:string}) => {
             </div>
             <div className='flex items-center gap-[4px]'>
                 <button className='btn btn-primary' onClick={exportData}><FileDownload02 />Export Excel</button>
-                <Link href={`/delivery/partner/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
+                <Link href={`/delivery/partner/${paramsId}/service/form`} className="btn btn-outline-neutral"><Plus />Add data</Link>
             </div>
         </div>
         <div className='flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]'>

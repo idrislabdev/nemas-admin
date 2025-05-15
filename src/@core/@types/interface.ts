@@ -199,3 +199,11 @@ export interface IDeliveryPartner {
     delivery_partner_description?: string
     delivery_partner_id?: number
 }
+
+export interface IDeliveryPartnerService {
+    delivery_partner_service_name?: string,
+    delivery_partner_service_code?: string,
+    delivery_partner_service_description?: string,
+    delivery_partner?: number,
+    delivery_partner_service_id?:number
+}
