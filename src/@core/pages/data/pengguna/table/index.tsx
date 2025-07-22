@@ -23,7 +23,7 @@ const DataPenggunaPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
+    search: '',
   });
   // const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<IUser> = [
@@ -75,7 +75,7 @@ const DataPenggunaPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
+      search: value,
     });
   };
 
@@ -85,7 +85,7 @@ const DataPenggunaPageTable = () => {
       format: 'json',
       offset: 0,
       limit: 50,
-      type__icontains: '',
+      search: '',
     };
     const resp = await axiosInstance.get(url, { params: param });
     const rows = resp.data.results;

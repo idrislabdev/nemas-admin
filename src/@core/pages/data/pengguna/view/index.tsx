@@ -2,6 +2,7 @@
 
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
+import { formatterNumber } from '@/@core/utils/general';
 import { FlipBackward } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -47,61 +48,61 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </h5>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nama
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.name ?? 'N/A'}
+                    : {detail.name ?? '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Username
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.user_name ?? 'N/A'}
+                    : {detail.user_name ?? '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Email
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.email ?? 'N/A'}
+                    : {detail.email ?? '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nomor Telepon
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.phone_number ?? 'N/A'}
+                    : {detail.phone_number ?? '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Level
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.level != ''
                       ? detail.props.level
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nomor Member
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.member_number && detail.member_number != ''
                       ? detail.member_number
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Verifikasi 2FA
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
@@ -114,22 +115,25 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </h5>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Alamat
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {(detail.props && detail.props.address) ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.address != ''
+                      ? detail.props.address
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kode POS
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
-                    {detail.props && detail.props.address_post_code
+                    {detail.props && detail.props.address_post_code != ''
                       ? detail.props.address_post_code
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
               </div>
@@ -140,47 +144,47 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </h5>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
-                    wallet_amt
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                    Saldo Walet Nemas
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.wallet_amt
-                      ? detail.props.wallet_amt
-                      : 'N/A'}
+                      ? `Rp${formatterNumber(detail.props.wallet_amt)}`
+                      : 'Rp0'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
-                    gold_wgt
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                    Saldo Tabungan Emas
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.gold_wgt
-                      ? detail.props.gold_wgt
-                      : 'N/A'}
+                      ? `${formatterNumber(detail.props.gold_wgt)} gr`
+                      : '0 gr'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
-                    invest_gold_wgt
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                    Saldo Deposito Emas
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.invest_gold_wgt
-                      ? detail.props.invest_gold_wgt
-                      : 'N/A'}
+                      ? `${formatterNumber(detail.props.invest_gold_wgt)} gr`
+                      : '0 gr'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
-                    loan_wgt
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                    Berat Emas yg Digadaikan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.loan_wgt
-                      ? detail.props.loan_wgt
-                      : 'N/A'}
+                      ? `${formatterNumber(detail.props.loan_wgt)} gr`
+                      : '0 gr'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
@@ -189,36 +193,36 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </h5>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nama Bank
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.bank_account_code
                       ? detail.props.bank_account_code
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     No. Rekening
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.bank_account_number
                       ? detail.props.bank_account_number
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     A.n Rekening
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.props && detail.props.bank_account_holder_name
                       ? detail.props.bank_account_holder_name
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
@@ -234,154 +238,152 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </h5>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     NIK
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp && detail.ktp.nik ? detail.ktp.nik : 'N/A'}
+                    : {detail.ktp && detail.ktp.nik ? detail.ktp.nik : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nama
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.full_name
                       ? detail.ktp.full_name
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Tgl. Lahir
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.date_of_birth
                       ? detail.ktp.date_of_birth
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Tempat Lahir
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.place_of_birth
                       ? detail.ktp.place_of_birth
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Status Perkawainan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.marital_status
                       ? detail.ktp.marital_status
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Jenis Kelamin
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
-                    {detail.ktp && detail.ktp.gender
-                      ? detail.ktp.gender
-                      : 'N/A'}
+                    {detail.ktp && detail.ktp.gender ? detail.ktp.gender : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Golongan Darah
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.blood_type
                       ? detail.ktp.blood_type
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
               </div>
               <div className="flex w-1/2 flex-col">
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 "></div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Agama
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.religion
                       ? detail.ktp.religion
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kewarganegaraan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.nationality
                       ? detail.ktp.nationality
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Pekerjaan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.occupation
                       ? detail.ktp.occupation
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Alamat (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.address
                       ? detail.ktp.address
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kelurahan (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.administrative_village
                       ? detail.ktp.administrative_village
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kecamatan (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
                     {detail.ktp && detail.ktp.district
                       ? detail.ktp.district
-                      : 'N/A'}
+                      : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                  <label className="w-[150px] text-[14px]/[14px] text-neutral-500">
+                  <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kota (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp && detail.ktp.city ? detail.ktp.city : 'N/A'}
+                    : {detail.ktp && detail.ktp.city ? detail.ktp.city : '-'}
                   </p>
                 </div>
                 <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
