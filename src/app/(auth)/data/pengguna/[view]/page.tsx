@@ -1,4 +1,3 @@
-import MainSidebar from '@/@core/components/main-sidebar';
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import {
   AboutOutlineIcon,

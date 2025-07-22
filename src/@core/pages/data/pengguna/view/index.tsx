@@ -3,7 +3,6 @@
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { FlipBackward } from '@untitled-ui/icons-react';
-import moment from 'moment';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 
