@@ -261,7 +261,7 @@ export interface IPenggunaAplikasi {
     subdistrict: string;
     postal_code: string;
     is_default: true;
-    longtitude: 9999;
-    latitude: 9999;
+    longtitude: number;
+    latitude: number;
   };
 }

@@ -1,5 +1,5 @@
 'use client';
-import { IUser } from '@/@core/@types/interface';
+import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pagination, Table } from 'antd';
@@ -15,7 +15,7 @@ moment.locale('id');
 
 const DataPenggunaPageTable = () => {
   const url = `/users/`;
-  const [dataTable, setDataTable] = useState<Array<IUser>>([]);
+  const [dataTable, setDataTable] = useState<Array<IPenggunaAplikasi>>([]);
   const [total, setTotal] = useState(0);
   // const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -23,10 +23,12 @@ const DataPenggunaPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    search: '',
+    name__icontains: '',
+    email__icontains: '',
+    username__icontains: '',
   });
   // const [api, contextHolder] = notification.useNotification();
-  const columns: ColumnsType<IUser> = [
+  const columns: ColumnsType<IPenggunaAplikasi> = [
     {
       title: 'No',
       width: 70,
@@ -39,6 +41,14 @@ const DataPenggunaPageTable = () => {
     { title: 'Nama', dataIndex: 'name', key: 'name', width: 150 },
     { title: 'Username', dataIndex: 'user_name', key: 'username', width: 150 },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 150 },
+    {
+      title: 'Alamat',
+      dataIndex: 'alamat',
+      key: 'alamat',
+      width: 150,
+      render: (_, record) =>
+        (record.address != null && record.address.address) ?? '-',
+    },
     {
       title: 'Phone Number',
       dataIndex: 'phone_number',
@@ -75,7 +85,9 @@ const DataPenggunaPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      search: value,
+      name__icontains: value,
+      username__icontains: value,
+      email__icontains: value,
     });
   };
 
@@ -89,7 +101,7 @@ const DataPenggunaPageTable = () => {
     };
     const resp = await axiosInstance.get(url, { params: param });
     const rows = resp.data.results;
-    const dataToExport = rows.map((item: IUser, index: number) => ({
+    const dataToExport = rows.map((item: IPenggunaAplikasi, index: number) => ({
       No: index + 1,
       Nama: item.name,
       Username: item.user_name,
@@ -100,20 +112,22 @@ const DataPenggunaPageTable = () => {
     const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
     const colA = 5;
     const colB = rows.reduce(
-      (w: number, r: IUser) => Math.max(w, r.name ? r.name.length : 10),
+      (w: number, r: IPenggunaAplikasi) =>
+        Math.max(w, r.name ? r.name.length : 10),
       10
     );
     const colC = rows.reduce(
-      (w: number, r: IUser) =>
+      (w: number, r: IPenggunaAplikasi) =>
         Math.max(w, r.user_name ? r.user_name.length : 10),
       10
     );
     const colD = rows.reduce(
-      (w: number, r: IUser) => Math.max(w, r.email ? r.email.length : 10),
+      (w: number, r: IPenggunaAplikasi) =>
+        Math.max(w, r.email ? r.email.length : 10),
       10
     );
     const colE = rows.reduce(
-      (w: number, r: IUser) =>
+      (w: number, r: IPenggunaAplikasi) =>
         Math.max(w, r.phone_number ? r.phone_number.length : 10),
       10
     );
