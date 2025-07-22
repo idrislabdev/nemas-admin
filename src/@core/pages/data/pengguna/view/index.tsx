@@ -10,14 +10,18 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const url = `/users/${paramsId}`;
 
+  const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<IPenggunaAplikasi>(
     {} as IPenggunaAplikasi
   );
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url);
-    const { data } = resp;
-    setDetail(data.user);
+    setLoading(true);
+    axiosInstance.get(url).then((resp) => {
+      const { data } = resp;
+      setDetail(data.user);
+      setLoading(false);
+    });
   }, [url]);
 
   useEffect(() => {
@@ -32,7 +36,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
           <FlipBackward /> Kembali
         </Link>
       </div>
-      {detail.ktp && (
+      {!loading && (
         <div className="flex flex-col">
           <div className="flex">
             <div className="w-full flex border border-gray-200 rounded-tr-[6px] rounded-tl-[6px]">
@@ -80,7 +84,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
                     :{' '}
-                    {detail.props.level && detail.props.level != ''
+                    {detail.props && detail.props.level != ''
                       ? detail.props.level
                       : 'N/A'}
                   </p>
@@ -114,7 +118,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Alamat
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.address ?? 'N/A'}
+                    : {(detail.props && detail.props.address) ?? 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -122,7 +126,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Kode POS
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.address_post_code ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.address_post_code
+                      ? detail.props.address_post_code
+                      : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -137,7 +144,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     wallet_amt
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.wallet_amt ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.wallet_amt
+                      ? detail.props.wallet_amt
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -145,7 +155,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     gold_wgt
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.gold_wgt ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.gold_wgt
+                      ? detail.props.gold_wgt
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -153,7 +166,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     invest_gold_wgt
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.invest_gold_wgt ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.invest_gold_wgt
+                      ? detail.props.invest_gold_wgt
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -161,7 +177,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     loan_wgt
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.loan_wgt ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.loan_wgt
+                      ? detail.props.loan_wgt
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
@@ -174,7 +193,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Nama Bank
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.bank_account_code ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.bank_account_code
+                      ? detail.props.bank_account_code
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -182,7 +204,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     No. Rekening
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.bank_account_number ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.bank_account_number
+                      ? detail.props.bank_account_number
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -190,7 +215,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     A.n Rekening
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.props.bank_account_holder_name ?? 'N/A'}
+                    :{' '}
+                    {detail.props && detail.props.bank_account_holder_name
+                      ? detail.props.bank_account_holder_name
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
@@ -210,7 +238,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     NIK
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.nik ?? 'N/A'}
+                    : {detail.ktp && detail.ktp.nik ? detail.ktp.nik : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -218,7 +246,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Nama
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.full_name ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.full_name
+                      ? detail.ktp.full_name
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -226,7 +257,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Tgl. Lahir
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.date_of_birth ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.date_of_birth
+                      ? detail.ktp.date_of_birth
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -234,7 +268,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Tempat Lahir
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.place_of_birth ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.place_of_birth
+                      ? detail.ktp.place_of_birth
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -242,7 +279,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Status Perkawainan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.marital_status ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.marital_status
+                      ? detail.ktp.marital_status
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -250,7 +290,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Jenis Kelamin
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.gender ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.gender
+                      ? detail.ktp.gender
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -258,7 +301,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Golongan Darah
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.blood_type ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.blood_type
+                      ? detail.ktp.blood_type
+                      : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -269,7 +315,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Agama
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.religion ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.religion
+                      ? detail.ktp.religion
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -277,7 +326,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Kewarganegaraan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.nationality ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.nationality
+                      ? detail.ktp.nationality
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -285,7 +337,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Pekerjaan
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.occupation ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.occupation
+                      ? detail.ktp.occupation
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -293,7 +348,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Alamat (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.address ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.address
+                      ? detail.ktp.address
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -301,7 +359,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Kelurahan (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.administrative_village ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.administrative_village
+                      ? detail.ktp.administrative_village
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -309,7 +370,10 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Kecamatan (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.district ?? 'N/A'}
+                    :{' '}
+                    {detail.ktp && detail.ktp.district
+                      ? detail.ktp.district
+                      : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -317,7 +381,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
                     Kota (Domisili)
                   </label>
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px]">
-                    : {detail.ktp.city ?? 'N/A'}
+                    : {detail.ktp && detail.ktp.city ? detail.ktp.city : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>

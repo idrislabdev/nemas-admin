@@ -30,6 +30,9 @@ export default async function PenggunaView({
                 <li>
                   <FolderOpenIcon /> Pengguna
                 </li>
+                <li>
+                  <FolderOpenIcon /> Detail
+                </li>
               </ul>
             </div>
             <ProfileDropdown />
