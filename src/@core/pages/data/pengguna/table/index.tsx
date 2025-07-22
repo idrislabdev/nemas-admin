@@ -10,6 +10,7 @@ import moment from 'moment';
 import 'moment/locale/id';
 import axiosInstance from '@/@core/utils/axios';
 import * as XLSX from 'xlsx';
+import Link from 'next/link';
 moment.locale('id');
 
 const DataPenggunaPageTable = () => {
@@ -51,9 +52,9 @@ const DataPenggunaPageTable = () => {
       width: 100,
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
-          <a className="btn-action" onClick={() => console.log(record.id)}>
+          <Link className="btn-action" href={`/data/pengguna/${record.id}`}>
             <Eye />
-          </a>
+          </Link>
         </div>
       ),
     },
