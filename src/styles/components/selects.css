@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ant-select {
+  &.select-base {
+    &.ant-select-single {
+      @apply h-[44px];
+    }
+    .ant-select-selector {
+      @apply border-gray-300 rounded-[8px] min-h-[44px];
+    }
+  }
+  &.select-sm {
+    @apply h-[38px];
+    .ant-select-selector {
+      @apply border-gray-300 rounded-md;
+    }
+  }
+  &.select-md {
+    @apply h-[40px];
+    .ant-select-selector {
+      @apply border-gray-300 rounded-md;
+    }
+  }
+  &.error {
+    .ant-select-selector {
+      @apply border-red-300;
+    }
+  }
+
+  &.ant-select-multiple {
+    &.ant-select-outlined {
+      &.ant-select-multiple {
+        .ant-select-selection-item {
+          @apply !h-[30px] leading-[28px];
+        }
+      }
+    }
+  }
+}

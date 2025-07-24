@@ -14,3 +14,13 @@ export const formatDecimal = (num: number) => {
     maximumFractionDigits: digitDesimal,
   });
 };
+
+export const statusTransaksiLangMap: Record<string, string> = {
+  order_buy: 'Produk Emas Fisik',
+  order_redeem: 'Tarik Emas',
+  gold_buy: 'Beli Emas',
+  gold_sell: 'Jual',
+  gold_transfer_send: 'Transfer Emas',
+  gold_transfer_receive: 'Terima Emas',
+  disburst: 'Tarik Saldo',
+};

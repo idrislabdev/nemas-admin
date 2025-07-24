@@ -183,7 +183,7 @@ const DataPenggunaPageTable = () => {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="information_rate_id"
+          rowKey="id"
         />
         <div className="flex justify-end p-[12px]">
           <Pagination

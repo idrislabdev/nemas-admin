@@ -265,3 +265,20 @@ export interface IPenggunaAplikasi {
     latitude: number;
   };
 }
+
+export interface IHistoryTransaction {
+  email: string;
+  user_id: string;
+  user_name: string;
+  transaction_date: string;
+  transaction_id: string;
+  weight: string;
+  price: string;
+  gold_history_price_base: number;
+  ref_number: string;
+  transaction_type: string;
+  user_from: string;
+  user_to: string;
+  transfered_admin_weight: string;
+  transfered_weight: string;
+}

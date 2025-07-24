@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ant-segmented {
+    @apply border border-gray-200;
+    .ant-segmented-group {
+        label {
+            &.ant-segmented-item {
+                @apply text-sm font-semibold text-gray-500;
+                &.ant-segmented-item-selected {
+                    @apply text-gray-700;
+                }
+                .ant-segmented-item-label{
+                    @apply min-h-[36px] leading-[36px];
+                }
+            }
+        }
+    }
+}
