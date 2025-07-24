@@ -3,7 +3,7 @@
 import { IHistoryTransaction } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber, statusTransaksiLangMap } from '@/@core/utils/general';
-import { Download01, FileDownload02 } from '@untitled-ui/icons-react';
+import { FileDownload02 } from '@untitled-ui/icons-react';
 import { Pagination, Select, Space } from 'antd';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
