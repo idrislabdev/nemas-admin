@@ -59,7 +59,7 @@ button {
         }
       }
       svg {
-        @apply h-[15px] w-[15px];
+        @apply h-[50px] w-[50px] text-red-500;
         path {
           @apply fill-neutral-700;
         }
@@ -127,6 +127,11 @@ a {
       @apply !bg-white !text-neutral-700 border !border-neutral-400 font-semibold;
       &:hover {
         @apply !text-white !bg-neutral-400;
+        svg {
+          path {
+            @apply !fill-white;
+          }
+        }
       }
       svg {
         @apply h-[15px] w-[15px];
