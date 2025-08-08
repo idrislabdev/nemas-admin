@@ -114,7 +114,7 @@ const MainSidebar = () => {
                   : ''
               }`}
             >
-              <Link href="/data/pengguna">
+              <Link href="/data/pengguna/aplikasi">
                 <CreditCard02 />
                 Pengguna
               </Link>

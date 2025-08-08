@@ -5,7 +5,7 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from '@/@core/my-icons';
-import DataPenggunaPageView from '@/@core/pages/data/pengguna/view';
+import DataPenggunaPageView from '@/@core/pages/data/pengguna/aplikasi/view';
 
 export default async function PenggunaView({
   params,
@@ -43,8 +43,8 @@ export default async function PenggunaView({
                 <AboutOutlineIcon />
               </div>
               <div className="text-area">
-                <h5>Halaman Pengguna</h5>
-                <p>Manajemen Data Pengguna</p>
+                <h5>Halaman Pengguna Toko</h5>
+                <p>Manajemen Data Pengguna Toko</p>
               </div>
             </div>
             <div className="main-body">

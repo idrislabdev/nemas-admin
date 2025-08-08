@@ -4,16 +4,13 @@ import {
   ArrowLeftIcon,
   FolderIcon,
   FolderOpenIcon,
+  UndoOutlineIcon,
 } from '@/@core/my-icons';
-import DataPenggunaPageView from '@/@core/pages/data/pengguna/aplikasi/view';
+import PenggunaTokoPageForm from '@/@core/pages/data/pengguna/toko/form';
+import PengaturanTabpage from '@/@core/pages/payment/components/tab-page';
+import Link from 'next/link';
 
-export default async function PenggunaView({
-  params,
-}: {
-  params: Promise<{ view: string }>;
-}) {
-  const paramsId = (await params).view;
-
+export default function AddressCityForm() {
   return (
     <main className="xadmin-page">
       <section className="xadmin-section">
@@ -28,10 +25,10 @@ export default async function PenggunaView({
                   <FolderIcon /> Home
                 </li>
                 <li>
-                  <FolderOpenIcon /> Pengguna
+                  <FolderIcon /> Pengaturan
                 </li>
                 <li>
-                  <FolderOpenIcon /> Detail
+                  <FolderOpenIcon /> Admin
                 </li>
               </ul>
             </div>
@@ -43,13 +40,23 @@ export default async function PenggunaView({
                 <AboutOutlineIcon />
               </div>
               <div className="text-area">
-                <h5>Halaman Pengguna</h5>
-                <p>Manajemen Data Pengguna</p>
+                <h5>Halaman Pengguna Toko</h5>
+                <p>Manajemen Data Pengguna Toko</p>
               </div>
             </div>
             <div className="main-body">
-              <div className="flex flex-col gap-[10px] w-full h-full">
-                <DataPenggunaPageView paramsId={paramsId} />
+              <PengaturanTabpage activeTab="admin" />
+              <div className="flex flex-col gap-[10px]">
+                <div className="flex justify-end">
+                  <Link
+                    href={`/data/pengguna/toko`}
+                    className="btn btn-outline-neutral"
+                  >
+                    <UndoOutlineIcon />
+                    Kembali
+                  </Link>
+                </div>
+                <PenggunaTokoPageForm />
               </div>
             </div>
           </div>

@@ -43,8 +43,8 @@ export default async function PenggunaView({
                 <AboutOutlineIcon />
               </div>
               <div className="text-area">
-                <h5>Halaman Pengguna</h5>
-                <p>Manajemen Data Pengguna</p>
+                <h5>Halaman Pengguna Aplikasi</h5>
+                <p>Manajemen Data Pengguna Aplikasi</p>
               </div>
             </div>
             <div className="main-body">

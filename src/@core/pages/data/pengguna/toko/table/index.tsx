@@ -4,7 +4,7 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import { Eye, FileDownload02, SearchSm } from '@untitled-ui/icons-react';
+import { Eye, FileDownload02, Plus, SearchSm } from '@untitled-ui/icons-react';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
@@ -13,8 +13,8 @@ import * as XLSX from 'xlsx';
 import Link from 'next/link';
 moment.locale('id');
 
-const DataPenggunaPageTable = () => {
-  const url = `/users/`;
+const DataPenggunaTokoPageTable = () => {
+  const url = `/users/admin`;
   const [dataTable, setDataTable] = useState<Array<IPenggunaAplikasi>>([]);
   const [total, setTotal] = useState(0);
   // const [selectedId, setSelectedId] = useState(0);
@@ -26,6 +26,7 @@ const DataPenggunaPageTable = () => {
     name__icontains: '',
     email__icontains: '',
     username__icontains: '',
+    role__name__icontains: 'Toko',
   });
   // const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<IPenggunaAplikasi> = [
@@ -62,7 +63,10 @@ const DataPenggunaPageTable = () => {
       width: 100,
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
-          <Link className="btn-action" href={`/data/pengguna/${record.id}`}>
+          <Link
+            className="btn-action"
+            href={`/data/pengguna/toko/${record.id}`}
+          >
             <Eye />
           </Link>
         </div>
@@ -173,6 +177,13 @@ const DataPenggunaPageTable = () => {
             <FileDownload02 />
             Export Excel
           </button>
+          <Link
+            href={`/data/pengguna/toko/form`}
+            className="btn btn-outline-neutral"
+          >
+            <Plus />
+            Add data
+          </Link>
         </div>
       </div>
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
@@ -202,4 +213,4 @@ const DataPenggunaPageTable = () => {
   );
 };
 
-export default DataPenggunaPageTable;
+export default DataPenggunaTokoPageTable;

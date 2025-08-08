@@ -5,9 +5,10 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from '@/@core/my-icons';
-import DataPenggunaPageTable from '@/@core/pages/data/pengguna/table';
+import PenggunaTabPage from '@/@core/pages/data/components/tab-page';
+import DataPenggunaTokoPageTable from '@/@core/pages/data/pengguna/toko/table';
 
-export default function PenggunaPage() {
+export default function PenggunaTokoPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +21,10 @@ export default function PenggunaPage() {
               <FolderIcon /> Home
             </li>
             <li>
-              <FolderOpenIcon /> Pengguna
+              <FolderIcon /> Pengguna
+            </li>
+            <li>
+              <FolderOpenIcon /> Toko
             </li>
           </ul>
         </div>
@@ -33,12 +37,13 @@ export default function PenggunaPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Pengguna</h5>
-            <p>Manajemen Data Pengguna</p>
+            <p>Manajemen Data Pengguna Toko</p>
           </div>
         </div>
         <div className="main-body">
+          <PenggunaTabPage activeTab="toko" />
           <div className="flex flex-col gap-[10px] w-full h-full">
-            <DataPenggunaPageTable />
+            <DataPenggunaTokoPageTable />
           </div>
         </div>
       </div>

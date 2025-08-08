@@ -11,7 +11,7 @@ import ProfileTransaction from './transaction';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
-  const url = `/users/${paramsId}`;
+  const url = `/users/admin/${paramsId}`;
 
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<IPenggunaAplikasi>(
@@ -42,7 +42,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
     <>
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
-        <Link href={`/data/pengguna`} className="btn btn-outline-neutral">
+        <Link href={`/data/pengguna/toko`} className="btn btn-outline-neutral">
           <FlipBackward /> Kembali
         </Link>
       </div>
