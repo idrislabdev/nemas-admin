@@ -125,7 +125,14 @@ const MainSidebar = () => {
       <div className="info-area">
         <div className="list-menu">
           <ul>
-            <li className={`${pathname.split('/')[1] === 'pengaturan'}`}>
+            <li
+              className={`${
+                pathname.split('/')[1] === 'pengaturan' &&
+                pathname.split('/')[2] == 'admin'
+                  ? 'active'
+                  : ''
+              }`}
+            >
               <Link href={`/pengaturan/admin`}>
                 <Settings01 />
                 Pengaturan
