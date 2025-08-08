@@ -183,6 +183,7 @@ export interface IUser {
   password: string;
   name: string;
   id: string;
+  role_name: string;
 }
 
 export interface IPaymentMethod {

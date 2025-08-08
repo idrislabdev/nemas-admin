@@ -26,7 +26,15 @@ const LoginForm = () => {
         const data = response.data;
         if (data) {
           localStorage.setItem('token', data.access);
-          router.push('/');
+          axiosInstance.get(`/users/me/`).then((resp) => {
+            const profile = resp.data;
+            if (profile.role_name === 'Admin') {
+              router.push('/');
+            } else {
+              localStorage.clear();
+              setError('Email Atau Password Tidak Valid');
+            }
+          });
         }
       })
       .catch((error) => {
