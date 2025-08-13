@@ -283,3 +283,9 @@ export interface IHistoryTransaction {
   transfered_admin_weight: string;
   transfered_weight: string;
 }
+
+export interface IGoldStockMovement {
+  transaction_type?: string,
+  weight?: number,
+  note?: string
+}
