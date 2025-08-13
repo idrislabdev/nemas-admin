@@ -1,5 +1,5 @@
 "use client"
-import { IGold, IGoldStockMovement } from '@/@core/@types/interface';
+import { IGoldStockMovement } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react'
@@ -65,21 +65,20 @@ const GoldStockMovementPageTable = () => {
         }
         const resp = await axiosInstance.get(url, { params:param });
         const rows = resp.data.results;
-        const dataToExport = rows.map((item: IGold, index:number) => ({
+        const dataToExport = rows.map((item: IGoldStockMovement, index:number) => ({
             'No' : index+1,
-            'Gold Weight': item. gold_weight,
-            'Type': item.type,
-            'Brand': item.brand,
-            'Certificate Number': item.certificate_number,
+            'Berat': item.weight,
+            'Tipe': item.transaction_type,
+            'Catatan': item.note,
         }),);
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
         const colA = 5;
         const colB = 10;
-        const colC = rows.reduce((w:number, r:IGold) => Math.max(w, r.type ? r.type.length : 10), 10);
-        const colD = rows.reduce((w:number, r:IGold) => Math.max(w, r.brand ? r.brand.length : 10), 10);
+        const colC = rows.reduce((w:number, r:IGoldStockMovement) => Math.max(w, r.transaction_type ? r.transaction_type.length : 10), 10);
+        const colD = rows.reduce((w:number, r:IGoldStockMovement) => Math.max(w, r.note ? r.note.length : 10), 10);
 
-        worksheet["!cols"] = [ { wch: colA }, { wch: colB }, { wch: colC }, { wch: colD }, { wch: 20 }  ]; 
+        worksheet["!cols"] = [ { wch: colA }, { wch: colB }, { wch: colC }, { wch: colD }  ]; 
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'gold');
         // Save the workbook as an Excel file
