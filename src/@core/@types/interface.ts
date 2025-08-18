@@ -285,7 +285,9 @@ export interface IHistoryTransaction {
 }
 
 export interface IGoldStockMovement {
-  transaction_type?: string,
-  weight?: number,
-  note?: string
+  transaction_type?: string;
+  stock_before?: number;
+  stock_after?: number;
+  weight?: number;
+  note?: string;
 }

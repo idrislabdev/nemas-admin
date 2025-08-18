@@ -55,7 +55,7 @@ const MainSidebar = () => {
                   : ''
               }`}
             >
-              <Link href="/master/gold">
+              <Link href="/master/gold/stock-movement">
                 <Tag01 />
                 Data Emas
               </Link>
