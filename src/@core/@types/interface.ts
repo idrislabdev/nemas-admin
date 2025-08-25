@@ -291,3 +291,20 @@ export interface IGoldStockMovement {
   weight?: number;
   note?: string;
 }
+
+export interface IAdminFee {
+  id?: number;
+  name?: string;
+  fee_type?: string;
+  transaction_type?: string;
+  value?: number;
+  description?: string;
+}
+
+export interface IInvesmentReturn {
+  id?: number;
+  name?: string;
+  rate?: number;
+  duration_days?: number;
+  description?: string;
+}

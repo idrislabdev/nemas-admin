@@ -127,10 +127,7 @@ const MainSidebar = () => {
           <ul>
             <li
               className={`${
-                pathname.split('/')[1] === 'pengaturan' &&
-                pathname.split('/')[2] == 'admin'
-                  ? 'active'
-                  : ''
+                pathname.split('/')[1] === 'pengaturan' ? 'active' : ''
               }`}
             >
               <Link href={`/pengaturan/admin`}>
