@@ -1,8 +1,9 @@
-import { IPenggunaAplikasi, IUserAddress } from '@/@core/@types/interface';
+import { IPenggunaAplikasi, IUserAddress, IUserBank } from '@/@core/@types/interface';
 import { formatDecimal, formatterNumber } from '@/@core/utils/general';
 import { Edit05 } from '@untitled-ui/icons-react';
 import dynamic from 'next/dynamic';
 import React, { Dispatch, SetStateAction, useState } from 'react';
+import ModalBank from './modal-bank';
 
 const ModalAddress = dynamic(
   () => import('@/@core/components/modal/modal-address'),
@@ -13,11 +14,22 @@ const ModalAddress = dynamic(
 const PengggunaProfile = (props: { detail: IPenggunaAplikasi, setRefresData:Dispatch<SetStateAction<boolean>> }) => {
   const { detail, setRefresData } = props;
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalBankOpen, setIsModalBankOpen] = useState(false)
   const [userAddress, setUserAddress] = useState<IUserAddress>({} as IUserAddress)
+  const [userBank, setUserBank] = useState<IUserBank>({} as IUserBank)
 
   const showModalAddress = () => {
     setUserAddress(detail.address ? detail.address : {} as IUserAddress)
     setIsModalOpen(true)
+  }
+
+  const showModalBank = () => {
+    setUserBank({...userBank, 
+      bank_account_code: detail.props.bank_account_code, 
+      bank_account_holder_name: detail.props.bank_account_holder_name, 
+      bank_account_number: detail.props.bank_account_number
+    })
+    setIsModalBankOpen(true)
   }
 
   return (
@@ -144,10 +156,11 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi, setRefresData:Disp
             </div>
           </div>
           <div className="flex w-1/2 flex-col">
-            <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
+            <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
               <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                 Rekening Bank
               </h5>
+              <a className='cursor-pointer' onClick={() => showModalBank()}><span className='my-icon icon-sm'><Edit05/></span></a>
             </div>
             <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
               <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
@@ -432,6 +445,14 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi, setRefresData:Disp
       setIsModalOpen={setIsModalOpen}
       userAddress={userAddress}
       setUserAddress={setUserAddress}
+      userId={detail.id}
+      setRefresData={setRefresData}
+    />
+    <ModalBank 
+      isModalOpen={isModalBankOpen}
+      setIsModalOpen={setIsModalBankOpen}
+      userBank={userBank}
+      setUserBank={setUserBank}
       userId={detail.id}
       setRefresData={setRefresData}
     />
