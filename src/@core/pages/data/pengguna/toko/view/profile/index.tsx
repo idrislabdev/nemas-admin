@@ -1,10 +1,27 @@
-import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import { IPenggunaAplikasi, IUserAddress } from '@/@core/@types/interface';
 import { formatDecimal, formatterNumber } from '@/@core/utils/general';
-import React from 'react';
+import { Edit05 } from '@untitled-ui/icons-react';
+import dynamic from 'next/dynamic';
+import React, { Dispatch, SetStateAction, useState } from 'react';
 
-const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
-  const { detail } = props;
+const ModalAddress = dynamic(
+  () => import('@/@core/components/modal/modal-address'),
+  { ssr: false }
+);
+
+
+const PengggunaProfile = (props: { detail: IPenggunaAplikasi, setRefresData:Dispatch<SetStateAction<boolean>> }) => {
+  const { detail, setRefresData } = props;
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [userAddress, setUserAddress] = useState<IUserAddress>({} as IUserAddress)
+
+  const showModalAddress = () => {
+    setUserAddress(detail.address ? detail.address : {} as IUserAddress)
+    setIsModalOpen(true)
+  }
+
   return (
+    <>
     <div className="flex flex-col">
       <div className="flex">
         <div className="w-full flex border border-gray-200 rounded-tr-[6px] rounded-tl-[6px]">
@@ -165,10 +182,11 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
                   : '-'}
               </p>
             </div>
-            <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
+            <div className="flex justify-between items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
               <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                 Data Alamat
               </h5>
+              <a className='cursor-pointer' onClick={() => showModalAddress()}><span className='my-icon icon-sm'><Edit05/></span></a>
             </div>
             <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] h-[60px]">
               <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
@@ -409,6 +427,15 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
         </div>
       </div>
     </div>
+    <ModalAddress
+      isModalOpen={isModalOpen}
+      setIsModalOpen={setIsModalOpen}
+      userAddress={userAddress}
+      setUserAddress={setUserAddress}
+      userId={detail.id}
+      setRefresData={setRefresData}
+    />
+    </>
   );
 };
 

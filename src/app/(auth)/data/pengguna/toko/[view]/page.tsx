@@ -5,7 +5,7 @@ import {
   FolderIcon,
   FolderOpenIcon,
 } from '@/@core/my-icons';
-import DataPenggunaPageView from '@/@core/pages/data/pengguna/aplikasi/view';
+import DataPenggunaPageView from '@/@core/pages/data/pengguna/toko/view';
 
 export default async function PenggunaView({
   params,

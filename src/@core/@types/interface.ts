@@ -308,3 +308,30 @@ export interface IInvesmentReturn {
   duration_days?: number;
   description?: string;
 }
+
+export interface IOpenStreetAddress {
+  road: string;
+  neighbourhood: string;
+  village: string;
+  city_district: string;
+  city: string;
+  state: string;
+  'ISO3166-2-lvl4': string;
+  region: string;
+  'ISO3166-2-lvl3': string;
+  postcode: string;
+  country: string;
+  country_code: string;
+}
+
+export interface IUserAddress {
+  address: string;
+  city: string;
+  district: string;
+  province: string;
+  subdistrict: string;
+  postal_code: string;
+  is_default: true;
+  longtitude: number;
+  latitude: number;
+}
