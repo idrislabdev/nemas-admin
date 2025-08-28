@@ -76,6 +76,14 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
                 : {detail.is_2fa_verified ? 'Aktif' : 'Tidak Aktif'}
               </p>
             </div>
+            <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+              <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                Status Akun
+              </label>
+              <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                : {detail.is_active ? 'Aktif' : 'Tidak Aktif'}
+              </p>
+            </div>
             <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
               <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                 Data Saldo / Wallet

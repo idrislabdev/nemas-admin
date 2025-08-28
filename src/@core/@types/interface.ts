@@ -215,10 +215,11 @@ export interface IPenggunaAplikasi {
   email: string;
   phone_number: string;
   name: string;
-  is_2fa_verified: true;
+  is_2fa_verified: boolean;
   income_source: string;
   investment_purpose: string;
   referal_code: string;
+  is_active: boolean;
   ktp: {
     nik: string;
     full_name: string;
