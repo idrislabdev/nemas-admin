@@ -336,3 +336,9 @@ export interface IUserAddress {
   longtitude: number;
   latitude: number;
 }
+
+export interface IUserBank {
+  bank_account_code: string,
+  bank_account_number: string,
+  bank_account_holder_name: string
+}
