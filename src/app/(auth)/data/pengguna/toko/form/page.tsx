@@ -6,8 +6,8 @@ import {
   FolderOpenIcon,
   UndoOutlineIcon,
 } from '@/@core/my-icons';
+import PenggunaTabPage from '@/@core/pages/data/components/tab-page';
 import PenggunaTokoPageForm from '@/@core/pages/data/pengguna/toko/form';
-import PengaturanTabpage from '@/@core/pages/payment/components/tab-page';
 import Link from 'next/link';
 
 export default function AddressCityForm() {
@@ -45,7 +45,7 @@ export default function AddressCityForm() {
               </div>
             </div>
             <div className="main-body">
-              <PengaturanTabpage activeTab="admin" />
+              <PenggunaTabPage activeTab="toko" />
               <div className="flex flex-col gap-[10px]">
                 <div className="flex justify-end">
                   <Link

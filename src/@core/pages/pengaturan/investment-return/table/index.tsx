@@ -34,6 +34,7 @@ const InvestmentReturnPageTable = () => {
     offset: 0,
     limit: 10,
     name__icontains: '',
+    description__icontains: '',
   });
   // const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<IInvesmentReturn> = [
@@ -112,6 +113,7 @@ const InvestmentReturnPageTable = () => {
       offset: 0,
       limit: 10,
       name__icontains: value,
+      description__icontains: value,
     });
   };
 

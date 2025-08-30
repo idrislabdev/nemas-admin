@@ -2,12 +2,12 @@
 
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import { FlipBackward } from '@untitled-ui/icons-react';
 import { Segmented, notification } from 'antd';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import PengggunaProfile from './profile';
 import ProfileTransaction from './transaction';
+import { UndoOutlineIcon } from '@/@core/my-icons';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
@@ -42,16 +42,16 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   }, [fetchData]);
 
   useEffect(() => {
-      if (refreshData) {
-        fetchData();
-        setRefresData(false)
-        api.info({
-          message: 'Data Profil',
-          description: 'Data Profile Telah Diupdate',
-          placement:'bottomRight',
+    if (refreshData) {
+      fetchData();
+      setRefresData(false);
+      api.info({
+        message: 'Data Profil',
+        description: 'Data Profile Telah Diupdate',
+        placement: 'bottomRight',
       });
-      }
-  }, [refreshData])
+    }
+  }, [refreshData]);
 
   return (
     <>
@@ -59,7 +59,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <Link href={`/data/pengguna/toko`} className="btn btn-outline-neutral">
-          <FlipBackward /> Kembali
+          <UndoOutlineIcon /> Kembali
         </Link>
       </div>
       <Segmented
@@ -70,7 +70,9 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
       />
       {!loading && (
         <>
-          {tab == 'profile' && <PengggunaProfile detail={detail} setRefresData={setRefresData} />}
+          {tab == 'profile' && (
+            <PengggunaProfile detail={detail} setRefresData={setRefresData} />
+          )}
           {tab == 'transaction' && <ProfileTransaction id={detail.id} />}
         </>
       )}

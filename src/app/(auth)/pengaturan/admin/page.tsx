@@ -6,7 +6,7 @@ import {
   FolderOpenIcon,
 } from '@/@core/my-icons';
 import AdminPageTable from '@/@core/pages/pengaturan/admin/table';
-import PengaturanTabpage from '@/@core/pages/payment/components/tab-page';
+import PengaturanTabpage from '@/@core/pages/pengaturan/components/tab-page';
 
 export default function PenggunaPage() {
   return (

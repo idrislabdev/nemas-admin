@@ -9,7 +9,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
-import { FlipBackward } from '@untitled-ui/icons-react';
+import { UndoOutlineIcon } from '@/@core/my-icons';
 const GoldStockMovementPageForm = () => {
   const url = `/gold-transaction/gold-stock/movement`;
   const [weight, setWeight] = useState('0');
@@ -67,7 +67,7 @@ const GoldStockMovementPageForm = () => {
             href={`/master/gold/stock-movement`}
             className="btn btn-outline-neutral"
           >
-            <FlipBackward /> Kembali
+            <UndoOutlineIcon /> Kembali
           </Link>
         </div>
         <div className="form-area">

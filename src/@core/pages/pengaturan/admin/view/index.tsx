@@ -2,12 +2,12 @@
 
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import { FlipBackward } from '@untitled-ui/icons-react';
 import { Segmented } from 'antd';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import PengggunaProfile from './profile';
 import ProfileTransaction from './transaction';
+import { UndoOutlineIcon } from '@/@core/my-icons';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
@@ -43,7 +43,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <Link href={`/data/pengguna`} className="btn btn-outline-neutral">
-          <FlipBackward /> Kembali
+          <UndoOutlineIcon /> Kembali
         </Link>
       </div>
       <Segmented

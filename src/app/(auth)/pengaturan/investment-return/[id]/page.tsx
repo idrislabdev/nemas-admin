@@ -6,7 +6,7 @@ import {
   FolderOpenIcon,
   UndoOutlineIcon,
 } from '@/@core/my-icons';
-import PengaturanTabpage from '@/@core/pages/payment/components/tab-page';
+import PengaturanTabpage from '@/@core/pages/pengaturan/components/tab-page';
 import InvestmentReturnPageForm from '@/@core/pages/pengaturan/investment-return/form';
 import Link from 'next/link';
 

@@ -32,7 +32,7 @@ const InformationCustomerServicePageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
+    nformation_name__icontains: '',
   });
   const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<ICustomerService> = [
@@ -90,7 +90,7 @@ const InformationCustomerServicePageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
+      nformation_name__icontains: value,
     });
   };
 
@@ -108,7 +108,7 @@ const InformationCustomerServicePageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: '',
+      nformation_name__icontains: '',
     });
     api.info({
       message: 'Data Pelayanan Pelanggan',
@@ -123,7 +123,7 @@ const InformationCustomerServicePageTable = () => {
       format: 'json',
       offset: 0,
       limit: 50,
-      type__icontains: '',
+      nformation_name__icontains: '',
     };
     const resp = await axiosInstance.get(url, { params: param });
     const rows = resp.data.results;
