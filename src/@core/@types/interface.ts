@@ -247,12 +247,19 @@ export interface IPenggunaAplikasi {
     bank_account_code: string;
     bank_account_number: string;
     bank_account_holder_name: string;
+    bank_name: string;
     level: string;
     level_id: number;
     address: string;
     address_post_code: string;
     create_time: string;
     create_user: string;
+    gold_stock: {
+      weight: number;
+    };
+    wallet: {
+      balance: number;
+    };
   };
   address: {
     id: number;
@@ -338,7 +345,7 @@ export interface IUserAddress {
 }
 
 export interface IUserBank {
-  bank_account_code: string,
-  bank_account_number: string,
-  bank_account_holder_name: string
+  bank_account_code: string;
+  bank_account_number: string;
+  bank_account_holder_name: string;
 }

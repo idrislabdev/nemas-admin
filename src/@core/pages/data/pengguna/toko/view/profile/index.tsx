@@ -146,8 +146,8 @@ const PengggunaProfile = (props: {
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
-                  {detail.props && detail.props.wallet_amt
-                    ? `Rp${formatterNumber(detail.props.wallet_amt)}`
+                  {detail.props && detail.props.wallet.balance
+                    ? `Rp${formatterNumber(detail.props.wallet.balance)}`
                     : 'Rp0'}
                 </p>
               </div>
@@ -157,8 +157,8 @@ const PengggunaProfile = (props: {
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
-                  {detail.props && detail.props.gold_wgt
-                    ? `${formatDecimal(detail.props.gold_wgt)} gr`
+                  {detail.props && detail.props.gold_stock.weight
+                    ? `${formatDecimal(detail.props.gold_stock.weight)} gr`
                     : '0 gr'}
                 </p>
               </div>
@@ -202,8 +202,8 @@ const PengggunaProfile = (props: {
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
-                  {detail.props && detail.props.bank_account_code
-                    ? detail.props.bank_account_code
+                  {detail.props && detail.props.bank_name
+                    ? detail.props.bank_name
                     : '-'}
                 </p>
               </div>
