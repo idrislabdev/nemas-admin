@@ -35,6 +35,8 @@ const DeliveryPartnerPageTable = () => {
     offset: 0,
     limit: 10,
     delivery_partner_code__icontains: '',
+    delivery_partner_description__icontains: '',
+    delivery_partner_name__icontains: '',
   });
   const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<IDeliveryPartner> = [
@@ -118,6 +120,8 @@ const DeliveryPartnerPageTable = () => {
       offset: 0,
       limit: 10,
       delivery_partner_code__icontains: value,
+      delivery_partner_description__icontains: value,
+      delivery_partner_name__icontains: value,
     });
   };
 
@@ -136,6 +140,8 @@ const DeliveryPartnerPageTable = () => {
       offset: 0,
       limit: 10,
       delivery_partner_code__icontains: '',
+      delivery_partner_description__icontains: '',
+      delivery_partner_name__icontains: '',
     });
     api.info({
       message: 'Data Delivery Partner',

@@ -33,8 +33,7 @@ const GoldPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
-    brand__icontains: '',
+    search: '',
   });
   const [api, contextHolder] = notification.useNotification();
   const columns: ColumnsType<IGold> = [
@@ -70,7 +69,7 @@ const GoldPageTable = () => {
         )} gr`,
     },
     { title: 'Tipe Emas', dataIndex: 'type', key: 'type', width: 120 },
-    { title: 'Merek', dataIndex: 'brand', key: 'brand' },
+    { title: 'Merek', dataIndex: 'brand', key: 'brand', width: 120 },
     {
       title: 'Harga',
       dataIndex: 'certificate_number',
@@ -118,8 +117,7 @@ const GoldPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
-      brand__icontains: value,
+      search: value,
     });
   };
 
@@ -137,7 +135,7 @@ const GoldPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: '',
+      search: '',
     });
     api.info({
       message: 'Data Gold',
@@ -152,8 +150,7 @@ const GoldPageTable = () => {
       format: 'json',
       offset: 0,
       limit: 50,
-      type__icontains: '',
-      brand__icontains: '',
+      search: '',
     };
     const resp = await axiosInstance.get(url, { params: param });
     const rows = resp.data.results;
