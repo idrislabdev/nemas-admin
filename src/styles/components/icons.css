@@ -3,19 +3,29 @@
 @tailwind utilities;
 
 span {
-    &.my-icon {
-        svg {
-            @apply w-[24px] h-[24px];
-        }
-        &.icon-sm {
-            svg {
-                @apply w-[18px] h-[18px];
-            }
-        }
-        &.icon-xl {
-            svg {
-                @apply w-[48px] h-[48px];
-            }
-        }
+  &.my-icon {
+    svg {
+      @apply w-[24px] h-[24px];
     }
+    &.icon-sm {
+      svg {
+        @apply w-[18px] h-[18px];
+      }
+    }
+    &.icon-xl {
+      svg {
+        @apply w-[48px] h-[48px];
+      }
+    }
+    &.icon-2xl {
+      svg {
+        @apply w-[96px] h-[96px];
+      }
+    }
+    &.icon-72px {
+      svg {
+        @apply w-[72px] h-[72px];
+      }
+    }
+  }
 }

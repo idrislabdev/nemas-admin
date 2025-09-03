@@ -377,3 +377,16 @@ export interface IKTP {
   blood_type: 'str';
   reference_id: string;
 }
+
+export interface IGoldSTock {
+  physical_stock: {
+    total_in: number;
+    total_out: number;
+    total_stock: number;
+  };
+  digital_stock: {
+    total_in: number;
+    total_out: number;
+    total_stock: number;
+  };
+}

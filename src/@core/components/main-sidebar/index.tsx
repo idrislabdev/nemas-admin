@@ -6,6 +6,7 @@ import {
   CreditCard01,
   CreditCard02,
   LogOut03,
+  Printer,
   Settings01,
   Tag01,
   Truck01,
@@ -117,6 +118,16 @@ const MainSidebar = () => {
               <Link href="/data/pengguna/aplikasi">
                 <CreditCard02 />
                 Pengguna
+              </Link>
+            </li>
+            <li
+              className={`${
+                pathname.split('/')[1] === 'laporan' ? 'active' : ''
+              }`}
+            >
+              <Link href="/laporan/stock">
+                <Printer />
+                Laporan
               </Link>
             </li>
           </ul>
