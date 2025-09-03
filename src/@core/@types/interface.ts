@@ -359,3 +359,21 @@ export interface IUserBank {
   bank_account_number: string;
   bank_account_holder_name: string;
 }
+
+export interface IKTP {
+  nik: string;
+  full_name: string;
+  date_of_birth: string;
+  place_of_birth: string;
+  address: string;
+  district: string;
+  administrative_village: string;
+  gender: string;
+  religion: string;
+  marital_status: string;
+  occupation: string;
+  nationality: string;
+  city: string;
+  blood_type: 'str';
+  reference_id: string;
+}
