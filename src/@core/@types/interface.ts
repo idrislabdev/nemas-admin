@@ -273,6 +273,16 @@ export interface IPenggunaAplikasi {
     longtitude: number;
     latitude: number;
   };
+  seller_props: {
+    nib: string;
+    npwp: string;
+    kartu_keluarga: string;
+    siup: string;
+    nama_toko: string;
+    alamat_toko: string;
+    no_telp_toko: string;
+    file_toko: string;
+  };
 }
 
 export interface IHistoryTransaction {

@@ -4,7 +4,7 @@ import {
   IUserBank,
 } from '@/@core/@types/interface';
 import { formatDecimal, formatterNumber } from '@/@core/utils/general';
-import { Edit05 } from '@untitled-ui/icons-react';
+import { Download01, Edit05 } from '@untitled-ui/icons-react';
 import dynamic from 'next/dynamic';
 import React, { Dispatch, SetStateAction, useState } from 'react';
 import ModalBank from './modal-bank';
@@ -135,6 +135,100 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
+              <div className="flex items-center border-b border-r rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+                  Data Toko
+                </h5>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Nama Toko
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {(detail.seller_props && detail.seller_props.nama_toko) ??
+                    '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Alamat Toko
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {(detail.seller_props && detail.seller_props.alamat_toko) ??
+                    '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  No. Telepon Toko
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {(detail.seller_props && detail.seller_props.no_telp_toko) ??
+                    '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  SIUP
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  : {(detail.seller_props && detail.seller_props.siup) ?? '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  NIB
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  : {(detail.seller_props && detail.seller_props.nib) ?? '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  NPWP
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  : {(detail.seller_props && detail.seller_props.npwp) ?? '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Kartu Keluarga
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {(detail.seller_props &&
+                    detail.seller_props.kartu_keluarga) ??
+                    '-'}
+                </p>
+              </div>
+              <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  File Pendukung
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {detail.seller_props && detail.seller_props.file_toko ? (
+                    <a
+                      href={detail.seller_props.file_toko}
+                      className="text-blue-600 flex items-center gap-[4px]"
+                      target="_blank"
+                    >
+                      <span className="my-icon icon-sm">
+                        <Download01 />
+                      </span>
+                      Download
+                    </a>
+                  ) : (
+                    '-'
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex w-1/2 flex-col">
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
                 <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                   Data Saldo / Wallet
@@ -173,7 +267,7 @@ const PengggunaProfile = (props: {
                     : '0 gr'}
                 </p>
               </div>
-              <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+              <div className="flex items-center border-r border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Berat Emas yg Digadaikan
                 </label>
@@ -184,8 +278,6 @@ const PengggunaProfile = (props: {
                     : '0 gr'}
                 </p>
               </div>
-            </div>
-            <div className="flex w-1/2 flex-col">
               <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
                 <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                   Rekening Bank
@@ -242,7 +334,7 @@ const PengggunaProfile = (props: {
                   </span>
                 </a>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] h-[60px]">
+              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Alamat
                 </label>
