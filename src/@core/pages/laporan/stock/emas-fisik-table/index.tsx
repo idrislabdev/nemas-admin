@@ -111,18 +111,31 @@ const StockEmasFisikTable = () => {
     });
   };
 
-  const fetchAllData = async (url: string, param: any) => {
+  const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
-    let nextUrl: string | null = url;
-    let params = { ...param, limit: 10, offset: 0 }; // default page size
+    const limit = 100;
 
-    while (nextUrl) {
-      const resp: any = await axiosInstance.get(nextUrl, { params });
-      const data: any = resp.data;
+    // 🔹 ambil request pertama untuk tahu count
+    const firstResp = await axiosInstance.get(url, {
+      params: { ...params, limit, offset: 0 },
+    });
 
-      allRows = allRows.concat(data.results);
-      nextUrl = data.next; // kalau null, loop selesai
-      params = {}; // penting: setelah page pertama, `next` sudah lengkap dengan query string
+    allRows = allRows.concat(firstResp.data.results);
+    const totalCount = firstResp.data.count;
+
+    // 🔹 hitung total page
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // 🔹 loop page berikutnya (mulai dari 1 karena page 0 sudah diambil)
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, limit, offset },
+      });
+      allRows = allRows.concat(resp.data.results);
+
+      // optional: delay supaya aman dari throttle
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     return allRows;
