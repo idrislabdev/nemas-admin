@@ -4,6 +4,8 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { Certificate02, CoinsStacked02 } from '@untitled-ui/icons-react';
 import React, { useCallback, useEffect, useState } from 'react';
+import StockEmasFisikTable from './emas-fisik-table';
+import StockEmasDigitalTable from './emas-digital-table';
 
 const LaporanStockView = () => {
   const [dataStock, setDataStock] = useState<IGoldSTock>({} as IGoldSTock);
@@ -109,6 +111,8 @@ const LaporanStockView = () => {
           </div>
         </div>
       </div>
+      {tabActive === 'physic' && <StockEmasFisikTable />}
+      {tabActive === 'digital' && <StockEmasDigitalTable />}
     </div>
   );
 };

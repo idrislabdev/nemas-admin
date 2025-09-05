@@ -390,3 +390,31 @@ export interface IGoldSTock {
     total_stock: number;
   };
 }
+
+export interface IReportGoldPhysic {
+  id: string;
+  in_out_number: string;
+  movement_type: string;
+  weight: number;
+  stock_before: number;
+  stock_after: number;
+  note: string;
+  weight_debet: string;
+  weight_credit: string;
+  date: string;
+  user_id: string;
+  user_name: string;
+}
+
+export interface IReportGoldDigital {
+  id: string;
+  transaction_number: string;
+  transaction_type: string;
+  amount_type: string;
+  weight: string;
+  weight_debet: string;
+  weight_credit: string;
+  date: string;
+  user_id: string;
+  user_name: 'reza';
+}
