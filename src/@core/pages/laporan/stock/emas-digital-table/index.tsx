@@ -112,6 +112,23 @@ const StockEmasDigitalTable = () => {
     });
   };
 
+  const fetchAllData = async (url: string, param: any) => {
+    let allRows: any[] = [];
+    let nextUrl: string | null = url;
+    let params = { ...param, limit: 10, offset: 0 }; // default page size
+
+    while (nextUrl) {
+      const resp: any = await axiosInstance.get(nextUrl, { params });
+      const data: any = resp.data;
+
+      allRows = allRows.concat(data.results);
+      nextUrl = data.next; // kalau null, loop selesai
+      params = {}; // penting: setelah page pertama, `next` sudah lengkap dengan query string
+    }
+
+    return allRows;
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -119,13 +136,12 @@ const StockEmasDigitalTable = () => {
       const param = {
         format: 'json',
         offset: 0,
-        limit: 100,
+        limit: 10,
         start_date: params.start_date,
         end_date: params.end_date,
       };
 
-      const resp = await axiosInstance.get(url, { params: param });
-      const rows = resp.data.results;
+      const rows = await fetchAllData(url, param);
 
       const dataToExport = rows.map((item: IReportGoldDigital) => ({
         Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
