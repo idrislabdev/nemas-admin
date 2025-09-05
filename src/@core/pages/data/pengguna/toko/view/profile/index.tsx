@@ -66,13 +66,16 @@ const PengggunaProfile = (props: {
             .put(`users/admin/${detail.id}/verify_ktp`, dataKTP)
             .then(() => {
               setIsModalLoading(false);
+              setRefresData(true);
             })
             .catch(() => {
               setIsModalLoading(false);
+              setRefresData(true);
             });
         })
         .catch(() => {
           setIsModalLoading(false);
+          setRefresData(true);
         });
     }
   };
