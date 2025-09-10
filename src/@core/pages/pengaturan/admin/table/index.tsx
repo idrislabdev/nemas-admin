@@ -1,16 +1,23 @@
 'use client';
-import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import { IMenu, IPenggunaAplikasi } from '@/@core/@types/interface';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import { Eye, FileDownload02, Plus, SearchSm } from '@untitled-ui/icons-react';
+import {
+  Dotpoints01,
+  Eye,
+  FileDownload02,
+  Plus,
+  SearchSm,
+} from '@untitled-ui/icons-react';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
 import axiosInstance from '@/@core/utils/axios';
 import * as XLSX from 'xlsx';
 import Link from 'next/link';
+import ModalMenu from '../modal-menu';
 moment.locale('id');
 
 const AdminPageTable = () => {
@@ -19,6 +26,9 @@ const AdminPageTable = () => {
   const [total, setTotal] = useState(0);
   // const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [isModalMenu, setIsModalMenu] = useState(false);
+  const [dataMenu, setDataMenu] = useState<IMenu[]>([] as IMenu[]);
+  const [userId, setUserId] = useState('');
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -42,6 +52,20 @@ const AdminPageTable = () => {
     { title: 'Nama', dataIndex: 'name', key: 'name', width: 150 },
     { title: 'Username', dataIndex: 'user_name', key: 'username', width: 150 },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 150 },
+    {
+      title: 'Akses Menu',
+      key: 'menu',
+      fixed: 'right',
+      align: 'center',
+      width: 100,
+      render: (_, record) => (
+        <div className="flex items-center gap-[5px] justify-center">
+          <a className="btn-action" onClick={() => showMenu(record.id)}>
+            <Dotpoints01 />
+          </a>
+        </div>
+      ),
+    },
     {
       title: '',
       key: 'action',
@@ -120,6 +144,15 @@ const AdminPageTable = () => {
     setIsModalLoading(false);
   };
 
+  const showMenu = (id: string) => {
+    axiosInstance.get(`users/menu/${id}`).then((resp) => {
+      const data = resp.data;
+      setUserId(id);
+      setDataMenu(data);
+      setIsModalMenu(true);
+    });
+  };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -177,6 +210,12 @@ const AdminPageTable = () => {
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
+      />
+      <ModalMenu
+        isModalOpen={isModalMenu}
+        setIsModalOpen={setIsModalMenu}
+        dataMenu={dataMenu}
+        userId={userId}
       />
     </>
   );

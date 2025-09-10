@@ -418,3 +418,13 @@ export interface IReportGoldDigital {
   user_id: string;
   user_name: 'reza';
 }
+
+export interface IMenu {
+  id: number;
+  name: string;
+  slug_url: string;
+  description: string;
+  parent: string;
+  is_active: boolean;
+  accessible: boolean;
+}
