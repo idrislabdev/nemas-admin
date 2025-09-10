@@ -118,7 +118,7 @@ const GoldPriceConfigPageTable = () => {
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
           <Link
-            href={`/master/gold/price-config/${record.gpc_id}`}
+            href={`/pengaturan/price-config/${record.gpc_id}`}
             className="btn-action"
           >
             <Edit05 />
@@ -245,7 +245,7 @@ const GoldPriceConfigPageTable = () => {
             Export Excel
           </button>
           <Link
-            href={`/master/gold/price-config/form`}
+            href={`/pengaturan/price-config/form`}
             className="btn btn-outline-neutral"
           >
             <Plus />

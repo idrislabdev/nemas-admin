@@ -6,8 +6,8 @@ import {
   FolderOpenIcon,
   UndoOutlineIcon,
 } from '@/@core/my-icons';
-import GoldTabPage from '@/@core/pages/master/gold/components/tab-page';
-import GoldPriceConfigPageForm from '@/@core/pages/master/gold/gold-price-config/form';
+import PengaturanTabpage from '@/@core/pages/pengaturan/components/tab-page';
+import GoldPriceConfigPageForm from '@/@core/pages/pengaturan/gold-price-config/form';
 import Link from 'next/link';
 
 export default async function GoldCertPriceForm({
@@ -29,10 +29,10 @@ export default async function GoldCertPriceForm({
               <FolderIcon /> Home
             </li>
             <li>
-              <FolderIcon /> Gold
+              <FolderIcon /> Pengaturan
             </li>
             <li>
-              <FolderOpenIcon /> Price Config
+              <FolderOpenIcon /> Harga Emas
             </li>
           </ul>
         </div>
@@ -44,16 +44,16 @@ export default async function GoldCertPriceForm({
             <AboutOutlineIcon />
           </div>
           <div className="text-area">
-            <h5>Halaman Data Emas</h5>
-            <p>Manajemen Data Gold</p>
+            <h5>Halaman Pengaturan Harga</h5>
+            <p>Manajemen Pengatauran Harga Emas</p>
           </div>
         </div>
         <div className="main-body">
-          <GoldTabPage activeTab="price_config" />
+          <PengaturanTabpage activeTab="price_config" />
           <div className="flex flex-col gap-[10px]">
             <div className="flex justify-end">
               <Link
-                href={`/master/gold/price-config`}
+                href={`/pengaturan/price-config`}
                 className="btn btn-outline-neutral"
               >
                 <UndoOutlineIcon />
