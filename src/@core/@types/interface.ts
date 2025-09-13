@@ -184,6 +184,7 @@ export interface IUser {
   name: string;
   id: string;
   role_name: string;
+  menus: IMenu[];
 }
 
 export interface IPaymentMethod {
