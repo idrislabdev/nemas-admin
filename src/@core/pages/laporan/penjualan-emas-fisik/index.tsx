@@ -1,6 +1,8 @@
+'use client';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldInvestmentReport } from '@/@core/@types/interface';
+import { ISalesOrder } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -17,9 +19,9 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-const GoldInvestmentTable = () => {
-  const url = `/reports/gold-investment/list`;
-  const [dataTable, setDataTable] = useState<Array<IGoldInvestmentReport>>([]);
+const PenjualanEmasFisikPage = () => {
+  const url = `/reports/gold-sales-order/list`;
+  const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
@@ -30,112 +32,143 @@ const GoldInvestmentTable = () => {
     start_date: '',
     end_date: '',
   });
-  const columns: ColumnsType<IGoldInvestmentReport> = [
+  const columns: ColumnsType<ISalesOrder> = [
     {
-      title: 'Nomor Transaksi',
-      dataIndex: 'transaction_number',
-      key: 'transaction_number',
+      title: 'Nomor Order',
+      dataIndex: 'order_number',
+      key: 'order_number',
       width: 150,
     },
     {
-      title: 'Tanggal',
-      dataIndex: 'date_invested',
-      key: 'date_invested',
-      width: 150,
-      render: (_, record) =>
-        moment(record.date_invested).format('DD MMMM YYYY'),
-    },
-    {
-      title: 'Tanggal Return',
-      dataIndex: 'date_returned',
-      key: 'date_returned',
+      title: 'Tanggal Order',
+      dataIndex: 'order_timestamp',
+      key: 'order_timestamp',
       width: 150,
       render: (_, record) =>
-        moment(record.date_returned).format('DD MMMM YYYY'),
+        moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
     },
     {
-      title: 'Return Investasi',
-      dataIndex: 'investment_return',
-      key: 'investment_return',
-      width: 150,
-      render: (_, record) => record.investment_return?.name,
-    },
-    {
-      title: 'Nama Investor',
-      dataIndex: 'investor_name',
-      key: 'investor_name',
+      title: 'User',
+      dataIndex: 'user_name',
+      key: 'user_name',
       width: 150,
     },
     {
-      title: 'Nominal Investasi',
-      dataIndex: 'amount_invested',
-      key: 'amount_invested',
-      width: 170,
+      title: 'Berat Emas',
+      dataIndex: 'order_item_weight',
+      key: 'order_item_weight',
+      width: 150,
       render: (_, record) => (
         <>
-          {record.amount_invested !== null
+          {record.order_item_weight !== null
+            ? `${formatDecimal(
+                parseFloat(record.order_item_weight.toString())
+              )} Gram`
+            : '-'}
+        </>
+      ),
+    },
+    {
+      title: 'Nominal Pesanan',
+      dataIndex: 'order_amount',
+      key: 'order_amount',
+      width: 150,
+      render: (_, record) => (
+        <>
+          {record.order_amount !== null
+            ? `Rp${formatDecimal(parseFloat(record.order_amount.toString()))}`
+            : '-'}
+        </>
+      ),
+    },
+    {
+      title: 'Total Harga',
+      dataIndex: 'order_total_price',
+      key: 'order_total_price',
+      width: 150,
+      render: (_, record) => (
+        <>
+          {record.order_total_price !== null
             ? `Rp${formatDecimal(
-                parseFloat(record.amount_invested.toString())
+                parseFloat(record.order_total_price.toString())
               )}`
             : '-'}
         </>
       ),
     },
     {
-      title: 'Berat Investasi',
-      dataIndex: 'weight_invested',
-      key: 'weight_invested',
+      title: 'Biaya Admin',
+      dataIndex: 'order_admin_amount',
+      key: 'order_admin_amount',
       width: 150,
       render: (_, record) => (
         <>
-          {record.weight_invested !== null
-            ? `${formatDecimal(
-                parseFloat(record.weight_invested.toString())
-              )} Gram`
+          {record.order_admin_amount !== null
+            ? `Rp${formatDecimal(
+                parseFloat(record.order_admin_amount.toString())
+              )}`
             : '-'}
         </>
       ),
     },
     {
-      title: 'Nominal Return',
-      dataIndex: 'return_amount',
-      key: 'return_amount',
+      title: 'Biaya Asuransi',
+      dataIndex: 'order_tracking_insurance_total_round',
+      key: 'order_tracking_insurance_total_round',
       width: 150,
       render: (_, record) => (
         <>
-          {record.return_amount !== null
-            ? `Rp${formatDecimal(parseFloat(record.return_amount.toString()))}`
+          {record.order_tracking_insurance_total_round !== null
+            ? `Rp${formatDecimal(
+                parseFloat(
+                  record.order_tracking_insurance_total_round.toString()
+                )
+              )}`
             : '-'}
         </>
       ),
     },
     {
-      title: 'Berat Return',
-      dataIndex: 'return_weight',
-      key: 'return_weight',
+      title: 'Biaya Pengiriman',
+      dataIndex: 'order_tracking_total_amount_round',
+      key: 'order_tracking_total_amount_round',
       width: 150,
       render: (_, record) => (
         <>
-          {record.return_weight !== null
-            ? `${formatDecimal(
-                parseFloat(record.return_weight.toString())
-              )} Gram`
+          {record.order_tracking_total_amount_round !== null
+            ? `Rp${formatDecimal(
+                parseFloat(record.order_tracking_total_amount_round.toString())
+              )}`
             : '-'}
         </>
       ),
     },
     {
-      title: 'Status Return',
-      dataIndex: 'investment_return',
-      key: 'investment_return',
+      title: 'Grand Total',
+      dataIndex: 'order_grand_total_price',
+      key: 'order_grand_total_price',
+      width: 150,
+      render: (_, record) => (
+        <>
+          {record.order_grand_total_price !== null
+            ? `Rp${formatDecimal(
+                parseFloat(record.order_grand_total_price.toString())
+              )}`
+            : '-'}
+        </>
+      ),
+    },
+    {
+      title: 'Status Pesanan',
+      dataIndex: 'order_status',
+      key: 'order_status',
       width: 150,
       fixed: 'right',
-      render: (_, record) => (record.is_returned ? 'Sudah' : 'Belum'),
     },
     {
-      title: 'Status Transksi',
-      dataIndex: 'status',
-      key: 'status',
+      title: 'Status Pembayaran',
+      dataIndex: 'order_gold_payment_status',
+      key: 'order_gold_payment_status',
       width: 150,
       fixed: 'right',
     },
@@ -208,35 +241,50 @@ const GoldInvestmentTable = () => {
 
       const rows = await fetchAllData(url, param);
 
-      const dataToExport = rows.map((item: IGoldInvestmentReport) => ({
-        'Nomor Transaksi': item.transaction_number,
-        'Tanggal Transaksi': moment(item.date_invested).format('DD MMMM YYYY'),
-        'Tanggal Return': moment(item.date_returned).format('DD MMMM YYYY'),
-        'Return Investasi': item.investment_return.name,
-        'Nama Investor': item.investor_name,
-        'Nominal Investasi': `Rp${formatDecimal(
-          parseFloat(item.return_amount.toString())
-        )}`,
-        'Berat Investasi': `${formatDecimal(
-          parseFloat(item.weight_invested.toString())
+      const dataToExport = rows.map((item: ISalesOrder) => ({
+        'Nomor Order': item.order_number,
+        'Tanggal Order': moment(item.order_timestamp).format('DD MMMM YYYY'),
+        User: item.user_name,
+        'Berat Emas': `${formatDecimal(
+          parseFloat(item.order_item_weight.toString())
         )} Gram`,
-        'Nominal Return': `Rp${formatDecimal(
-          parseFloat(item.return_amount.toString())
+        'Nominal Pesanan': `Rp${formatDecimal(
+          parseFloat(item.order_amount.toString())
         )}`,
-        'Berat Return': `${formatDecimal(
-          parseFloat(item.return_weight.toString())
-        )} Gram`,
-        'Status Return': item.is_returned ? 'Sudah' : 'Belum',
-        'Status Transaksi': item.status,
+        'Total Harga': `Rp${formatDecimal(
+          parseFloat(item.order_total_price.toString())
+        )}`,
+        'Biaya Admin': `Rp${formatDecimal(
+          parseFloat(item.order_admin_amount.toString())
+        )}`,
+        'Biaya Asuransi': `Rp${formatDecimal(
+          parseFloat(
+            item.order_tracking_insurance_total_round
+              ? item.order_tracking_insurance_total_round.toString()
+              : '0'
+          )
+        )}`,
+        'Biaya Pengiriman': `Rp${formatDecimal(
+          parseFloat(
+            item.order_tracking_total_amount_round
+              ? item.order_tracking_total_amount_round.toString()
+              : '0'
+          )
+        )}`,
+        'Grand Total': `Rp${formatDecimal(
+          parseFloat(item.order_grand_total_price.toString())
+        )}`,
+        'Status Pesanan': item.order_status,
+        'Status Pembayaran': item.order_gold_payment_status,
       }));
 
       // 🔹 Buat workbook baru
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
+      const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
 
       // 🔹 Tambahkan Judul
-      worksheet.mergeCells('A1:K1');
-      worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS';
+      worksheet.mergeCells('A1:L1');
+      worksheet.getCell('A1').value = 'LAPORAN PENJUALAN EMAS FISIK';
       worksheet.getCell('A1').alignment = {
         horizontal: 'center',
         vertical: 'middle',
@@ -244,7 +292,7 @@ const GoldInvestmentTable = () => {
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:K2');
+        worksheet.mergeCells('A2:L2');
         worksheet.getCell('A2').value = `Periode: ${dayjs(
           params.start_date
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
@@ -306,7 +354,7 @@ const GoldInvestmentTable = () => {
 
       // 🔹 Simpan file
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_investasi_emas_${dayjs().format(
+      const fileName = `laporan_penjualan_emas_fisik${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
       saveAs(new Blob([buffer]), fileName);
@@ -360,4 +408,4 @@ const GoldInvestmentTable = () => {
   );
 };
 
-export default GoldInvestmentTable;
+export default PenjualanEmasFisikPage;

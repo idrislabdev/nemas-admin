@@ -457,3 +457,21 @@ export interface IMenu {
   is_active: boolean;
   accessible: boolean;
 }
+
+export interface ISalesOrder {
+  order_gold_id: string;
+  order_number: string;
+  order_timestamp: string;
+  order_item_weight: number;
+  order_amount: number;
+  order_total_price: number;
+  order_admin_amount: number;
+  order_tracking_insurance_total_round: number;
+  order_tracking_total_amount_round: number;
+  order_grand_total_price: number;
+  user_id: string;
+  user_name: string;
+  order_type: string;
+  order_gold_payment_status: string;
+  order_status: string;
+}
