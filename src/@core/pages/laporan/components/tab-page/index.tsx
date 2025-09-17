@@ -7,7 +7,10 @@ const LaporanTabPage = (props: { activeTab: string }) => {
     <div className="tab-default">
       <ul>
         <li className={`${activeTab === 'stock' ? 'active' : ''}`}>
-          <Link href={`/payment/bank`}>Data Stock</Link>
+          <Link href={`/laporan/stock`}>Data Stock</Link>
+        </li>
+        <li className={`${activeTab === 'gold_investment' ? 'active' : ''}`}>
+          <Link href={`/laporan/investasi-emas`}>Investasi Emas</Link>
         </li>
       </ul>
     </div>

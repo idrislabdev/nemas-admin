@@ -392,6 +392,12 @@ export interface IGoldSTock {
   };
 }
 
+export interface IInvestmentSummary {
+  total_return: number;
+  total_active: number;
+  total_investment: number;
+}
+
 export interface IReportGoldPhysic {
   id: string;
   in_out_number: string;
@@ -418,6 +424,28 @@ export interface IReportGoldDigital {
   date: string;
   user_id: string;
   user_name: 'reza';
+}
+
+export interface IGoldInvestmentReport {
+  transaction_id: string;
+  transaction_number: string;
+  amount_invested: number;
+  weight_invested: number;
+  date_invested: string;
+  investor_id: string;
+  investor_name: string;
+  investment_return: {
+    id: number;
+    name: string;
+    rate: number;
+    duration_days: number;
+    description: string;
+  };
+  return_weight: number;
+  return_amount: number;
+  date_returned: string;
+  is_returned: true;
+  status: string;
 }
 
 export interface IMenu {
