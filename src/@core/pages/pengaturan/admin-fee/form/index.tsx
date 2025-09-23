@@ -123,6 +123,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
                 <option value={`investment`}>Investment</option>
                 <option value={`redeem`}>Redeem</option>
                 <option value={`loan`}>Loan</option>
+                <option value={`loan_transfer`}>Loan Transfer</option>
               </select>
               {required.name && (
                 <span className="text-red-500 text-xs italic">
