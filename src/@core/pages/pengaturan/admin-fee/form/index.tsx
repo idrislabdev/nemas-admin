@@ -59,7 +59,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(`${url}/${paramsId}`);
     const { data } = resp;
     setFeeType(data.fee_type);
-    setTransactionType(data.delivery_partner_code);
+    setTransactionType(data.transaction_type);
     setName(data.name);
     setValue(data.value);
     setDescription(data.description);
@@ -96,7 +96,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
             </label>
             <div className="flex flex-col">
               <select
-                value={feeType ? 'active' : 'not_active'}
+                value={feeType}
                 onChange={(e) => setFeeType(e.target.value)}
                 className="base"
               >
@@ -116,7 +116,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
             </label>
             <div className="flex flex-col">
               <select
-                value={transactionType ? 'active' : 'not_active'}
+                value={transactionType}
                 onChange={(e) => setTransactionType(e.target.value)}
                 className="base"
               >
