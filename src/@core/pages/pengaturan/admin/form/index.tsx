@@ -24,6 +24,7 @@ const AdminPageForm = () => {
       name: name,
       user_name: userName,
       password: 'admin12345',
+      phone_number: '-',
       role: 3,
     };
 
