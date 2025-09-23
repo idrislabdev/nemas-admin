@@ -110,7 +110,7 @@ const AdminPageForm = () => {
           </div>
           <div className="input-area">
             <label>
-              Nomor Telepon <span className="text-xs text-gray-400">*</span>{' '}
+              No. Telepon <span className="text-xs text-gray-400">*</span>{' '}
             </label>
             <div className="flex flex-col">
               <input
