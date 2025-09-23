@@ -96,7 +96,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
             </label>
             <div className="flex flex-col">
               <select
-                defaultValue={feeType ? 'active' : 'not_active'}
+                value={feeType ? 'active' : 'not_active'}
                 onChange={(e) => setFeeType(e.target.value)}
                 className="base"
               >
@@ -116,7 +116,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
             </label>
             <div className="flex flex-col">
               <select
-                defaultValue={transactionType ? 'active' : 'not_active'}
+                value={transactionType ? 'active' : 'not_active'}
                 onChange={(e) => setTransactionType(e.target.value)}
                 className="base"
               >
