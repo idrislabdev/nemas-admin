@@ -475,3 +475,22 @@ export interface ISalesOrder {
   order_gold_payment_status: string;
   order_status: string;
 }
+
+export interface IGoldLoan {
+  id: string;
+  loan_ref_number: string;
+  loan_period_day: number;
+  loan_due_date: string; // bisa diganti Date kalau kamu mau parsing jadi Date object
+  loan_gold_wgt: number;
+  loan_gold_price_sell: number;
+  loan_amt: number;
+  loan_cost_admin: number;
+  loan_total_amt: number;
+  loan_cost_transfer: number;
+  loan_transfer_amount: number;
+  loan_status_name: string;
+  loan_note: string;
+  user_id: string;
+  user_name: string;
+  loan_date_time: string; // bisa diganti Date kalau mau otomatis pakai object Date
+}

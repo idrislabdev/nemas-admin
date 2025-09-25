@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
-import PenjualanEmasFisikPage from '@/@core/pages/laporan/penjualan-emas-fisik';
+import PinjamanEmasTablePage from '@/@core/pages/laporan/pinjaman-emas';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanSalesOrderPage() {
+export default function LaporanPinjamanEmasPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +20,7 @@ export default function LaporanSalesOrderPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Penjualan Emas Fisik
+              <FolderOpenIcon /> Pinjaman Emas
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanSalesOrderPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Penjualan Emas Fisik</p>
+            <p>Pinjaman Emas</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabPage activeTab="sales_order" />
+          <LaporanTabPage activeTab="gold_loan" />
           <div className="flex flex-col gap-[10px]">
-            <PenjualanEmasFisikPage />
+            <PinjamanEmasTablePage />
           </div>
         </div>
       </div>

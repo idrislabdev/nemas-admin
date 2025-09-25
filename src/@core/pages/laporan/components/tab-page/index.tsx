@@ -17,6 +17,9 @@ const LaporanTabPage = (props: { activeTab: string }) => {
             Penjualan Emas Fisik
           </Link>
         </li>
+        <li className={`${activeTab === 'gold_loan' ? 'active' : ''}`}>
+          <Link href={`/laporan/pinjaman-emas`}>Pinjaman Emas</Link>
+        </li>
       </ul>
     </div>
   );
