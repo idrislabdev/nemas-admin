@@ -20,6 +20,13 @@ const AdminPageForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [required, setRequired] = useState<IForm>({} as IForm);
   const [api, contextHolder] = notification.useNotification();
+
+  const onCancel = () => {
+    setEmail('');
+    setName('');
+    setUserName('');
+    setPhoneNumber('');
+  };
   const onSave = async () => {
     const body = {
       email: email,
@@ -127,7 +134,12 @@ const AdminPageForm = () => {
           </div>
         </div>
         <div className="form-button">
-          <button className="btn btn-outline-secondary">Cancel</button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
           <button className="btn btn-primary" onClick={() => onSave()}>
             Simpan
           </button>

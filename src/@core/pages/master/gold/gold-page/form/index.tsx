@@ -45,6 +45,14 @@ const GoldPageForm = (props: { paramsId: string }) => {
   //     timeout: 200000
   // })
 
+  const onCancel = () => {
+    if (paramsId == 'form') {
+      clearForm();
+    } else {
+      fetchData();
+    }
+  };
+
   const onSave = async () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const body = {
@@ -188,16 +196,14 @@ const GoldPageForm = (props: { paramsId: string }) => {
 
   return (
     <>
+      <div className="flex justify-end">
+        <Link href={`/master/gold`} className="btn btn-outline-neutral">
+          <UndoOutlineIcon />
+          Kembali
+        </Link>
+      </div>
       <div className="form-input">
         {contextHolder}
-        <div className="flex gap-[4px] items-center justify-end">
-          <button className="btn btn-primary" onClick={() => onSave()}>
-            Simpan
-          </button>
-          <Link href={`/master/gold`} className="btn btn-outline-neutral">
-            <UndoOutlineIcon /> Kembali
-          </Link>
-        </div>
         <div className="form-area">
           <div className="flex gap-[20px]">
             <div className="input-area w-1/5">
@@ -357,6 +363,17 @@ const GoldPageForm = (props: { paramsId: string }) => {
               ))}
             </select>
           </div>
+        </div>
+        <div className="form-button">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
+          <button className="btn btn-primary" onClick={() => onSave()}>
+            Simpan
+          </button>
         </div>
       </div>
       <hr />

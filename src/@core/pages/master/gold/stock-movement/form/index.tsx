@@ -21,6 +21,10 @@ const GoldStockMovementPageForm = () => {
   const [api, contextHolder] = notification.useNotification();
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  const onCancel = () => {
+    clearForm();
+  };
+
   const onSave = async () => {
     const body = {
       weight: parseFloat(weight.toString().replace('.', '').replace(',', '.')),
@@ -57,19 +61,17 @@ const GoldStockMovementPageForm = () => {
 
   return (
     <>
+      <div className="flex justify-end">
+        <Link
+          href={`/master/gold/stock-movement`}
+          className="btn btn-outline-neutral"
+        >
+          <UndoOutlineIcon />
+          Kembali
+        </Link>
+      </div>
       <div className="form-input">
         {contextHolder}
-        <div className="flex gap-[4px] items-center justify-end">
-          <button className="btn btn-primary" onClick={() => onSave()}>
-            Simpan
-          </button>
-          <Link
-            href={`/master/gold/stock-movement`}
-            className="btn btn-outline-neutral"
-          >
-            <UndoOutlineIcon /> Kembali
-          </Link>
-        </div>
         <div className="form-area">
           <div className="input-area">
             <label>
@@ -125,6 +127,17 @@ const GoldStockMovementPageForm = () => {
               className="base"
             />
           </div>
+        </div>
+        <div className="form-button">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
+          <button className="btn btn-primary" onClick={() => onSave()}>
+            Simpan
+          </button>
         </div>
       </div>
       <ModalLoading

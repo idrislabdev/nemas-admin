@@ -17,6 +17,18 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
   const [description, setDescription] = useState('');
   const [required, setRequired] = useState<IAdminFee>({} as IAdminFee);
   const [api, contextHolder] = notification.useNotification();
+
+  const onCancel = () => {
+    if (paramsId == 'form') {
+      setValue('0');
+      setName('');
+      setFeeType('');
+      setDescription('');
+      setTransactionType('');
+    } else {
+      fetchData();
+    }
+  };
   const onSave = async () => {
     const body = {
       name: name,
@@ -174,7 +186,12 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
           </div>
         </div>
         <div className="form-button">
-          <button className="btn btn-outline-secondary">Cancel</button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
           <button className="btn btn-primary" onClick={() => onSave()}>
             Simpan
           </button>

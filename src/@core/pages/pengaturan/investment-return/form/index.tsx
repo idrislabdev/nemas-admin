@@ -18,6 +18,18 @@ const InvestmentReturnPageForm = (props: { paramsId: string }) => {
     {} as IInvesmentReturn
   );
   const [api, contextHolder] = notification.useNotification();
+
+  const onCancel = () => {
+    if (paramsId == 'form') {
+      setName('');
+      setRate('0');
+      setDescription('');
+      setDurationDays('0');
+    } else {
+      fetchData();
+    }
+  };
+
   const onSave = async () => {
     const body = {
       name: name,
@@ -149,7 +161,12 @@ const InvestmentReturnPageForm = (props: { paramsId: string }) => {
           </div>
         </div>
         <div className="form-button">
-          <button className="btn btn-outline-secondary">Cancel</button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
           <button className="btn btn-primary" onClick={() => onSave()}>
             Simpan
           </button>

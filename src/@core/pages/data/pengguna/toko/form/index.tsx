@@ -36,6 +36,11 @@ const PenggunaTokoPageForm = () => {
   const [fileUrl, setFileUrl] = useState('');
   const [required, setRequired] = useState<IForm>({} as IForm);
   const [api, contextHolder] = notification.useNotification();
+
+  const onCancel = () => {
+    clearForm();
+  };
+
   const onSave = async () => {
     const formData = new FormData();
 
@@ -72,22 +77,7 @@ const PenggunaTokoPageForm = () => {
         description: desc,
         placement: 'bottomRight',
       });
-      setEmail('');
-      setName('');
-      setUserName('');
-      setReferralCode('');
-      setIncomeSource('');
-      setInvestmenPurpose('');
-      setNib('');
-      setNpwp('');
-      setNamaToko('');
-      setPhoneNumber('');
-      setKartuKeluarga('');
-      setSiup('');
-      setAlamatToko('');
-      setNoTelp('');
-      setFileData(null);
-      setFileUrl('');
+      clearForm();
     } catch (error) {
       const err = error as AxiosError;
       if (err.response && err.response.data) {
@@ -95,6 +85,25 @@ const PenggunaTokoPageForm = () => {
         setRequired(data);
       }
     }
+  };
+
+  const clearForm = () => {
+    setEmail('');
+    setName('');
+    setUserName('');
+    setReferralCode('');
+    setIncomeSource('');
+    setInvestmenPurpose('');
+    setNib('');
+    setNpwp('');
+    setNamaToko('');
+    setPhoneNumber('');
+    setKartuKeluarga('');
+    setSiup('');
+    setAlamatToko('');
+    setNoTelp('');
+    setFileData(null);
+    setFileUrl('');
   };
   return (
     <>
@@ -339,7 +348,12 @@ const PenggunaTokoPageForm = () => {
           />
         </div>
         <div className="form-button">
-          <button className="btn btn-outline-secondary">Cancel</button>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
+          >
+            Batal
+          </button>
           <button className="btn btn-primary" onClick={() => onSave()}>
             Simpan
           </button>

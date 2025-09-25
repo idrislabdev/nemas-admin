@@ -27,6 +27,14 @@ const DeliveryPartnerServicePageForm = (props: {
   const [api, contextHolder] = notification.useNotification();
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  const onCancel = () => {
+    if (paramsId == 'form') {
+      clearForm();
+    } else {
+      fetchData();
+    }
+  };
+
   const onSave = async () => {
     const body = {
       delivery_partner_service_name: deliveryPartnerName,
@@ -145,12 +153,12 @@ const DeliveryPartnerServicePageForm = (props: {
           </div>
         </div>
         <div className="form-button">
-          <Link
-            href={`/delivery/partner`}
+          <button
             className="btn btn-outline-secondary"
+            onClick={() => onCancel()}
           >
-            Cancel
-          </Link>
+            Batal
+          </button>
           <button className="btn btn-primary" onClick={() => onSave()}>
             Simpan
           </button>
