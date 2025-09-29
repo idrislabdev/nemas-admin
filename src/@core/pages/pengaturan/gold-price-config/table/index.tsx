@@ -42,8 +42,7 @@ const GoldPriceConfigPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    gpc_code__icontains: '',
-    gpc_description__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -163,8 +162,7 @@ const GoldPriceConfigPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      gpc_code__icontains: value,
-      gpc_description__icontains: value,
+      search: value,
     });
   };
 
@@ -185,8 +183,7 @@ const GoldPriceConfigPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      gpc_code__icontains: '',
-      gpc_description__icontains: '',
+      search: '',
     });
     api.info({
       message: 'Data Price Config',
@@ -206,8 +203,7 @@ const GoldPriceConfigPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        gpc_code__icontains: '',
-        gpc_description__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });

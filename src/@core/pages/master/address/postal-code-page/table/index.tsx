@@ -18,7 +18,7 @@ const AddressPostalCodePageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    post_code__icontains: '',
+    search: '',
   });
   const columns: ColumnsType<IAddressPostalCode> = [
     {
@@ -52,8 +52,8 @@ const AddressPostalCodePageTable = () => {
     },
     {
       title: 'Kode Pos',
-      dataIndex: 'subdistrict_name',
-      key: 'subdistrict_name',
+      dataIndex: 'post_code',
+      key: 'post_code',
     },
   ];
 
@@ -72,7 +72,7 @@ const AddressPostalCodePageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      post_code__icontains: value,
+      search: value,
     });
   };
 
@@ -82,7 +82,7 @@ const AddressPostalCodePageTable = () => {
       format: 'json',
       offset: 0,
       limit: 50,
-      post_code__icontains: '',
+      search: '',
     };
     const resp = await axiosInstance.get(url, { params: param });
     const rows = resp.data.results;

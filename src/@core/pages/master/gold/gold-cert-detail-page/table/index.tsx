@@ -43,7 +43,7 @@ const GoldCertDetailPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    cert_code__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -140,7 +140,7 @@ const GoldCertDetailPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      cert_code__icontains: value,
+      search: value,
     });
   };
 
@@ -184,7 +184,7 @@ const GoldCertDetailPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        cert_code__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });

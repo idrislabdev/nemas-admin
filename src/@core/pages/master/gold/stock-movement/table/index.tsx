@@ -30,6 +30,7 @@ const GoldStockMovementPageTable = () => {
     offset: 0,
     limit: 10,
     type__icontains: '',
+    search: '',
   });
 
   const columns: ColumnsType<IGoldStockMovement> = [
@@ -106,6 +107,7 @@ const GoldStockMovementPageTable = () => {
       offset: 0,
       limit: 10,
       type__icontains: value,
+      search: value,
     });
   };
 

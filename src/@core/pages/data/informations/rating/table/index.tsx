@@ -41,7 +41,7 @@ const InformationRatingPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    information_rate_name__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -127,7 +127,7 @@ const InformationRatingPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      information_rate_name__icontains: value,
+      search: value,
     });
   };
 
@@ -148,7 +148,7 @@ const InformationRatingPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      information_rate_name__icontains: '',
+      search: '',
     });
     api.info({
       message: 'Data Rating',

@@ -39,7 +39,7 @@ const InformationCustomerServicePageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    information_name__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -139,7 +139,7 @@ const InformationCustomerServicePageTable = () => {
     setParams({
       ...params,
       offset: 0,
-      information_name__icontains: value,
+      search: value,
     });
   };
 
@@ -159,7 +159,7 @@ const InformationCustomerServicePageTable = () => {
     setParams({
       ...params,
       offset: 0,
-      information_name__icontains: '',
+      search: '',
     });
     api.info({
       message: 'Data Pelayanan Pelanggan',
@@ -203,7 +203,7 @@ const InformationCustomerServicePageTable = () => {
         format: 'json',
         offset: 0,
         limit: 50,
-        information_name__icontains: '',
+        search: '',
       };
 
       const rows = await fetchAllData(url, exportParams);

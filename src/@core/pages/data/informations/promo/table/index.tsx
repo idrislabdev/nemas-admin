@@ -43,8 +43,7 @@ const InformationPromoPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    promo_code__icontains: '',
-    promo_name__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -209,8 +208,7 @@ const InformationPromoPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      promo_code__icontains: value,
-      promo_name__icontains: value,
+      search: value,
     });
   };
 
@@ -255,8 +253,7 @@ const InformationPromoPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        promo_code__icontains: '',
-        promo_name__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });

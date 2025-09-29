@@ -42,8 +42,7 @@ const GoldPromoPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    gold_promo_code__icontains: '',
-    gold_promo_description__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -186,8 +185,7 @@ const GoldPromoPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      gold_promo_code__icontains: value,
-      gold_promo_description__icontains: value,
+      search: value,
     });
   };
 
@@ -208,8 +206,7 @@ const GoldPromoPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      gold_promo_code__icontains: '',
-      gold_promo_description__icontains: '',
+      search: '',
     });
     api.info({
       message: 'Data Gold Promo',

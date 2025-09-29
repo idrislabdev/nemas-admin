@@ -44,8 +44,7 @@ const InformationEducationalPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    information_background__icontains: '',
-    information_name__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -183,8 +182,7 @@ const InformationEducationalPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      information_background__icontains: value,
-      information_name__icontains: value,
+      search: value,
     });
   };
 
@@ -206,8 +204,7 @@ const InformationEducationalPageTable = () => {
         ...params,
         offset: 0,
         limit: 10,
-        information_background__icontains: '',
-        information_name__icontains: '',
+        search: '',
       });
       api.success({
         message: 'Data Educational',
@@ -235,8 +232,7 @@ const InformationEducationalPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        information_background__icontains: '',
-        information_name__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
