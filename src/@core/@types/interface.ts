@@ -14,6 +14,7 @@ export interface IGold {
   certificate_id?: string;
   create_user_name?: string;
   upd_user_name?: string;
+  create_time?: string;
 }
 
 export interface IGoldPrice {
@@ -23,8 +24,10 @@ export interface IGoldPrice {
   gold_price_base?: number;
   gold_price_sell?: number;
   gold_price_buy?: number;
-  upd_user_name?: string;
   create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldCertPrice {
@@ -35,6 +38,8 @@ export interface IGoldCertPrice {
   create_user_name?: string;
   upd_user_name?: string;
   cert_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldCert {
@@ -45,6 +50,9 @@ export interface IGoldCert {
   cert_price?: number;
   create_time?: string;
   create_user?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  upd_time?: string;
 }
 
 export interface IGoldCertPriceDetail {
@@ -57,6 +65,8 @@ export interface IGoldCertPriceDetail {
   create_user?: string;
   create_user_name?: string;
   upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldPriceConfig {
@@ -72,29 +82,48 @@ export interface IGoldPriceConfig {
   create_user?: string;
   upd_user?: string;
   upd_time?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
 }
 
 export interface IAddressProvince {
   province_id: number;
   province_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IAddressCity {
   city_id: number;
   province_name: string;
   city_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IAddressDistrict {
   district_id: number;
   city_name: string;
   district_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IAddressSubDistrict {
   subdistrict_id: number;
   district_name: string;
   subdistrict_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IAddressPostalCode {
@@ -107,12 +136,20 @@ export interface IAddressPostalCode {
   province_id: number;
   province_name: string;
   post_code: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface ICustomerService {
   information_customer_service_id?: number;
   information_phone?: string;
   information_name?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IEducational {
@@ -121,6 +158,10 @@ export interface IEducational {
   information_notes?: string;
   information_url?: string;
   information_background?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IBank {
@@ -156,6 +197,10 @@ export interface IPromo {
   createuser?: string;
   updtime?: Date;
   upduser?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldPromo {
@@ -174,6 +219,10 @@ export interface IGoldPromo {
   gold_promo_active?: boolean;
   create_user?: string;
   upd_user?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IRating {
@@ -182,10 +231,18 @@ export interface IRating {
   rate?: number;
   message?: string;
   publish?: boolean;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IErrorResponse {
   response: object;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IUser {
@@ -197,6 +254,10 @@ export interface IUser {
   id: string;
   role_name: string;
   menus: IMenu[];
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IPaymentMethod {
@@ -204,10 +265,10 @@ export interface IPaymentMethod {
   payment_method_name?: string;
   payment_method_description?: string;
   is_active?: boolean;
-  upd_user_name?: string;
   create_user_name?: string;
   create_time?: string;
   upd_time?: string;
+  upd_user_name?: string;
 }
 
 export interface IDeliveryPartner {
@@ -215,6 +276,10 @@ export interface IDeliveryPartner {
   delivery_partner_code?: string;
   delivery_partner_description?: string;
   delivery_partner_id?: number;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IDeliveryPartnerService {
@@ -223,6 +288,10 @@ export interface IDeliveryPartnerService {
   delivery_partner_service_description?: string;
   delivery_partner?: number;
   delivery_partner_service_id?: number;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IPenggunaAplikasi {
@@ -300,6 +369,10 @@ export interface IPenggunaAplikasi {
     no_telp_toko: string;
     file_toko: string;
   };
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IHistoryTransaction {
@@ -317,6 +390,10 @@ export interface IHistoryTransaction {
   user_to: string;
   transfered_admin_weight: string;
   transfered_weight: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldStockMovement {
@@ -327,6 +404,10 @@ export interface IGoldStockMovement {
   note?: string;
   user_name?: string;
   movement_type?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IAdminFee {
@@ -336,6 +417,10 @@ export interface IAdminFee {
   transaction_type?: string;
   value?: number;
   description?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IInvesmentReturn {
@@ -344,6 +429,10 @@ export interface IInvesmentReturn {
   rate?: number;
   duration_days?: number;
   description?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IOpenStreetAddress {
@@ -359,6 +448,10 @@ export interface IOpenStreetAddress {
   postcode: string;
   country: string;
   country_code: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IUserAddress {
@@ -371,12 +464,20 @@ export interface IUserAddress {
   is_default: true;
   longtitude: number;
   latitude: number;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IUserBank {
   bank_account_code: string;
   bank_account_number: string;
   bank_account_holder_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IKTP {
@@ -395,6 +496,10 @@ export interface IKTP {
   city: string;
   blood_type: 'str';
   reference_id: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldSTock {
@@ -408,12 +513,20 @@ export interface IGoldSTock {
     total_out: number;
     total_stock: number;
   };
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IInvestmentSummary {
   total_return: number;
   total_active: number;
   total_investment: number;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IReportGoldPhysic {
@@ -429,6 +542,10 @@ export interface IReportGoldPhysic {
   date: string;
   user_id: string;
   user_name: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IReportGoldDigital {
@@ -442,6 +559,10 @@ export interface IReportGoldDigital {
   date: string;
   user_id: string;
   user_name: 'reza';
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldInvestmentReport {
@@ -464,6 +585,10 @@ export interface IGoldInvestmentReport {
   date_returned: string;
   is_returned: true;
   status: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IMenu {
@@ -474,6 +599,10 @@ export interface IMenu {
   parent: string;
   is_active: boolean;
   accessible: boolean;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface ISalesOrder {
@@ -492,6 +621,10 @@ export interface ISalesOrder {
   order_type: string;
   order_gold_payment_status: string;
   order_status: string;
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IGoldLoan {
@@ -511,4 +644,8 @@ export interface IGoldLoan {
   user_id: string;
   user_name: string;
   loan_date_time: string; // bisa diganti Date kalau mau otomatis pakai object Date
+  create_user_name?: string;
+  upd_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }

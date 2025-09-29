@@ -1,11 +1,19 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { IEducational } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import debounce from 'debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table } from 'antd';
+
+import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'debounce';
+import Link from 'next/link';
+import Image from 'next/image';
+
 import {
   Edit05,
   FileDownload02,
@@ -13,22 +21,25 @@ import {
   SearchSm,
   Trash01,
 } from '@untitled-ui/icons-react';
-import Link from 'next/link';
-import { notification } from 'antd';
-import * as XLSX from 'xlsx';
-import ModalLoading from '@/@core/components/modal/modal-loading';
+
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import Image from 'next/image';
+
 moment.locale('id');
 
-const InformationEducataionalPageTable = () => {
+const InformationEducationalPageTable = () => {
   const url = `/core/information/educational/`;
+
   const [dataTable, setDataTable] = useState<Array<IEducational>>([]);
   const [total, setTotal] = useState(0);
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -36,16 +47,20 @@ const InformationEducataionalPageTable = () => {
     information_background__icontains: '',
     information_name__icontains: '',
   });
+
   const [api, contextHolder] = notification.useNotification();
+
+  // ========================
+  // Table Columns
+  // ========================
   const columns: ColumnsType<IEducational> = [
     {
       title: 'No',
       width: 70,
-      dataIndex: 'educational_id',
-      key: 'educational_id',
-      fixed: 'left',
+      dataIndex: 'information_educational_id',
+      key: 'information_educational_id',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     {
       title: 'Pertanyaan',
@@ -57,35 +72,55 @@ const InformationEducataionalPageTable = () => {
       title: 'Jawaban',
       dataIndex: 'information_notes',
       key: 'information_notes',
-      width: 500,
+      width: 400,
     },
     {
       title: 'Link / URL',
       dataIndex: 'information_url',
       key: 'information_url',
-      render: (_, record) => (
-        <a href={record.information_url} target="_blank" className="block">
-          {record.information_url}
-        </a>
-      ),
+      width: 200,
+      render: (_, record) =>
+        record.information_url ? (
+          <a
+            href={record.information_url}
+            target="_blank"
+            className="block text-blue-500 underline"
+          >
+            {record.information_url}
+          </a>
+        ) : (
+          '-'
+        ),
     },
     {
       title: 'Gambar / Foto',
       dataIndex: 'information_background',
       key: 'information_background',
+      width: 160,
       render: (_, record) =>
         record.information_background ? (
           <Image
             src={record.information_background}
             alt="image background"
-            width={0}
-            height={0}
-            sizes="100%"
+            width={120}
+            height={60}
             className="w-[120px] h-[60px] object-cover border border-gray-200 rounded-md"
           />
         ) : (
-          ''
+          '-'
         ),
+    },
+    {
+      title: 'Create By',
+      dataIndex: 'create_user_name',
+      key: 'create_user_name',
+      width: 150,
+    },
+    {
+      title: 'Update By',
+      dataIndex: 'upd_user_name',
+      key: 'upd_user_name',
+      width: 150,
     },
     {
       title: '',
@@ -111,13 +146,28 @@ const InformationEducataionalPageTable = () => {
     },
   ];
 
+  // ========================
+  // Fetch Data
+  // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      setLoading(true);
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Error',
+        description: 'Gagal memuat data',
+        placement: 'bottomRight',
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
+  const onChangePage = (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
   };
 
@@ -131,6 +181,9 @@ const InformationEducataionalPageTable = () => {
     });
   };
 
+  // ========================
+  // Delete Data
+  // ========================
   const deleteData = (id: number | undefined) => {
     if (id) {
       setSelectedId(id);
@@ -139,69 +192,136 @@ const InformationEducataionalPageTable = () => {
   };
 
   const confirmDelete = async () => {
-    await axiosInstance.delete(`${url}${selectedId}/`);
-    setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      information_background__icontains: '',
-      information_name__icontains: '',
-    });
-    api.info({
-      message: 'Data Educational',
-      description: 'Data Educational Berhasil Dihapus',
-      placement: 'bottomRight',
-    });
+    try {
+      await axiosInstance.delete(`${url}${selectedId}/`);
+      setOpenModalConfirm(false);
+      setParams({
+        ...params,
+        offset: 0,
+        limit: 10,
+        information_background__icontains: '',
+        information_name__icontains: '',
+      });
+      api.success({
+        message: 'Data Educational',
+        description: 'Data Educational berhasil dihapus',
+        placement: 'bottomRight',
+      });
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Error',
+        description: 'Gagal menghapus data',
+        placement: 'bottomRight',
+      });
+    }
   };
 
+  // ========================
+  // Export Excel
+  // ========================
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      information_background__icontains: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IEducational, index: number) => ({
-      No: index + 1,
-      Pertanyaan: item.information_name,
-      Jawaban: item.information_notes,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = 10;
-    const colC = rows.reduce(
-      (w: number, r: IEducational) =>
-        Math.max(w, r.information_name ? r.information_name.length : 10),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IEducational) =>
-        Math.max(w, r.information_notes ? r.information_notes.length : 10),
-      10
-    );
+    try {
+      setIsModalLoading(true);
 
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: 20 },
-    ];
+      const exportParams = {
+        format: 'json',
+        offset: 0,
+        limit: 100,
+        information_background__icontains: '',
+        information_name__icontains: '',
+      };
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'faq');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_faq.xlsx`);
-    setIsModalLoading(false);
+      const resp = await axiosInstance.get(url, { params: exportParams });
+      const rows = resp.data.results;
+
+      const dataToExport = rows.map((item: IEducational, index: number) => ({
+        No: index + 1,
+        Pertanyaan: item.information_name,
+        Jawaban: item.information_notes,
+        URL: item.information_url,
+        'Create By': item.create_user_name,
+        'Update By': item.upd_user_name,
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data Educational');
+
+      worksheet.mergeCells('A1:F1');
+      worksheet.getCell('A1').value = 'DATA EDUCATIONAL';
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      worksheet.addRow([]);
+
+      const header = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const newRow = worksheet.addRow(rowValues);
+        newRow.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
+      });
+
+      worksheet.columns.forEach((col: any) => {
+        if (col != undefined) {
+          let maxLength = 0;
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
+          col.width = maxLength + 2;
+        }
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `data_educational_${dayjs().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+      saveAs(new Blob([buffer]), fileName);
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Error',
+        description: 'Export data gagal',
+        placement: 'bottomRight',
+      });
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   return (
     <>
       {contextHolder}
@@ -243,6 +363,7 @@ const InformationEducataionalPageTable = () => {
           pagination={false}
           className="table-basic"
           rowKey="information_educational_id"
+          loading={loading}
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
@@ -267,4 +388,4 @@ const InformationEducataionalPageTable = () => {
   );
 };
 
-export default InformationEducataionalPageTable;
+export default InformationEducationalPageTable;

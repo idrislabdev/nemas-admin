@@ -1,11 +1,19 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { IPromo } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import debounce from 'debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table } from 'antd';
+
+import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'debounce';
+import Link from 'next/link';
+// import Image from 'next/image';
+
 import {
   Edit05,
   FileDownload02,
@@ -13,22 +21,24 @@ import {
   SearchSm,
   Trash01,
 } from '@untitled-ui/icons-react';
-import Link from 'next/link';
-import { notification } from 'antd';
-import * as XLSX from 'xlsx';
-import ModalLoading from '@/@core/components/modal/modal-loading';
+
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import Image from 'next/image';
+
 moment.locale('id');
 
 const InformationPromoPageTable = () => {
   const url = `/core/information/promo/`;
+
   const [dataTable, setDataTable] = useState<Array<IPromo>>([]);
   const [total, setTotal] = useState(0);
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -36,16 +46,20 @@ const InformationPromoPageTable = () => {
     promo_code__icontains: '',
     promo_name__icontains: '',
   });
+
   const [api, contextHolder] = notification.useNotification();
+
+  // ========================
+  // Table Columns
+  // ========================
   const columns: ColumnsType<IPromo> = [
     {
       title: 'No',
       width: 70,
-      dataIndex: 'customer_service_id',
-      key: 'customer_service_id',
-      fixed: 'left',
+      dataIndex: 'promo_id',
+      key: 'promo_id',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     {
       title: 'Kode Promo',
@@ -92,25 +106,24 @@ const InformationPromoPageTable = () => {
       key: 'promo_tag',
       width: 150,
     },
-    {
-      title: 'Promo Background',
-      dataIndex: 'information_background',
-      key: 'information_background',
-      width: 200,
-      render: (_, record) =>
-        record.promo_url_background ? (
-          <Image
-            src={record.promo_url_background}
-            alt="image background"
-            width={0}
-            height={0}
-            sizes="100%"
-            className="w-[120px] h-[60px] object-cover border border-gray-200 rounded-md"
-          />
-        ) : (
-          ''
-        ),
-    },
+    // {
+    //   title: 'Promo Background',
+    //   dataIndex: 'promo_url_background',
+    //   key: 'promo_url_background',
+    //   width: 200,
+    //   render: (_, record) =>
+    //     record.promo_url_background ? (
+    //       <Image
+    //         src={record.promo_url_background}
+    //         alt="image background"
+    //         width={120}
+    //         height={60}
+    //         className="object-cover border border-gray-200 rounded-md"
+    //       />
+    //     ) : (
+    //       ''
+    //     ),
+    // },
     {
       title: 'Promo Diskon',
       dataIndex: 'promo_diskon',
@@ -130,15 +143,15 @@ const InformationPromoPageTable = () => {
       width: 200,
     },
     {
-      title: 'Dibuat oleh',
-      dataIndex: 'create_user',
-      key: 'create_user',
+      title: 'Create By',
+      dataIndex: 'create_user_name',
+      key: 'create_user_name',
       width: 150,
     },
     {
-      title: 'Diupdate oleh',
-      dataIndex: 'upd_user',
-      key: 'upd_user',
+      title: 'Update By',
+      dataIndex: 'upd_user_name',
+      key: 'upd_user_name',
       width: 150,
     },
     {
@@ -146,8 +159,8 @@ const InformationPromoPageTable = () => {
       key: 'action',
       fixed: 'right',
       width: 100,
-      render: (_, record, index) => (
-        <div className="flex items-center gap-[5px] justify-center" key={index}>
+      render: (_, record) => (
+        <div className="flex items-center gap-[5px] justify-center">
           <Link
             href={`/data/informations/promo/${record.promo_id}`}
             className="btn-action"
@@ -162,11 +175,23 @@ const InformationPromoPageTable = () => {
     },
   ];
 
+  // ========================
+  // Fetch Data
+  // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
-  }, [params, url]);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Fetch Failed',
+        description: 'Terjadi kesalahan saat mengambil data promo',
+        placement: 'bottomRight',
+      });
+    }
+  }, [params, url, api]);
 
   const onChangePage = async (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
@@ -182,6 +207,9 @@ const InformationPromoPageTable = () => {
     });
   };
 
+  // ========================
+  // Delete Data
+  // ========================
   const deleteData = (id: number | undefined) => {
     if (id) {
       setSelectedId(id);
@@ -190,102 +218,130 @@ const InformationPromoPageTable = () => {
   };
 
   const confirmDelete = async () => {
-    await axiosInstance.delete(`${url}${selectedId}/`);
-    setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      promo_code__icontains: '',
-      promo_name__icontains: '',
-    });
-    api.info({
-      message: 'Data Pelayanan Pelanggan',
-      description: 'Data Pelayanan Pelanggan Berhasil Dihapus',
-      placement: 'bottomRight',
-    });
+    try {
+      await axiosInstance.delete(`${url}${selectedId}/`);
+      setOpenModalConfirm(false);
+      setParams({ ...params, offset: 0 });
+      api.info({
+        message: 'Data Promo',
+        description: 'Data Promo Berhasil Dihapus',
+        placement: 'bottomRight',
+      });
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Delete Failed',
+        description: 'Terjadi kesalahan saat menghapus data promo',
+        placement: 'bottomRight',
+      });
+    }
   };
 
+  // ========================
+  // Export Excel
+  // ========================
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      promo_code__icontains: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IPromo, index: number) => ({
-      No: index + 1,
-      'Kode Promo': item.promo_code,
-      'Level User': item.promo_code,
-      'Nama Promo': item.promo_name,
-      'Url Promo': item.promo_url,
-      'Tanggal Mulai': moment(item.promo_start_date).format('DD-MM-YYYY'),
-      'Tanggal Berakhir': moment(item.promo_end_date).format('DD-MM-YYYY'),
-      'Tag Promo': item.promo_tag,
-      Diskon: item.promo_diskon,
-      'Promo Cashback': item.promo_cashback,
-      'Merchant Cashback': item.merchant_cashback,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = rows.reduce(
-      (w: number, r: IPromo) =>
-        Math.max(w, r.promo_code ? r.promo_code.length : 10),
-      10
-    );
-    const colC = rows.reduce(
-      (w: number, r: IPromo) =>
-        Math.max(w, r.leveling_user ? r.leveling_user.length : 10),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IPromo) =>
-        Math.max(w, r.promo_name ? r.promo_name.length : 10),
-      10
-    );
-    const colE = rows.reduce(
-      (w: number, r: IPromo) =>
-        Math.max(w, r.promo_url ? r.promo_url.length : 10),
-      10
-    );
-    const colF = 20;
-    const colG = 20;
-    const colH = rows.reduce(
-      (w: number, r: IPromo) =>
-        Math.max(w, r.promo_tag ? r.promo_tag.length : 10),
-      10
-    );
-    const colI = 20;
-    const colJ = 20;
+    try {
+      setIsModalLoading(true);
 
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: colD },
-      { wch: colE },
-      { wch: colF },
-      { wch: colG },
-      { wch: colH },
-      { wch: colI },
-      { wch: colJ },
-      { wch: 20 },
-    ];
+      const exportParams = {
+        format: 'json',
+        offset: 0,
+        limit: 100,
+        promo_code__icontains: '',
+        promo_name__icontains: '',
+      };
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'promo');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_promo.xlsx`);
-    setIsModalLoading(false);
+      const resp = await axiosInstance.get(url, { params: exportParams });
+      const rows = resp.data.results;
+
+      const dataToExport = rows.map((item: IPromo, index: number) => ({
+        No: index + 1,
+        'Kode Promo': item.promo_code,
+        'Level User': item.leveling_user,
+        'Nama Promo': item.promo_name,
+        'URL Promo': item.promo_url,
+        'Tanggal Mulai': moment(item.promo_start_date).format('DD-MM-YYYY'),
+        'Tanggal Berakhir': moment(item.promo_end_date).format('DD-MM-YYYY'),
+        'Tag Promo': item.promo_tag,
+        Diskon: item.promo_diskon,
+        'Promo Cashback': item.promo_cashback,
+        'Merchant Cashback': item.merchant_cashback,
+        'Create By': item.create_user_name,
+        'Update By': item.upd_user_name,
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data Promo');
+
+      worksheet.mergeCells('A1:L1');
+      worksheet.getCell('A1').value = 'DATA PROMO';
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      worksheet.addRow([]);
+
+      const header = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const newRow = worksheet.addRow(rowValues);
+        newRow.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
+      });
+
+      worksheet.columns.forEach((col: any) => {
+        if (col) {
+          let maxLength = 0;
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
+          col.width = maxLength + 2;
+        }
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `data_promo_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+      saveAs(new Blob([buffer]), fileName);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   return (
     <>
       {contextHolder}
@@ -327,6 +383,7 @@ const InformationPromoPageTable = () => {
           pagination={false}
           className="table-basic"
           rowKey="promo_id"
+          locale={{ emptyText: 'Tidak ada data promo ditemukan' }}
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
