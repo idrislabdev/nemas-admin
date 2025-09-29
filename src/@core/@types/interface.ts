@@ -134,6 +134,8 @@ export interface IBank {
   create_user?: string;
   upd_time?: string;
   upd_user?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
 }
 
 export interface IPromo {
@@ -202,6 +204,10 @@ export interface IPaymentMethod {
   payment_method_name?: string;
   payment_method_description?: string;
   is_active?: boolean;
+  upd_user_name?: string;
+  create_user_name?: string;
+  create_time?: string;
+  upd_time?: string;
 }
 
 export interface IDeliveryPartner {
