@@ -42,8 +42,8 @@ const StockEmasDigitalTable = () => {
     // },
     {
       title: 'Tipe',
-      dataIndex: 'amount_type',
-      key: 'amount_type',
+      dataIndex: 'transaction_type_name',
+      key: 'transaction_type_name',
     },
     {
       title: 'Update User',
@@ -158,6 +158,7 @@ const StockEmasDigitalTable = () => {
 
       const dataToExport = rows.map((item: IReportGoldDigital) => ({
         Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
+        Tipe: item.transaction_type_name,
         'Update User': item.user_name,
         'Update Time': dayjs(item.date).format('HH:mm'),
         Debit:

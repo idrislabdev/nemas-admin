@@ -553,6 +553,7 @@ export interface IReportGoldDigital {
   transaction_number: string;
   transaction_type: string;
   amount_type: string;
+  transaction_type_name: string;
   weight: string;
   weight_debet: string;
   weight_credit: string;
