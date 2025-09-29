@@ -8,9 +8,12 @@ export interface IGold {
   product_cost?: string;
   gold_price_summary_roundup?: string;
   create_user?: string;
+  stock?: string;
   upd_user?: string;
   upd_time?: string;
   certificate_id?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
 }
 
 export interface IGoldPrice {
@@ -20,6 +23,8 @@ export interface IGoldPrice {
   gold_price_base?: number;
   gold_price_sell?: number;
   gold_price_buy?: number;
+  upd_user_name?: string;
+  create_user_name?: string;
 }
 
 export interface IGoldCertPrice {
@@ -27,6 +32,9 @@ export interface IGoldCertPrice {
   cert_code?: string;
   gold_weight?: number;
   cert_price?: number;
+  create_user_name?: string;
+  upd_user_name?: string;
+  cert_name?: string;
 }
 
 export interface IGoldCert {
@@ -47,6 +55,8 @@ export interface IGoldCertPriceDetail {
   gold_weight?: number;
   include_stock?: boolean;
   create_user?: string;
+  create_user_name?: string;
+  upd_user_name?: string;
 }
 
 export interface IGoldPriceConfig {
@@ -309,6 +319,8 @@ export interface IGoldStockMovement {
   stock_after?: number;
   weight?: number;
   note?: string;
+  user_name?: string;
+  movement_type?: string;
 }
 
 export interface IAdminFee {

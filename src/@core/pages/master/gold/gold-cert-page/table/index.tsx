@@ -1,11 +1,19 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { IGoldCertPrice } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import debounce from 'debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table } from 'antd';
+import { formatterNumber } from '@/@core/utils/general';
+
+import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'debounce';
+import Link from 'next/link';
+
 import {
   Edit05,
   FileDownload02,
@@ -13,19 +21,20 @@ import {
   SearchSm,
   Trash01,
 } from '@untitled-ui/icons-react';
-import Link from 'next/link';
-import { notification } from 'antd';
-import * as XLSX from 'xlsx';
-import ModalLoading from '@/@core/components/modal/modal-loading';
-import { formatterNumber } from '@/@core/utils/general';
+
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import dayjs from 'dayjs';
 
 const GoldCertPageTable = () => {
   const url = `/core/gold/cert/`;
+
   const [dataTable, setDataTable] = useState<Array<IGoldCertPrice>>([]);
   const [total, setTotal] = useState(0);
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -33,16 +42,20 @@ const GoldCertPageTable = () => {
     cert_code__icontains: '',
     cert_brand__icontains: '',
   });
+
   const [api, contextHolder] = notification.useNotification();
+
+  // ========================
+  // Table Columns
+  // ========================
   const columns: ColumnsType<IGoldCertPrice> = [
     {
       title: 'No',
       width: 70,
       dataIndex: 'cert_id',
       key: 'cert_id',
-      fixed: 'left',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code' },
     { title: 'Nama Sertifikat', dataIndex: 'cert_name', key: 'cert_name' },
@@ -61,6 +74,16 @@ const GoldCertPageTable = () => {
         `Rp${formatterNumber(record.cert_price ? record.cert_price : 0)}`,
     },
     {
+      title: 'Create By',
+      dataIndex: 'create_user_name',
+      key: 'create_user_name',
+    },
+    {
+      title: 'Update By',
+      dataIndex: 'upd_user_name',
+      key: 'upd_user_name',
+    },
+    {
       title: '',
       key: 'action',
       fixed: 'right',
@@ -73,19 +96,34 @@ const GoldCertPageTable = () => {
           >
             <Edit05 />
           </Link>
-          <a className="btn-action" onClick={() => deleteData(record.cert_id)}>
+          <button
+            className="btn-action"
+            onClick={() => deleteData(record.cert_id)}
+          >
             <Trash01 />
-          </a>
+          </button>
         </div>
       ),
     },
   ];
 
+  // ========================
+  // Fetch Data
+  // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
-  }, [params, url]);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Error',
+        description: 'Gagal memuat data sertifikat emas',
+        placement: 'bottomRight',
+      });
+    }
+  }, [params, url, api]);
 
   const onChangePage = async (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
@@ -101,6 +139,9 @@ const GoldCertPageTable = () => {
     });
   };
 
+  // ========================
+  // Delete Data
+  // ========================
   const deleteData = (id: number | undefined) => {
     if (id) {
       setSelectedId(id);
@@ -109,47 +150,141 @@ const GoldCertPageTable = () => {
   };
 
   const confirmDelete = async () => {
-    await axiosInstance.delete(`${url}${selectedId}/`);
-    setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      cert_code__icontains: '',
-      cert_brand__icontains: '',
-    });
-    api.info({
-      message: 'Data Gold Cert Price',
-      description: 'Data Gold Cert Price Berhasil Dihapus',
-      placement: 'bottomRight',
-    });
+    try {
+      await axiosInstance.delete(`${url}${selectedId}/`);
+      setOpenModalConfirm(false);
+      setParams({ ...params, offset: 0, limit: 10 });
+      api.success({
+        message: 'Data Sertifikat',
+        description: 'Data Sertifikat berhasil dihapus',
+        placement: 'bottomRight',
+      });
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Error',
+        description: 'Gagal menghapus data sertifikat',
+        placement: 'bottomRight',
+      });
+    }
   };
 
+  // ========================
+  // Export Excel
+  // ========================
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      cert_code__icontains: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IGoldCertPrice, index: number) => ({
-      No: index + 1,
-      'Cert Code': item.cert_code,
-      'Gold Weight': item.gold_weight,
-      'Cert Price': item.cert_price,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
+    try {
+      setIsModalLoading(true);
 
-    worksheet['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+      const exportParams = {
+        format: 'json',
+        offset: 0,
+        limit: 100,
+        cert_code__icontains: '',
+        cert_brand__icontains: '',
+      };
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'cert price');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_cert_price.xlsx`);
-    setIsModalLoading(false);
+      const resp = await axiosInstance.get(url, { params: exportParams });
+      const rows = resp.data.results;
+
+      const dataToExport = rows.map((item: IGoldCertPrice, index: number) => ({
+        No: index + 1,
+        'Kode Sertifikat': item.cert_code,
+        'Nama Sertifikat': item.cert_name,
+        'Satuan (gr)': item.gold_weight,
+        'Harga Sertifikat': item.cert_price ? item.cert_price : 0,
+        'Create By': item.create_user_name,
+        'Update By': item.upd_user_name,
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data Sertifikat');
+
+      // Judul
+      worksheet.mergeCells('A1:G1');
+      worksheet.getCell('A1').value = 'DATA MASTER SERTIFIKAT';
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      worksheet.addRow([]);
+
+      // Header
+      const header = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      // Data rows
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const newRow = worksheet.addRow(rowValues);
+
+        newRow.eachCell((cell, colNumber) => {
+          cell.alignment = { vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+
+          if (header[colNumber - 1] === 'Harga Sertifikat') {
+            cell.numFmt = '"Rp"#,##0';
+          }
+        });
+      });
+
+      // Auto column width
+      worksheet.columns.forEach((col: any) => {
+        if (col) {
+          let maxLength = 0;
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
+          col.width = maxLength + 2;
+        }
+      });
+
+      // Save file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `data_cert_price_${dayjs().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+      saveAs(new Blob([buffer]), fileName);
+
+      api.success({
+        message: 'Export Sukses',
+        description: 'File sertifikat berhasil diunduh',
+        placement: 'bottomRight',
+      });
+    } catch (error) {
+      console.log(error);
+      api.error({
+        message: 'Export Gagal',
+        description: 'Terjadi kesalahan saat export data',
+        placement: 'bottomRight',
+      });
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   useEffect(() => {

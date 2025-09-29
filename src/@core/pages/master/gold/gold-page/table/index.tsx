@@ -1,11 +1,19 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { IGold } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import debounce from 'debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table } from 'antd';
+import { formatterNumber } from '@/@core/utils/general';
+
+import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import debounce from 'debounce';
+import Link from 'next/link';
+
 import {
   Edit05,
   FileDownload02,
@@ -13,22 +21,24 @@ import {
   SearchSm,
   Trash01,
 } from '@untitled-ui/icons-react';
-import Link from 'next/link';
-import { notification } from 'antd';
-import * as XLSX from 'xlsx';
-import ModalLoading from '@/@core/components/modal/modal-loading';
+
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { formatterNumber } from '@/@core/utils/general';
+
 moment.locale('id');
 
 const GoldPageTable = () => {
   const url = `/core/gold/list/product-show`;
+
   const [dataTable, setDataTable] = useState<Array<IGold>>([]);
   const [total, setTotal] = useState(0);
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -36,26 +46,29 @@ const GoldPageTable = () => {
     type__icontains: '',
     brand__icontains: '',
   });
+
   const [api, contextHolder] = notification.useNotification();
+
+  // ========================
+  // Table Columns
+  // ========================
   const columns: ColumnsType<IGold> = [
     {
       title: 'No',
       width: 70,
       dataIndex: 'gold_id',
       key: 'gold_id',
-      fixed: 'left',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     {
       title: 'Berat Emas (gr)',
       dataIndex: 'gold_weight',
       key: 'gold_weight',
       width: 150,
-      fixed: 'left',
       render: (_, record) =>
         `${parseFloat(
-          record.gold_weight ? record.gold_weight.toString() : ''
+          record.gold_weight ? record.gold_weight.toString() : '0'
         )} gr`,
     },
     {
@@ -63,18 +76,17 @@ const GoldPageTable = () => {
       dataIndex: 'certificate_weight',
       key: 'certificate_weight',
       width: 170,
-      fixed: 'left',
       render: (_, record) =>
         `${parseFloat(
-          record.certificate_weight ? record.certificate_weight.toString() : ''
+          record.certificate_weight ? record.certificate_weight.toString() : '0'
         )} gr`,
     },
     { title: 'Tipe Emas', dataIndex: 'type', key: 'type', width: 120 },
-    { title: 'Merek', dataIndex: 'brand', key: 'brand' },
+    { title: 'Merek', dataIndex: 'brand', key: 'brand', width: 120 },
     {
       title: 'Harga',
-      dataIndex: 'certificate_number',
-      key: 'certificate_number',
+      dataIndex: 'gold_price_summary_roundup',
+      key: 'gold_price_summary_roundup',
       width: 150,
       render: (_, record) =>
         `Rp${formatterNumber(
@@ -84,7 +96,18 @@ const GoldPageTable = () => {
         )}`,
     },
     { title: 'Stok', dataIndex: 'stock', key: 'stock', width: 100 },
-
+    {
+      title: 'Create By',
+      dataIndex: 'create_user_name',
+      key: 'create_user_name',
+      width: 150,
+    },
+    {
+      title: 'Update By',
+      dataIndex: 'upd_user_name',
+      key: 'upd_user_name',
+      width: 150,
+    },
     {
       title: '',
       key: 'action',
@@ -103,6 +126,9 @@ const GoldPageTable = () => {
     },
   ];
 
+  // ========================
+  // Fetch Data
+  // ========================
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(url, { params });
     setDataTable(resp.data.results);
@@ -123,6 +149,9 @@ const GoldPageTable = () => {
     });
   };
 
+  // ========================
+  // Delete Data
+  // ========================
   const deleteData = (id: number | undefined) => {
     if (id) {
       setSelectedId(id);
@@ -133,12 +162,7 @@ const GoldPageTable = () => {
   const confirmDelete = async () => {
     await axiosInstance.delete(`${url}${selectedId}/`);
     setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      type__icontains: '',
-    });
+    setParams({ ...params, offset: 0, limit: 10, type__icontains: '' });
     api.info({
       message: 'Data Gold',
       description: 'Data Gold Berhasil Dihapus',
@@ -146,49 +170,113 @@ const GoldPageTable = () => {
     });
   };
 
+  // ========================
+  // Export Excel
+  // ========================
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      type__icontains: '',
-      brand__icontains: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IGold, index: number) => ({
-      No: index + 1,
-      'Gold Weight': item.gold_weight,
-      Type: item.type,
-      Brand: item.brand,
-      'Certificate Number': item.certificate_number,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = 10;
-    const colC = rows.reduce(
-      (w: number, r: IGold) => Math.max(w, r.type ? r.type.length : 10),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IGold) => Math.max(w, r.brand ? r.brand.length : 10),
-      10
-    );
+    try {
+      setIsModalLoading(true);
 
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: 20 },
-    ];
+      const exportParams = {
+        format: 'json',
+        offset: 0,
+        limit: 100,
+        type__icontains: '',
+        brand__icontains: '',
+      };
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'gold');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_gold.xlsx`);
-    setIsModalLoading(false);
+      const resp = await axiosInstance.get(url, { params: exportParams });
+      const rows = resp.data.results;
+
+      const dataToExport = rows.map((item: IGold, index: number) => ({
+        No: index + 1,
+        'Berat Emas': item.gold_weight,
+        'Berat Sertifikat': item.certificate_weight,
+        Type: item.type,
+        Brand: item.brand,
+        Harga: item.gold_price_summary_roundup
+          ? parseInt(item.gold_price_summary_roundup)
+          : 0,
+        Stok: item.stock,
+        'Create By': item.create_user_name,
+        'Update By': item.upd_user_name,
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data Gold');
+
+      // Judul
+      worksheet.mergeCells('A1:J1');
+      worksheet.getCell('A1').value = 'DATA MASTER GOLD';
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      worksheet.addRow([]); // baris kosong
+
+      // Header
+      const header = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      // Data rows
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const newRow = worksheet.addRow(rowValues);
+
+        newRow.eachCell((cell, colNumber) => {
+          cell.alignment = { vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+
+          if (header[colNumber - 1] === 'Harga') {
+            cell.numFmt = '"Rp"#,##0';
+          }
+        });
+      });
+
+      // Auto column width
+      worksheet.columns.forEach((col: any) => {
+        if (col != undefined) {
+          let maxLength = 0;
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
+          col.width = maxLength + 2;
+        }
+      });
+
+      // Save file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `data_gold_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+      saveAs(new Blob([buffer]), fileName);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   useEffect(() => {
