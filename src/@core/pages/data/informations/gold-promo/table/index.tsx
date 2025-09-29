@@ -132,6 +132,13 @@ const GoldPromoPageTable = () => {
       width: 150,
     },
     {
+      title: 'Create Time',
+      dataIndex: 'create_time',
+      key: 'create_time',
+      width: 170,
+      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
+    },
+    {
       title: 'Update By',
       dataIndex: 'upd_user_name',
       key: 'upd_user_name',
@@ -239,6 +246,9 @@ const GoldPromoPageTable = () => {
           'DD-MM-YYYY'
         ),
         'Create By': item.create_user_name,
+        'Create Time': item.create_time
+          ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+          : '-',
         'Update By': item.upd_user_name,
       }));
 

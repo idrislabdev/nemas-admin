@@ -25,6 +25,10 @@ import {
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs from 'dayjs';
+import moment from 'moment';
+import 'moment/locale/id';
+
+moment.locale('id');
 
 const GoldCertDetailPageTable = () => {
   const url = `/core/gold/cert_price_detail/`;
@@ -80,6 +84,13 @@ const GoldCertDetailPageTable = () => {
       title: 'Create By',
       dataIndex: 'create_user_name',
       key: 'create_user_name',
+    },
+    {
+      title: 'Create Time',
+      dataIndex: 'create_time',
+      key: 'create_time',
+      width: 170,
+      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     { title: 'Update By', dataIndex: 'upd_user_name', key: 'upd_user_name' },
     {
@@ -188,6 +199,9 @@ const GoldCertDetailPageTable = () => {
           'Satuan (gr)': item.gold_weight,
           'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
           'Create By': item.create_user_name,
+          'Create Time': item.create_time
+            ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+            : '-',
           'Update By': item.upd_user_name,
         })
       );

@@ -20,6 +20,9 @@ import {
 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id');
 
 const GoldPricePageTable = () => {
   const url = `/core/gold/price/`;
@@ -90,6 +93,13 @@ const GoldPricePageTable = () => {
       dataIndex: 'create_user_name',
       key: 'create_user_name',
       width: 180,
+    },
+    {
+      title: 'Create Time',
+      dataIndex: 'create_time',
+      key: 'create_time',
+      width: 170,
+      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     {
       title: 'Update By',
@@ -210,6 +220,9 @@ const GoldPricePageTable = () => {
         'Gold Price Sell': item.gold_price_sell || 0,
         'Gold Price Buy': item.gold_price_buy || 0,
         'Create By': item.create_user_name,
+        'Create Time': item.create_time
+          ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+          : '-',
         'Update By': item.upd_user_name,
       }));
 

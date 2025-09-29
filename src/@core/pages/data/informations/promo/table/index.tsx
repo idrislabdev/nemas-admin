@@ -149,6 +149,13 @@ const InformationPromoPageTable = () => {
       width: 150,
     },
     {
+      title: 'Create Time',
+      dataIndex: 'create_time',
+      key: 'create_time',
+      width: 170,
+      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
+    },
+    {
       title: 'Update By',
       dataIndex: 'upd_user_name',
       key: 'upd_user_name',
