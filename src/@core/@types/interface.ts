@@ -37,7 +37,7 @@ export interface IGoldCertPrice {
   cert_price?: number;
   create_user_name?: string;
   upd_user_name?: string;
-  cert_name?: string;
+  cert_brand?: string;
   create_time?: string;
   upd_time?: string;
 }

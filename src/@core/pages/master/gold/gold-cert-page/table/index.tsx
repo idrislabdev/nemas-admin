@@ -61,7 +61,7 @@ const GoldCertPageTable = () => {
       render: (_, __, index) => index + params.offset + 1,
     },
     { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code' },
-    { title: 'Nama Sertifikat', dataIndex: 'cert_brand', key: 'cert_brand' },
+    { title: 'Nama Brand', dataIndex: 'cert_brand', key: 'cert_brand' },
     {
       title: 'Satuan (gr)',
       dataIndex: 'gold_weight',
