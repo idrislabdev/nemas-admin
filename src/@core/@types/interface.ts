@@ -704,6 +704,7 @@ export interface IOrderGold {
   order_payment_method: number;
   tracking_courier: number;
   tracking_courier_service: number;
+  is_picked_up: boolean;
 }
 
 export interface IOrderShipping {

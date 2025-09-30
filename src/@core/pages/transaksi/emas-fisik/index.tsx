@@ -16,6 +16,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 import ModalProsesPengiriman from './modal-proses';
+import Link from 'next/link';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -42,6 +43,14 @@ const ComEmasFisikPage = () => {
       dataIndex: 'order_number',
       key: 'order_number',
       width: 150,
+      render: (_, record) => (
+        <Link
+          href={`/transaksi/emas-fisik/${record.order_gold_id}`}
+          className="items-start text-primary"
+        >
+          {record.order_number}
+        </Link>
+      ),
     },
     {
       title: 'Tanggal Order',
