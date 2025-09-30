@@ -11,7 +11,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   const url = `/core/gold/cert`;
   const [required, setRequired] = useState<IGoldCert>({} as IGoldCert);
   const [certCode, setCertCode] = useState('');
-  const [certName, setCertName] = useState('');
+  const [certBrand, setCertBrand] = useState('');
   const [goldWeight, setGoldWeight] = useState('');
   const [certPrice, setCertPrice] = useState('');
   const [api, contextHolder] = notification.useNotification();
@@ -32,7 +32,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     // })
     const body = {
       cert_code: certCode,
-      cert_name: certName,
+      cert_name: certBrand,
       gold_weight: parseInt(
         goldWeight.toString().replace('.', '').replace(',', '.')
       ),
@@ -71,7 +71,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
     setCertCode(data.cert_code);
-    setCertName(data.cert_name);
+    setCertBrand(data.cert_name);
     setGoldWeight(data.gold_weight.toString());
     setCertPrice(data.cert_price.toString());
   };
@@ -84,7 +84,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     setCertCode('');
     setGoldWeight('');
     setCertPrice('');
-    setCertName('');
+    setCertBrand('');
   };
   return (
     <div className="form-input">
@@ -107,7 +107,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
         </div>
         <div className="input-area">
           <label>
-            Nama Sertifikat{' '}
+            Nama Brand{' '}
             {required.cert_code && (
               <span className="text-red-500 text-[10px]/[14px] italic">
                 ({required.cert_code?.toString()})
@@ -115,8 +115,8 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
             )}
           </label>
           <input
-            value={certName}
-            onChange={(e) => setCertName(e.target.value)}
+            value={certBrand}
+            onChange={(e) => setCertBrand(e.target.value)}
             className={`base ${required.cert_name ? 'error' : ''}`}
           />
         </div>

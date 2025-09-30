@@ -61,7 +61,7 @@ const GoldCertPageTable = () => {
       render: (_, __, index) => index + params.offset + 1,
     },
     { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code' },
-    { title: 'Nama Sertifikat', dataIndex: 'cert_name', key: 'cert_name' },
+    { title: 'Nama Sertifikat', dataIndex: 'cert_brand', key: 'cert_brand' },
     {
       title: 'Satuan (gr)',
       dataIndex: 'gold_weight',
@@ -200,7 +200,7 @@ const GoldCertPageTable = () => {
       const dataToExport = rows.map((item: IGoldCertPrice, index: number) => ({
         No: index + 1,
         'Kode Sertifikat': item.cert_code,
-        'Nama Sertifikat': item.cert_name,
+        'Nama Sertifikat': item.cert_brand,
         'Satuan (gr)': item.gold_weight,
         'Harga Sertifikat': item.cert_price ? item.cert_price : 0,
         'Create By': item.create_user_name,
