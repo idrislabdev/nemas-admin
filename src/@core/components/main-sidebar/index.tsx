@@ -5,13 +5,14 @@ import { useGlobals } from '@/@core/hoc/useGlobals';
 import {
   BankNote01,
   Building07,
+  CoinsHand,
   CreditCard01,
-  CreditCard02,
   LogOut03,
   Printer,
   Settings01,
   Tag01,
   Truck01,
+  User01,
 } from '@untitled-ui/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -133,6 +134,16 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+                <li
+                  className={`${
+                    pathname.split('/')[1] === 'transaksi' ? 'active' : ''
+                  }`}
+                >
+                  <Link href="/transaksi/emas-fisik">
+                    <CoinsHand />
+                    Daftar Transaksi
+                  </Link>
+                </li>
                 {checkMenu('Pengguna') && (
                   <li
                     className={`${
@@ -143,7 +154,7 @@ const MainSidebar = () => {
                     }`}
                   >
                     <Link href="/data/pengguna/aplikasi">
-                      <CreditCard02 />
+                      <User01 />
                       Pengguna
                     </Link>
                   </li>

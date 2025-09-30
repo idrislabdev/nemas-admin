@@ -7,6 +7,11 @@ span {
     svg {
       @apply w-[24px] h-[24px];
     }
+    &.icon-xs {
+      svg {
+        @apply w-[15px] h-[15px];
+      }
+    }
     &.icon-sm {
       svg {
         @apply w-[18px] h-[18px];

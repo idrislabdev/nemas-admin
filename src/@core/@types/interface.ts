@@ -626,6 +626,7 @@ export interface ISalesOrder {
   upd_user_name?: string;
   create_time?: string;
   upd_time?: string;
+  is_picked_up: boolean;
 }
 
 export interface IGoldLoan {
@@ -649,4 +650,130 @@ export interface IGoldLoan {
   upd_user_name?: string;
   create_time?: string;
   upd_time?: string;
+}
+
+export interface IOrderGold {
+  order_gold_id: string;
+  user: IUser;
+  order_user_address: IUserAddress;
+  order_shipping: IOrderShipping[];
+  order_gold_details: IOrderGoldDetail[];
+  tracking_sla: string | null;
+  tracking_last_updated_datetime: string | null;
+  order_timestamp: string;
+  order_number: string;
+  order_status: string;
+  order_phone_number: string;
+  order_item_weight: number;
+  order_payment_method_name: string;
+  order_payment_va_bank: string;
+  order_payment_va_number: string | null;
+  order_amount: number;
+  order_admin_amount: number;
+  order_pickup_address: string | null;
+  order_pickup_customer_datetime: string | null;
+  order_tracking_amount: number;
+  order_type: string;
+  order_tracking_item_insurance_amount: number;
+  order_tracking_insurance: number;
+  order_tracking_insurance_admin: number;
+  order_tracking_insurance_total: number;
+  order_tracking_insurance_total_round: number;
+  order_tracking_packing: number;
+  order_tracking_total_amount: number;
+  order_tracking_total_amount_round: number;
+  tracking_status_id: string;
+  tracking_status: string | null;
+  tracking_courier_name: string;
+  tracking_courier_service_name: string;
+  tracking_courier_service_code: string;
+  tracking_number: string | null;
+  tracking_last_note: string | null;
+  order_gold_payment_ref: string;
+  order_gold_payment_status: string;
+  order_promo_code: string | null;
+  order_discount: number;
+  order_total_price: number;
+  order_total_price_round: number;
+  order_pph22: number | null;
+  order_grand_total_price: number;
+  order_total_redeem_price: number;
+  gold_history_price_sell: number;
+  gold_history_price_buy: number;
+  order_cart: string;
+  order_payment_method: number;
+  tracking_courier: number;
+  tracking_courier_service: number;
+}
+
+export interface IOrderShipping {
+  order_delivery_id: string;
+  delivery_partner: string;
+  delivery_actual_date: string | null;
+  delivery_est_date: string;
+  delivery_pickup_date: string;
+  delivery_pickup_order_date: string;
+  delivery_price: number;
+  delivery_insurance_price: number;
+  delivery_total_price: number;
+  delivery_status: string;
+  delivery_tracking_number: string;
+  delivery_ref_number: string;
+  delivery_origin_branch: string;
+  delivery_destination_branch: string;
+  delivery_tlc_branch_code: string;
+  delivery_label: string;
+  delivery_tracking_url: string;
+  delivery_notes: string;
+  origin_name: string | null;
+  origin_email: string | null;
+  origin_phone: string | null;
+  origin_address: string | null;
+  origin_note: string | null;
+  origin_longitude: number | null;
+  origin_latitude: number | null;
+  origin_province: string | null;
+  origin_city: string | null;
+  origin_district: string | null;
+  origin_village: string | null;
+  origin_zip_code: string | null;
+  destination_name: string;
+  destination_email: string;
+  destination_phone: string;
+  destination_address: string;
+  destination_note: string;
+  destination_longitude: number;
+  destination_latitude: number;
+  destination_province: string | null;
+  destination_city: string;
+  destination_district: string;
+  destination_village: string;
+  destination_zip_code: string;
+  order_gold: string;
+}
+
+export interface IOrderGoldDetail {
+  order_gold_detail_id: string;
+  gold_type: string;
+  gold_brand: string;
+  cert_brand: string;
+  cert_code: string;
+  gold_price: number;
+  gold_price_round: number;
+  order_price: number;
+  order_price_round: number;
+  order_type: string;
+  cert_price: number;
+  product_cost: number;
+  weight: number;
+  qty: number;
+  order_detail_stock_status: string;
+  order_detail_total_price: number;
+  order_detail_total_price_round: number;
+  order_redeem_price: number | null;
+  order_gold: string;
+  gold: number;
+  order_cart_detail: string | null;
+  gold_price_ref: string | null;
+  cert: number;
 }

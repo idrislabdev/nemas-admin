@@ -44,9 +44,7 @@ const AdminPageTable = () => {
     offset: 0,
     limit: 10,
     role__name__icontains: 'Admin',
-    name__icontains: '',
-    email__icontains: '',
-    username__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -141,9 +139,7 @@ const AdminPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      name__icontains: value,
-      username__icontains: value,
-      email__icontains: value,
+      search: value,
     });
   };
 

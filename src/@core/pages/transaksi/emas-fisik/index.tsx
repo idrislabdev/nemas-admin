@@ -6,7 +6,7 @@ import { ISalesOrder } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
-import { FileDownload02 } from '@untitled-ui/icons-react';
+import { CheckCircle, FileDownload02, Truck01 } from '@untitled-ui/icons-react';
 import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -15,22 +15,26 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+import ModalProsesPengiriman from './modal-proses';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-const PenjualanEmasFisikPage = () => {
+const ComEmasFisikPage = () => {
   const url = `/reports/gold-sales-order/list`;
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
-
+  const [isModalPengiriman, setIsModalPengiriman] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
+  const [refreshData, setRefresData] = useState(false);
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
     start_date: '',
     end_date: '',
+    // is_picked_up: null,
   });
   const columns: ColumnsType<ISalesOrder> = [
     {
@@ -43,7 +47,7 @@ const PenjualanEmasFisikPage = () => {
       title: 'Tanggal Order',
       dataIndex: 'order_timestamp',
       key: 'order_timestamp',
-      width: 150,
+      width: 180,
       render: (_, record) =>
         moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
     },
@@ -51,7 +55,7 @@ const PenjualanEmasFisikPage = () => {
       title: 'User',
       dataIndex: 'user_name',
       key: 'user_name',
-      width: 150,
+      width: 120,
     },
     {
       title: 'Berat Emas',
@@ -72,58 +76,11 @@ const PenjualanEmasFisikPage = () => {
       title: 'Nominal Pesanan',
       dataIndex: 'order_amount',
       key: 'order_amount',
-      width: 150,
+      width: 160,
       render: (_, record) => (
         <>
           {record.order_amount !== null
             ? `Rp${formatDecimal(parseFloat(record.order_amount.toString()))}`
-            : '-'}
-        </>
-      ),
-    },
-    {
-      title: 'Total Harga',
-      dataIndex: 'order_total_price',
-      key: 'order_total_price',
-      width: 150,
-      render: (_, record) => (
-        <>
-          {record.order_total_price !== null
-            ? `Rp${formatDecimal(
-                parseFloat(record.order_total_price.toString())
-              )}`
-            : '-'}
-        </>
-      ),
-    },
-    {
-      title: 'Biaya Admin',
-      dataIndex: 'order_admin_amount',
-      key: 'order_admin_amount',
-      width: 150,
-      render: (_, record) => (
-        <>
-          {record.order_admin_amount !== null
-            ? `Rp${formatDecimal(
-                parseFloat(record.order_admin_amount.toString())
-              )}`
-            : '-'}
-        </>
-      ),
-    },
-    {
-      title: 'Biaya Asuransi',
-      dataIndex: 'order_tracking_insurance_total_round',
-      key: 'order_tracking_insurance_total_round',
-      width: 150,
-      render: (_, record) => (
-        <>
-          {record.order_tracking_insurance_total_round !== null
-            ? `Rp${formatDecimal(
-                parseFloat(
-                  record.order_tracking_insurance_total_round.toString()
-                )
-              )}`
             : '-'}
         </>
       ),
@@ -169,10 +126,46 @@ const PenjualanEmasFisikPage = () => {
       title: 'Status Pembayaran',
       dataIndex: 'order_gold_payment_status',
       key: 'order_gold_payment_status',
-      width: 150,
+      width: 165,
       fixed: 'right',
     },
+    {
+      title: 'Status Pengiriman',
+      dataIndex: 'order_gold_payment_status',
+      key: 'order_gold_payment_status',
+      width: 165,
+      fixed: 'right',
+      align: 'center',
+      render: (_, record) => (
+        <div className="flex items-center justify-center">
+          {!record.is_picked_up && (
+            <a
+              className="bg-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
+              onClick={() => prosePengiriman(record.order_gold_id)}
+            >
+              <span className="my-icon icon-sm">
+                <Truck01 />
+              </span>
+              Proses Pesanan
+            </a>
+          )}
+          {record.is_picked_up && (
+            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px]">
+              <span className="my-icon icon-xs">
+                <CheckCircle />
+              </span>
+              Dikirim
+            </span>
+          )}
+        </div>
+      ),
+    },
   ];
+
+  const prosePengiriman = (id: string) => {
+    setSelectedId(id);
+    setIsModalPengiriman(true);
+  };
 
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(url, { params });
@@ -235,6 +228,7 @@ const PenjualanEmasFisikPage = () => {
         format: 'json',
         offset: 0,
         limit: 10,
+        is_picked_up: true,
         start_date: params.start_date,
         end_date: params.end_date,
       };
@@ -366,6 +360,12 @@ const PenjualanEmasFisikPage = () => {
   };
 
   useEffect(() => {
+    if (refreshData) {
+      fetchData();
+    }
+  }, [refreshData]);
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
   return (
@@ -376,10 +376,12 @@ const PenjualanEmasFisikPage = () => {
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
         />
-        <button className="btn btn-primary" onClick={exportData}>
-          <FileDownload02 />
-          Export Excel
-        </button>
+        <div className="flex items-center gap-[4px]">
+          <button className="btn btn-primary" onClick={exportData}>
+            <FileDownload02 />
+            Export Excel
+          </button>
+        </div>
       </div>
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
@@ -404,8 +406,14 @@ const PenjualanEmasFisikPage = () => {
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
       />
+      <ModalProsesPengiriman
+        isModalOpen={isModalPengiriman}
+        setIsModalOpen={setIsModalPengiriman}
+        orderId={selectedId}
+        setRefresData={setRefresData}
+      />
     </>
   );
 };
 
-export default PenjualanEmasFisikPage;
+export default ComEmasFisikPage;
