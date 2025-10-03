@@ -6,7 +6,11 @@ import { ISalesOrder } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
-import { CheckCircle, FileDownload02, Truck01 } from '@untitled-ui/icons-react';
+import {
+  CalendarCheck01,
+  FileDownload02,
+  Truck01,
+} from '@untitled-ui/icons-react';
 import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -15,7 +19,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
-import ModalProsesPengiriman from './modal-proses';
 import Link from 'next/link';
 moment.locale('id');
 
@@ -26,9 +29,6 @@ const ComEmasFisikPage = () => {
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
-  const [isModalPengiriman, setIsModalPengiriman] = useState(false);
-  const [selectedId, setSelectedId] = useState('');
-  const [refreshData, setRefresData] = useState(false);
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -147,21 +147,21 @@ const ComEmasFisikPage = () => {
       align: 'center',
       render: (_, record) => (
         <div className="flex items-center justify-center">
-          {!record.is_picked_up && (
-            <a
+          {!record.is_picked_up && record.order_status == 'PAID' && (
+            <Link
+              href={`/transaksi/emas-fisik/${record.order_gold_id}/delivery`}
               className="bg-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
-              onClick={() => prosePengiriman(record.order_gold_id)}
             >
               <span className="my-icon icon-sm">
-                <Truck01 />
+                <CalendarCheck01 />
               </span>
               Proses Pesanan
-            </a>
+            </Link>
           )}
           {record.is_picked_up && (
-            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px]">
+            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
               <span className="my-icon icon-xs">
-                <CheckCircle />
+                <Truck01 />
               </span>
               Dikirim
             </span>
@@ -170,11 +170,6 @@ const ComEmasFisikPage = () => {
       ),
     },
   ];
-
-  const prosePengiriman = (id: string) => {
-    setSelectedId(id);
-    setIsModalPengiriman(true);
-  };
 
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(url, { params });
@@ -369,12 +364,6 @@ const ComEmasFisikPage = () => {
   };
 
   useEffect(() => {
-    if (refreshData) {
-      fetchData();
-    }
-  }, [refreshData]);
-
-  useEffect(() => {
     fetchData();
   }, [fetchData]);
   return (
@@ -414,12 +403,6 @@ const ComEmasFisikPage = () => {
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
-      />
-      <ModalProsesPengiriman
-        isModalOpen={isModalPengiriman}
-        setIsModalOpen={setIsModalPengiriman}
-        orderId={selectedId}
-        setRefresData={setRefresData}
       />
     </>
   );

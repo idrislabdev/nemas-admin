@@ -40,7 +40,7 @@ const GoldCertDetailTable = (props: {
       render: (_, record, index) => index + params.offset + 1,
     },
     {
-      title: 'Kode Sertifikat',
+      title: 'Serial Number',
       dataIndex: 'gold_cert_code',
       key: 'gold_cert_code',
       width: 150,

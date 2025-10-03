@@ -777,4 +777,23 @@ export interface IOrderGoldDetail {
   order_cart_detail: string | null;
   gold_price_ref: string | null;
   cert: number;
+  gold_cert_detail_price: string | null;
+  gold_cert_detail: string | null;
+  pre_packing_file: string;
+  post_packing_file: string;
+}
+
+export interface IOrderGoldDetailPayload {
+  order_detail_id: string;
+  gold_type: string;
+  gold_brand: string;
+  weight: number;
+  qty: number;
+  gold_price: number;
+  order_detail_total_price: number;
+  gold_cert_detail_price: string | null;
+  gold_cert_detail: string | null;
+  pre_packing_file: File | null;
+  post_packing_file: File | null;
+  gold: number;
 }

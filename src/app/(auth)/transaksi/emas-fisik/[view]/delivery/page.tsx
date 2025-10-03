@@ -1,9 +1,9 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
-import ComEmasFisikDetailPage from '@/@core/pages/transaksi/emas-fisik/detail';
+import ComEmasFisikDeliveryPage from '@/@core/pages/transaksi/emas-fisik/delivery';
 import { CoinsHand } from '@untitled-ui/icons-react';
 
-export default async function TransaksiEmasFisiView({
+export default async function TransaksiEmasFisikDelivery({
   params,
 }: {
   params: Promise<{ view: string }>;
@@ -48,7 +48,7 @@ export default async function TransaksiEmasFisiView({
             </div>
             <div className="main-body">
               <div className="flex flex-col gap-[10px] w-full h-full">
-                <ComEmasFisikDetailPage paramsId={paramsId} />
+                <ComEmasFisikDeliveryPage paramsId={paramsId} />
               </div>
             </div>
           </div>
