@@ -259,7 +259,8 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                     <td className="px-3 py-3 text-center flex flex-col">
                       <div className="w-full flex flex-col items-center">
                         <div className="w-[90px] h-[90px]">
-                          {item.delivery_details.pre_packing_photo_url &&
+                          {item.delivery_details &&
+                            item.delivery_details.pre_packing_photo_url &&
                             item.delivery_details.pre_packing_photo_url !=
                               null && (
                               <Image
@@ -279,7 +280,8 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                     <td className="px-3 py-3 text-center ">
                       <div className="w-full flex flex-col items-center">
                         <div className="w-[90px] h-[90px]">
-                          {item.delivery_details.post_packing_photo_url &&
+                          {item.delivery_details &&
+                            item.delivery_details.post_packing_photo_url &&
                             item.delivery_details.post_packing_photo_url !=
                               null && (
                               <Image

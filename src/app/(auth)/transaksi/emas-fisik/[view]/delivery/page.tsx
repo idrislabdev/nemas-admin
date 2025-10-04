@@ -43,7 +43,7 @@ export default async function TransaksiEmasFisikDelivery({
               </div>
               <div className="text-area">
                 <h5>Halaman Transaksi</h5>
-                <p>Penjualan Emas Fisik</p>
+                <p>Proses Delivery Order</p>
               </div>
             </div>
             <div className="main-body">
