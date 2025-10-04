@@ -33,6 +33,10 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
   const [isModalSertifikat, setIsModalSertifikat] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectGoldId, setSelectGoldId] = useState(0);
+  const [detailErrors, setDetailErrors] = useState<Record<string, string[]>[]>(
+    []
+  );
+
   const [api, contextHolder] = notification.useNotification();
   const router = useRouter();
 
@@ -145,7 +149,11 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
           setNote('');
           router.push(`/transaksi/emas-fisik/${paramsId}`);
         })
-        .catch(() => {
+        .catch((error) => {
+          if (error.response?.data) {
+            console.log(error.response.data.details);
+            setDetailErrors(error.response.data.details); // ← simpan array error dari backend
+          }
           api.error({
             message: 'Proses Gagal',
             description: 'Data order gagal disimpan',
@@ -177,7 +185,7 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <div className="flex items-center gap-[4px]">
-          {!data.is_picked_up && data.order_status == 'PAID' && (
+          {!data.is_picked_up && data.order_gold_payment_status == 'PAID' && (
             <a
               className="btn btn-primary cursor-pointer w-full h-[28px] rounded"
               onClick={() => handleSubmit()}
@@ -406,7 +414,11 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                     <td className="px-3 text-center">
                       {item.gold_cert_detail_price == null ? (
                         <a
-                          className="underline text-primary cursor-pointer"
+                          className={`underline h-[90px] w-[90px] cursor-pointer ${
+                            detailErrors[index]?.gold_cert_detail_price
+                              ? 'text-red-500 border border-red-500 rounded-md border-dashed'
+                              : 'text-primary'
+                          }`}
                           onClick={() => {
                             setSelectGoldId(item.gold);
                             setSelectedIndex(index);

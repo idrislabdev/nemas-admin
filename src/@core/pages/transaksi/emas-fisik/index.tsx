@@ -147,17 +147,18 @@ const ComEmasFisikPage = () => {
       align: 'center',
       render: (_, record) => (
         <div className="flex items-center justify-center">
-          {!record.is_picked_up && record.order_status == 'PAID' && (
-            <Link
-              href={`/transaksi/emas-fisik/${record.order_gold_id}/delivery`}
-              className="bg-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
-            >
-              <span className="my-icon icon-sm">
-                <CalendarCheck01 />
-              </span>
-              Proses Pesanan
-            </Link>
-          )}
+          {!record.is_picked_up &&
+            record.order_gold_payment_status == 'PAID' && (
+              <Link
+                href={`/transaksi/emas-fisik/${record.order_gold_id}/delivery`}
+                className="bg-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
+              >
+                <span className="my-icon icon-sm">
+                  <CalendarCheck01 />
+                </span>
+                Proses Pesanan
+              </Link>
+            )}
           {record.is_picked_up && (
             <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
               <span className="my-icon icon-xs">
