@@ -3,7 +3,7 @@
 import { IGoldPriceConfig } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 
 const GoldPriceConfigPageForm = (props: { paramsId: string }) => {
@@ -43,7 +43,7 @@ const GoldPriceConfigPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // const user = JSON.parse(localStorage.getItem('user') || '{}');
     const body = {
       gpc_code: gpcCode,
       gpc_description: gpcDescription,
@@ -55,8 +55,8 @@ const GoldPriceConfigPageForm = (props: { paramsId: string }) => {
       gold_price_setting_model_buy_weekend: goldPriceSettingModelBuyWeekend,
       gold_price_setting_model_sell_weekend: goldPriceSettingModelSellWeekend,
       gpc_active: gpcActive === 'active' ? true : false,
-      create_user: user.name,
-      upd_user: user.name,
+      // create_user: user.name,
+      // upd_user: user.name,
     };
     setRequired({});
     try {
@@ -104,7 +104,7 @@ const GoldPriceConfigPageForm = (props: { paramsId: string }) => {
     setGpcActive(data.gpc_active ? 'active' : 'not_active');
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 

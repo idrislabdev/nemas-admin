@@ -1,7 +1,7 @@
 'use client';
 import { IGoldCert } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
 import { AxiosError } from 'axios';
@@ -16,6 +16,16 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   const [certPrice, setCertPrice] = useState('');
   const [api, contextHolder] = notification.useNotification();
 
+  const brandOptions = [
+    'ANTAM',
+    'MARVA GOLD',
+    'UBS',
+    'LOTUS ARCHI',
+    'KING HALIM',
+    'SAMORA',
+    'HWT',
+  ];
+
   const onCancel = () => {
     if (paramsId == 'form') {
       clearForm();
@@ -25,22 +35,17 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    // const axiosInstance = axios.create({
-    //     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    //     timeout: 200000
-    // })
     const body = {
       cert_code: certCode,
-      cert_name: certBrand,
+      cert_brand: certBrand,
       gold_weight: parseInt(
         goldWeight.toString().replace('.', '').replace(',', '.')
       ),
       cert_price: parseFloat(
         certPrice.toString().replace('.', '').replace(',', '.')
       ),
-      create_user: user.id,
     };
+
     setRequired({});
     try {
       let desc = '';
@@ -76,7 +81,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     setCertPrice(data.cert_price.toString());
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 
@@ -86,10 +91,12 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     setCertPrice('');
     setCertBrand('');
   };
+
   return (
     <div className="form-input">
       {contextHolder}
       <div className="form-area">
+        {/* Kode Sertifikat */}
         <div className="input-area">
           <label>
             Kode Sertifikat{' '}
@@ -105,21 +112,32 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
             className={`base ${required.cert_code ? 'error' : ''}`}
           />
         </div>
+
+        {/* Nama Brand (Dropdown) */}
         <div className="input-area">
           <label>
             Nama Brand{' '}
-            {required.cert_code && (
+            {required.cert_name && (
               <span className="text-red-500 text-[10px]/[14px] italic">
-                ({required.cert_code?.toString()})
+                ({required.cert_name?.toString()})
               </span>
             )}
           </label>
-          <input
+          <select
             value={certBrand}
             onChange={(e) => setCertBrand(e.target.value)}
             className={`base ${required.cert_name ? 'error' : ''}`}
-          />
+          >
+            <option value="">-- Pilih Brand --</option>
+            {brandOptions.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {/* Satuan (gr) */}
         <div className="input-area">
           <label>
             Satuan (gr){' '}
@@ -146,6 +164,8 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
             />
           </div>
         </div>
+
+        {/* Harga Sertifikat */}
         <div className="input-area">
           <label>
             Harga Sertifikat{' '}
@@ -165,6 +185,8 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
           />
         </div>
       </div>
+
+      {/* Tombol Aksi */}
       <div className="form-button">
         <button
           className="btn btn-outline-secondary"

@@ -180,24 +180,34 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                   </div>
                   <div className="flex items-center gap-[10px] px-4 h-[120px]">
                     <div className="w-[90px] h-[90px]">
-                      <Image
-                        src={''}
-                        width={0}
-                        height={0}
-                        alt="image"
-                        className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                        unoptimized={true}
-                      />
+                      {data.delivery_transaction.length > 0 &&
+                        data.delivery_transaction[0].delivery_file_url !=
+                          null && (
+                          <Image
+                            src={data.delivery_transaction[0].delivery_file_url}
+                            width={0}
+                            height={0}
+                            alt="image"
+                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                            unoptimized={true}
+                          />
+                        )}
                     </div>
                     <div className="w-[90px] h-[90px]">
-                      <Image
-                        src={''}
-                        width={0}
-                        height={0}
-                        alt="image"
-                        className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                        unoptimized={true}
-                      />
+                      {data.delivery_transaction.length > 0 &&
+                        data.delivery_transaction[0].additional_file_url !=
+                          null && (
+                          <Image
+                            src={
+                              data.delivery_transaction[0].additional_file_url
+                            }
+                            width={0}
+                            height={0}
+                            alt="image"
+                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                            unoptimized={true}
+                          />
+                        )}
                     </div>
                   </div>
                 </div>
@@ -249,28 +259,40 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                     <td className="px-3 py-3 text-center flex flex-col">
                       <div className="w-full flex flex-col items-center">
                         <div className="w-[90px] h-[90px]">
-                          <Image
-                            src={item.pre_packing_file}
-                            width={0}
-                            height={0}
-                            alt="image"
-                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                            unoptimized={true}
-                          />
+                          {item.delivery_details.pre_packing_photo_url &&
+                            item.delivery_details.pre_packing_photo_url !=
+                              null && (
+                              <Image
+                                src={
+                                  item.delivery_details.pre_packing_photo_url
+                                }
+                                width={0}
+                                height={0}
+                                alt="image"
+                                className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                                unoptimized={true}
+                              />
+                            )}
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-3 text-center ">
                       <div className="w-full flex flex-col items-center">
                         <div className="w-[90px] h-[90px]">
-                          <Image
-                            src={item.post_packing_file}
-                            width={0}
-                            height={0}
-                            alt="image"
-                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                            unoptimized={true}
-                          />
+                          {item.delivery_details.post_packing_photo_url &&
+                            item.delivery_details.post_packing_photo_url !=
+                              null && (
+                              <Image
+                                src={
+                                  item.delivery_details.post_packing_photo_url
+                                }
+                                width={0}
+                                height={0}
+                                alt="image"
+                                className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                                unoptimized={true}
+                              />
+                            )}
                         </div>
                       </div>
                     </td>

@@ -4,7 +4,7 @@ import { IDeliveryPartner } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import { UndoOutlineIcon } from '@/@core/my-icons';
@@ -86,7 +86,7 @@ const DeliveryPartnerServicePageForm = (props: {
     // setIsActive(true)
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsServiceId != 'form') fetchData();
   });
   return (

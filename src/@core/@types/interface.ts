@@ -705,6 +705,7 @@ export interface IOrderGold {
   tracking_courier: number;
   tracking_courier_service: number;
   is_picked_up: boolean;
+  delivery_transaction: IDeliveryTransaction[];
 }
 
 export interface IOrderShipping {
@@ -781,6 +782,7 @@ export interface IOrderGoldDetail {
   gold_cert_detail: string | null;
   pre_packing_file: string;
   post_packing_file: string;
+  delivery_details: IDeliveryDetails;
 }
 
 export interface IOrderGoldDetailPayload {
@@ -796,4 +798,31 @@ export interface IOrderGoldDetailPayload {
   pre_packing_file: File | null;
   post_packing_file: File | null;
   gold: number;
+}
+
+export interface IDeliveryTransaction {
+  delivery_id: string;
+  delivery_number: string;
+  delivery_status: string; // bisa disesuaikan enum-nya
+  delivery_notes: string;
+  delivery_tracking_number: string;
+  delivery_timestamp: string; // ISO datetime
+  delivery_pickup_request_datetime: string; // ISO datetime
+  delivery_pickup_confirm_datetime: string; // ISO datetime
+  delivery_status_update_datetime: string; // ISO datetime
+  delivery_file_url: string;
+  additional_file_url: string;
+}
+
+export interface IDeliveryDetails {
+  delivery_transaction_id: string;
+  delivery: string; // relasi ke delivery_id
+  product: number; // ID produk
+  order_detail_id: string;
+  batch_number: string;
+  user: string; // user_id
+  gold_cert_detail_price: string;
+  gold_cert_code: string;
+  pre_packing_photo_url: string;
+  post_packing_photo_url: string;
 }

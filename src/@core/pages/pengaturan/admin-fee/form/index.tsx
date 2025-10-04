@@ -4,7 +4,7 @@ import { IAdminFee } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { notification } from 'antd';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 
 const AdminFeePageForm = (props: { paramsId: string }) => {
@@ -77,7 +77,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
     setDescription(data.description);
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
   return (

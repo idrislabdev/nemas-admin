@@ -102,7 +102,7 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
     fetchDataCerts();
   }, [fetchDataCerts]);
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 

@@ -54,7 +54,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // const user = JSON.parse(localStorage.getItem('user') || '{}');
     const body = {
       gold_weight: parseFloat(
         goldWeight.toString().replace('.', '').replace(',', '.')
@@ -65,8 +65,8 @@ const GoldPageForm = (props: { paramsId: string }) => {
         productCost.toString().replace('.', '').replace(',', '.')
       ),
       certificate_number: certificateNumber,
-      create_user: user.name,
-      upd_user: user.name,
+      // create_user: user.name,
+      // upd_user: user.name,
       certificate_id: certificateId,
     };
     setIsModalLoading(true);
@@ -179,7 +179,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 

@@ -3,7 +3,7 @@
 import { IGoldPrice } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
 
@@ -85,7 +85,7 @@ const GoldPricePageForm = (props: { paramsId: string }) => {
     setGoldPriceBuy('');
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 

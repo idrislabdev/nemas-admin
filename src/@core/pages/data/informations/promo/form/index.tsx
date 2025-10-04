@@ -5,14 +5,24 @@ import UploadForm from '@/@core/components/forms/upload-form';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import { notification } from 'antd';
 import moment from 'moment';
 
+const levelOptions: Record<number, string> = {
+  6: 'Opulence King',
+  5: 'Gold Sovereign',
+  4: 'Treasure Voyager',
+  3: 'Fortune Rider',
+  2: 'Coin Digger',
+  1: 'Novice Saver',
+};
+
 const InformationPromoPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const url = `/core/information/promo`;
+
   const [promoCode, setPromoCode] = useState('');
   const [levelingUser, setLevelingUser] = useState('');
   const [promoName, setPromoName] = useState('');
@@ -31,7 +41,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
   const [isModalLoading, setIsModalLoading] = useState(false);
 
   const onCancel = () => {
-    if (paramsId == 'form') {
+    if (paramsId === 'form') {
       clearForm();
     } else {
       fetchData();
@@ -39,8 +49,6 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
     const body = {
       promo_code: promoCode,
       leveling_user: levelingUser,
@@ -50,23 +58,25 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
       promo_end_date: promoEndDate,
       promo_tag: promoTag,
       promo_url_background: promoUrlBackground,
-      promo_diskon: parseFloat(
-        promoDiskon.toString().replace('.', '').replace(',', '.')
-      ),
-      promo_cashback: parseFloat(
-        promoCashback.toString().replace('.', '').replace(',', '.')
-      ),
+      promo_diskon: promoDiskon
+        ? parseFloat(promoDiskon.replace(/\./g, '').replace(',', '.'))
+        : 0,
+      promo_cashback: promoCashback
+        ? parseFloat(promoCashback.replace(/\./g, '').replace(',', '.'))
+        : 0,
       promo_cashback_tipe_user: promoCashbackTipeUser,
-      merchant_cashback: merchantCashback,
-      create_user: user.name,
-      upd_user: user.name,
+      merchant_cashback: merchantCashback
+        ? parseFloat(merchantCashback.replace(/\./g, '').replace(',', '.'))
+        : 0,
+      // create_user: username,
+      // upd_user: username,
     };
 
     setRequired({});
     setIsModalLoading(true);
     try {
       let desc = '';
-      if (paramsId == 'form') {
+      if (paramsId === 'form') {
         const resp = await axiosInstance.post(`${url}/create/`, body);
         const { data } = resp;
         if (fileData != null) await uploadFile(data.promo_id);
@@ -107,16 +117,15 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
     setPromoCode(data.promo_code);
-    setLevelingUser(data.leveling_user);
+    setLevelingUser(data.leveling_user?.toString() || '');
     setPromoName(data.promo_name);
     setPromoUrl(data.promo_url);
     setPromoStartDate(moment(data.promo_start_date).format('YYYY-MM-DD'));
     setPromoEndDate(moment(data.promo_end_date).format('YYYY-MM-DD'));
     setPromoTag(data.promo_tag);
-    setPromoDiskon(data.promo_diskon);
-    setPromoCashback(data.promo_cashback);
-    setMerchantCasbhack(data.merchant_cashback);
-    setIsModalLoading(true);
+    setPromoDiskon(data.promo_diskon?.toString() || '');
+    setPromoCashback(data.promo_cashback?.toString() || '');
+    setMerchantCasbhack(data.merchant_cashback?.toString() || '');
     setPromoUrlBackground(data.promo_url_background);
     setIsModalLoading(false);
   };
@@ -145,13 +154,14 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
     setPromoUrlBackground('');
   };
 
-  useState(() => {
-    if (paramsId != 'form') fetchData();
-  });
+  useEffect(() => {
+    if (paramsId !== 'form') fetchData();
+  }, [paramsId]);
+
   return (
     <>
       {contextHolder}
-      {isModalLoading == false && (
+      {isModalLoading === false && (
         <div className="form-input">
           <div className="flex items-start gap-[10px]">
             <div className="form-area w-1/2">
@@ -199,11 +209,18 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                     </span>
                   )}
                 </label>
-                <input
+                <select
                   value={levelingUser}
                   onChange={(e) => setLevelingUser(e.target.value)}
                   className="base"
-                />
+                >
+                  <option value="">-- Pilih Level User --</option>
+                  {Object.entries(levelOptions).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="input-area">
                 <label>

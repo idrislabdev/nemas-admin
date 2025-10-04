@@ -3,7 +3,7 @@
 import { IPaymentMethod } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 
@@ -76,7 +76,7 @@ const PaymentMethodPageForm = (props: { paramsId: string }) => {
     setIsActive(true);
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
   return (

@@ -2,7 +2,7 @@
 
 import { IRating } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import { notification } from 'antd';
 import { AxiosError } from 'axios';
@@ -72,7 +72,7 @@ const InformationRatingPageForm = (props: { paramsId: string }) => {
     setMessage('');
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
   return (

@@ -2,7 +2,7 @@
 
 import { ICustomerService } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notification } from 'antd';
 import { AxiosError } from 'axios';
 
@@ -67,7 +67,7 @@ const InformationCustomerServicePageForm = (props: { paramsId: string }) => {
     setInformationPhone('');
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
 

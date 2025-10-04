@@ -4,7 +4,7 @@ import { IGoldPromo } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import { notification } from 'antd';
 
@@ -129,7 +129,7 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
     setGoldPromoActive(true);
   };
 
-  useState(() => {
+  useEffect(() => {
     if (paramsId != 'form') fetchData();
   });
   return (
