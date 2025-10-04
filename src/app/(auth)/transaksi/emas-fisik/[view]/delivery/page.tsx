@@ -1,7 +1,7 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import ComEmasFisikDeliveryPage from '@/@core/pages/transaksi/emas-fisik/delivery';
-import { CoinsHand } from '@untitled-ui/icons-react';
+import { Truck01 } from '@untitled-ui/icons-react';
 
 export default async function TransaksiEmasFisikDelivery({
   params,
@@ -39,7 +39,7 @@ export default async function TransaksiEmasFisikDelivery({
           <div className="container-body">
             <div className="title-body">
               <div className="logo-area">
-                <CoinsHand />
+                <Truck01 />
               </div>
               <div className="text-area">
                 <h5>Halaman Transaksi</h5>
