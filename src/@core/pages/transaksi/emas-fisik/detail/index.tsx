@@ -8,10 +8,13 @@ import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Truck01 } from '@untitled-ui/icons-react';
 import Image from 'next/image';
+import ModalPhoto from '@/@core/components/modal/modal-photo';
 
 const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
+  const [openModalPhoto, setOpenModalPhoto] = useState(false);
+  const [urlPhoto, setUrlPhoto] = useState('');
 
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(
@@ -183,30 +186,52 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                       {data.delivery_transaction.length > 0 &&
                         data.delivery_transaction[0].delivery_file_url !=
                           null && (
-                          <Image
-                            src={data.delivery_transaction[0].delivery_file_url}
-                            width={0}
-                            height={0}
-                            alt="image"
-                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                            unoptimized={true}
-                          />
+                          <a
+                            onClick={() => {
+                              setUrlPhoto(
+                                data.delivery_transaction[0].delivery_file_url
+                              );
+                              setOpenModalPhoto(true);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Image
+                              src={
+                                data.delivery_transaction[0].delivery_file_url
+                              }
+                              width={0}
+                              height={0}
+                              alt="image"
+                              className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                              unoptimized={true}
+                            />
+                          </a>
                         )}
                     </div>
                     <div className="w-[90px] h-[90px]">
                       {data.delivery_transaction.length > 0 &&
                         data.delivery_transaction[0].additional_file_url !=
                           null && (
-                          <Image
-                            src={
-                              data.delivery_transaction[0].additional_file_url
-                            }
-                            width={0}
-                            height={0}
-                            alt="image"
-                            className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                            unoptimized={true}
-                          />
+                          <a
+                            onClick={() => {
+                              setUrlPhoto(
+                                data.delivery_transaction[0].additional_file_url
+                              );
+                              setOpenModalPhoto(true);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Image
+                              src={
+                                data.delivery_transaction[0].additional_file_url
+                              }
+                              width={0}
+                              height={0}
+                              alt="image"
+                              className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                              unoptimized={true}
+                            />
+                          </a>
                         )}
                     </div>
                   </div>
@@ -254,7 +279,11 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                       Rp{formatterNumber(item.order_detail_total_price)}
                     </td>
                     <td className="px-3 text-center">
-                      <span>{item.gold_cert_detail}</span>
+                      <span>
+                        {item.delivery_details
+                          ? item.delivery_details.gold_cert_code
+                          : ''}
+                      </span>
                     </td>
                     <td className="px-3 py-3 text-center flex flex-col">
                       <div className="w-full flex flex-col items-center">
@@ -263,16 +292,26 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                             item.delivery_details.pre_packing_photo_url &&
                             item.delivery_details.pre_packing_photo_url !=
                               null && (
-                              <Image
-                                src={
-                                  item.delivery_details.pre_packing_photo_url
-                                }
-                                width={0}
-                                height={0}
-                                alt="image"
-                                className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                                unoptimized={true}
-                              />
+                              <a
+                                onClick={() => {
+                                  setUrlPhoto(
+                                    item.delivery_details.pre_packing_photo_url
+                                  );
+                                  setOpenModalPhoto(true);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Image
+                                  src={
+                                    item.delivery_details.pre_packing_photo_url
+                                  }
+                                  width={0}
+                                  height={0}
+                                  alt="image"
+                                  className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                                  unoptimized={true}
+                                />
+                              </a>
                             )}
                         </div>
                       </div>
@@ -284,16 +323,26 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                             item.delivery_details.post_packing_photo_url &&
                             item.delivery_details.post_packing_photo_url !=
                               null && (
-                              <Image
-                                src={
-                                  item.delivery_details.post_packing_photo_url
-                                }
-                                width={0}
-                                height={0}
-                                alt="image"
-                                className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
-                                unoptimized={true}
-                              />
+                              <a
+                                onClick={() => {
+                                  setUrlPhoto(
+                                    item.delivery_details.post_packing_photo_url
+                                  );
+                                  setOpenModalPhoto(true);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Image
+                                  src={
+                                    item.delivery_details.post_packing_photo_url
+                                  }
+                                  width={0}
+                                  height={0}
+                                  alt="image"
+                                  className="w-full h-full rounded-[12px] border border-gray-100 object-cover"
+                                  unoptimized={true}
+                                />
+                              </a>
                             )}
                         </div>
                       </div>
@@ -303,6 +352,11 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
               </tbody>
             </table>
           </div>
+          <ModalPhoto
+            isModalOpen={openModalPhoto}
+            setIsModalOpen={setOpenModalPhoto}
+            url={urlPhoto}
+          />
         </>
       )}
     </div>
