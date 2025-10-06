@@ -97,7 +97,6 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
   };
 
   const fetchData = async () => {
-    setIsModalLoading(true);
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
     setGoldPromoCode(data.gold_promo_code);
@@ -131,7 +130,7 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
 
   useEffect(() => {
     if (paramsId != 'form') fetchData();
-  });
+  }, []);
   return (
     <>
       {contextHolder}

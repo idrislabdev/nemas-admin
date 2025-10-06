@@ -79,7 +79,7 @@ const AdminFeePageForm = (props: { paramsId: string }) => {
 
   useEffect(() => {
     if (paramsId != 'form') fetchData();
-  });
+  }, []);
   return (
     <>
       {contextHolder}

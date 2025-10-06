@@ -104,7 +104,7 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
 
   useEffect(() => {
     if (paramsId != 'form') fetchData();
-  });
+  }, []);
 
   const clearForm = () => {
     setGoldCertCode('');

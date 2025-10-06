@@ -87,7 +87,7 @@ const GoldPricePageForm = (props: { paramsId: string }) => {
 
   useEffect(() => {
     if (paramsId != 'form') fetchData();
-  });
+  }, []);
 
   return (
     <div className="form-input">
