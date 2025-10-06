@@ -84,6 +84,13 @@ const GoldStockMovementPageTable = () => {
       width: 120,
     },
     {
+      title: 'Create Time',
+      dataIndex: 'date',
+      key: 'date',
+      width: 170,
+      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
+    },
+    {
       title: 'Create By',
       dataIndex: 'user_name',
       key: 'user_name',
@@ -162,6 +169,9 @@ const GoldStockMovementPageTable = () => {
           'Stock Sesudah': `${formatterNumber(
             parseFloat(item.stock_after?.toString() || '0')
           )} gr`,
+          'Create Time': item.date
+            ? moment(item.date).format('DD MMM YYYY, HH:mm')
+            : '-',
           Catatan: item.note,
           'Create By': item.user_name,
         })
@@ -171,7 +181,7 @@ const GoldStockMovementPageTable = () => {
       const worksheet = workbook.addWorksheet('Gold Stock Movement');
 
       // Judul
-      worksheet.mergeCells('A1:G1');
+      worksheet.mergeCells('A1:H1');
       worksheet.getCell('A1').value = 'LAPORAN PERGERAKAN STOK EMAS';
       worksheet.getCell('A1').alignment = {
         horizontal: 'center',

@@ -407,6 +407,7 @@ export interface IGoldStockMovement {
   create_user_name?: string;
   upd_user_name?: string;
   create_time?: string;
+  date?: string;
   upd_time?: string;
 }
 
