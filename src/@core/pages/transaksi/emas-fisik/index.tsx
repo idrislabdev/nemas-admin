@@ -10,6 +10,7 @@ import {
   CalendarCheck01,
   ClipboardCheck,
   FileDownload02,
+  Truck01,
 } from '@untitled-ui/icons-react';
 import { DatePicker, Pagination } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -133,13 +134,42 @@ const ComEmasFisikPage = () => {
       key: 'order_status',
       width: 150,
       fixed: 'right',
-    },
-    {
-      title: 'Status Pembayaran',
-      dataIndex: 'order_gold_payment_status_pembayaran',
-      key: 'order_gold_payment_status_pembayaran',
-      width: 165,
-      fixed: 'right',
+      render: (_, record) => (
+        <div className="flex flex-col gap-[4px]">
+          {/* <label>
+            Pesanan :
+            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+              <span className="my-icon icon-xs">
+                <Truck01 />
+              </span>
+              Dikirim
+            </span>
+          </label> */}
+          <label className="flex items-center gap-[4px]">
+            Pesanan :
+            <span className="bg-yellow-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+              {record.order_status}
+            </span>
+          </label>
+          <label className="flex items-center gap-[4px]">
+            Pembayaran :
+            <span className="bg-blue-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+              {record.order_gold_payment_status}
+            </span>
+          </label>
+          <label className="flex items-center gap-[4px]">
+            Pengiriman :
+            {record.is_picked_up && (
+              <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+                <span className="my-icon icon-xs">
+                  <Truck01 />
+                </span>
+                Dikirim
+              </span>
+            )}
+          </label>
+        </div>
+      ),
     },
     {
       title: 'Status Pengiriman',
@@ -163,12 +193,6 @@ const ComEmasFisikPage = () => {
               </Link>
             )}
           {record.is_picked_up && (
-            // <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
-            //   <span className="my-icon icon-xs">
-            //     <Truck01 />
-            //   </span>
-            //   Dikirim
-            // </span>
             <a
               onClick={() => {
                 setSelectedId(record.order_gold_id);

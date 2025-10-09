@@ -167,9 +167,7 @@ const ModalDO = (props: {
                       Ekspedisi
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
-                      {data.order_shipping.length > 0
-                        ? data.order_shipping[0].delivery_partner
-                        : '-'}
+                      {data.tracking_courier_name}
                     </td>
                   </tr>
                   <tr className="h-[30px]">
@@ -183,7 +181,7 @@ const ModalDO = (props: {
                       Metode Pengiriman
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
-                      Kurir Tertutup – Paket Bernilai Tinggi
+                      {data.tracking_courier_service_name}
                     </td>
                   </tr>
                   <tr className="h-[30px]">
@@ -257,11 +255,8 @@ const ModalDO = (props: {
                 segel keamanan NEMAS.
                 {'\n'}- Mohon pastikan segel dalam kondisi utuh saat diterima.
                 {'\n'}- Setiap kerusakan atau kehilangan wajib disertai berita
-                acara dari pihak{' '}
-                {data.order_shipping.length > 0
-                  ? data.order_shipping[0].delivery_partner
-                  : '-'}{' '}
-                dalam waktu 1x24 jam.
+                acara dari pihak {data.tracking_courier_name} dalam waktu 1x24
+                jam.
                 {'\n'}- Barang dikirim dalam kondisi terasuransi penuh sesuai
                 nilai invoice.
               </div>
