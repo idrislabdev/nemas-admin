@@ -278,9 +278,7 @@ const ModalDO = (props: {
                 <div>
                   <div>PIC Kurir</div>
                   <div className="border-t border-black mt-12 pt-1">
-                    {data.order_shipping.length > 0
-                      ? data.order_shipping[0].delivery_partner
-                      : '-'}
+                    {data.tracking_courier_name ?? '-'}
                   </div>
                 </div>
                 <div>
