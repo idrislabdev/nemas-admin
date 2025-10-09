@@ -11,6 +11,10 @@ import { Modal } from 'antd';
 import { PrinterFilled } from '@ant-design/icons';
 import Image from 'next/image';
 import { X } from '@untitled-ui/icons-react';
+import moment from 'moment';
+import 'moment/locale/id';
+
+moment.locale('id');
 
 const ModalDO = (props: {
   isModalOpen: boolean;
@@ -118,9 +122,12 @@ const ModalDO = (props: {
                     <label className="w-[120px] font-medium">Tanggal</label>
                     <p>
                       :{' '}
-                      {data.delivery_transaction &&
-                        data.delivery_transaction[0]
-                          .delivery_pickup_confirm_datetime}
+                      {data.delivery_transaction && data.delivery_transaction[0]
+                        ? moment(
+                            data.delivery_transaction[0]
+                              .delivery_pickup_confirm_datetime
+                          ).format('DD MMM YYYY, HH:mm')
+                        : '-'}
                     </p>
                   </div>
                 </div>
@@ -191,11 +198,15 @@ const ModalDO = (props: {
                       <tr className="h-[30px]">
                         <th className="border p-1 text-[11px] w-10">No</th>
                         <th className="border p-1 text-[11px]">Nama Produk</th>
-                        <th className="border p-1 text-[11px] w-20">Kadar</th>
-                        <th className="border p-1 text-[11px] w-24">
+                        <th className="border p-1 text-[11px]  text-center w-[50px]">
+                          Kadar
+                        </th>
+                        <th className="border p-1 text-[11px]  text-center w-[70px]">
                           Berat (gr)
                         </th>
-                        <th className="border p-1 text-[11px] w-14">Qty</th>
+                        <th className="border p-1 text-[11px] text-center w-[50px]">
+                          Qty
+                        </th>
                         <th className="border p-1 text-[11px] w-[20%]">
                           No Seri
                         </th>
@@ -211,11 +222,13 @@ const ModalDO = (props: {
                             {index + 1}
                           </td>
                           <td className="border p-1 text-[11px]">{`Emas Batangan ${item.gold_brand} (${item.cert_brand})`}</td>
-                          <td className="border p-1 text-[11px]">99.99%</td>
+                          <td className="border p-1 text-[11px]  text-center">
+                            99.99%
+                          </td>
                           <td className="border p-1 text-[11px] text-center">
                             {item.weight}gr
                           </td>
-                          <td className="border p-1 text-[11px] text-center">
+                          <td className="border p-1 text-[11px]  text-center">
                             {item.qty}
                           </td>
                           <td className="border p-1 text-[11px] w-[20%]">
@@ -278,7 +291,7 @@ const ModalDO = (props: {
                 <div>
                   <div>Diterima Oleh</div>
                   <div className="border-t border-black mt-[80px] pt-1">
-                    &nbsp;
+                    {moment().format('DD MMM YYYY, HH:mm')}
                   </div>
                 </div>
               </div>
