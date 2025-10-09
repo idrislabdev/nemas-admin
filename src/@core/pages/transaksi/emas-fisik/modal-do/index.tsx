@@ -174,7 +174,9 @@ const ModalDO = (props: {
                     <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
                       No. Resi
                     </th>
-                    <td className="px-2 py-1 border text-[11px]">-</td>
+                    <td className="px-2 py-1 border text-[11px]">
+                      {data.tracking_number ?? '-'}
+                    </td>
                   </tr>
                   <tr className="h-[30px]">
                     <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
