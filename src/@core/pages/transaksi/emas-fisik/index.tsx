@@ -8,10 +8,10 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import {
   CalendarCheck01,
+  ClipboardCheck,
   FileDownload02,
-  Truck01,
 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -20,6 +20,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 import Link from 'next/link';
+import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -29,6 +30,8 @@ const ComEmasFisikPage = () => {
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [isModalDO, setIsModalDO] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -58,7 +61,7 @@ const ComEmasFisikPage = () => {
       key: 'order_timestamp',
       width: 180,
       render: (_, record) =>
-        moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
+        moment(record.order_timestamp).format('DD MMMM YYYY'),
     },
     {
       title: 'User',
@@ -133,15 +136,15 @@ const ComEmasFisikPage = () => {
     },
     {
       title: 'Status Pembayaran',
-      dataIndex: 'order_gold_payment_status',
-      key: 'order_gold_payment_status',
+      dataIndex: 'order_gold_payment_status_pembayaran',
+      key: 'order_gold_payment_status_pembayaran',
       width: 165,
       fixed: 'right',
     },
     {
       title: 'Status Pengiriman',
-      dataIndex: 'order_gold_payment_status',
-      key: 'order_gold_payment_status',
+      dataIndex: 'order_gold_payment_status_pengiriman',
+      key: 'order_gold_payment_status_pengiriman',
       width: 165,
       fixed: 'right',
       align: 'center',
@@ -156,16 +159,28 @@ const ComEmasFisikPage = () => {
                 <span className="my-icon icon-sm">
                   <CalendarCheck01 />
                 </span>
-                Proses Pesanan
+                Proses
               </Link>
             )}
           {record.is_picked_up && (
-            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
-              <span className="my-icon icon-xs">
-                <Truck01 />
+            // <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+            //   <span className="my-icon icon-xs">
+            //     <Truck01 />
+            //   </span>
+            //   Dikirim
+            // </span>
+            <a
+              onClick={() => {
+                setSelectedId(record.order_gold_id);
+                setIsModalDO(true);
+              }}
+              className="bg-green-600 text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded cursor-pointer"
+            >
+              <span className="my-icon icon-sm">
+                <ClipboardCheck />
               </span>
-              Dikirim
-            </span>
+              Surat Jalan
+            </a>
           )}
         </div>
       ),
@@ -382,16 +397,69 @@ const ComEmasFisikPage = () => {
           </button>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
-        <Table
-          columns={columns}
-          dataSource={dataTable}
-          size="small"
-          scroll={{ x: 'max-content', y: 550 }}
-          pagination={false}
-          className="table-basic"
-          rowKey="order_gold_id"
-        />
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+        <div className="overflow-x-auto rounded-tr-[8px] rounded-tl-[8px] max-h-[600px]">
+          <table className="min-w-full text-sm border-collapse">
+            <thead className="bg-gray-100 sticky top-0 z-10">
+              <tr>
+                {columns.map((col: any) => (
+                  <th
+                    key={col.key?.toString() || col.dataIndex?.toString()}
+                    className={`px-4 py-2 border text-left font-medium text-gray-700 ${
+                      col.align === 'right'
+                        ? 'text-right'
+                        : col.align === 'center'
+                        ? 'text-center'
+                        : 'text-left'
+                    }`}
+                    style={{ width: col.width }}
+                  >
+                    {col.title}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {dataTable.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="text-center py-6 text-gray-400"
+                  >
+                    Tidak ada data
+                  </td>
+                </tr>
+              )}
+              {dataTable.map((record: any) => (
+                <tr key={record.order_gold_id} className="hover:bg-gray-50">
+                  {columns.map((col: any) => {
+                    const rawValue =
+                      record[col.dataIndex as keyof typeof record] ?? '';
+                    const cellContent = col.render
+                      ? col.render(rawValue, record, 0)
+                      : rawValue;
+
+                    return (
+                      <td
+                        key={col.key?.toString() || col.dataIndex?.toString()}
+                        className={`px-4 py-2 border ${
+                          col.align === 'right'
+                            ? 'text-right'
+                            : col.align === 'center'
+                            ? 'text-center'
+                            : 'text-left'
+                        }`}
+                      >
+                        {cellContent}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -404,6 +472,11 @@ const ComEmasFisikPage = () => {
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
+      />
+      <ModalDO
+        isModalOpen={isModalDO}
+        setIsModalOpen={setIsModalDO}
+        orderId={selectedId}
       />
     </>
   );

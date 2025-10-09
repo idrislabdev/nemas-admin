@@ -1,110 +1,125 @@
 @tailwind components;
 .rs-modal-wrapper {
-    display: flex;
-    align-items: center;
-    .rs-modal {
-        margin: 0 auto 0 auto !important;
-    }
+  display: flex;
+  align-items: center;
+  .rs-modal {
+    margin: 0 auto 0 auto !important;
+  }
 }
 .my-modal {
-    .rs-modal-content {
-        @apply rounded-sm;
-        .rs-modal-header {
-            .rs-modal-title {
-                @apply text-neutral-700;
-            }
-        }
-        .rs-modal-body {
-            @apply text-neutral-700;
-        }
-    }  
-  }
-  
-  .my-modal-backdrop {
-    background-color: #000c !important;
-    &.rs-anim-fade {
-        -webkit-transition: opacity 0.05 ease-in  !important;
-        transition: opacity 0.05 ease-in !important;
+  .rs-modal-content {
+    @apply rounded-sm;
+    .rs-modal-header {
+      .rs-modal-title {
+        @apply text-neutral-700;
+      }
+    }
+    .rs-modal-body {
+      @apply text-neutral-700;
     }
   }
+}
 
-  .ant-modal {
-    &.modal-confirm {
-        .ant-modal-body {
-            @apply flex flex-col gap-[20px];
-            .content-icon {
-                @apply flex flex-col justify-center items-center;
-                span {
-                    &.my-icon {
-                        @apply rounded-[50%] bg-red-200 p-[10px];
-                        svg {
-                            @apply w-[48px] h-[48px];
-                            path {
-                                @apply stroke-red-600;
-                            }
-                        }
-                    }
-                }
+.my-modal-backdrop {
+  background-color: #000c !important;
+  &.rs-anim-fade {
+    -webkit-transition: opacity 0.05 ease-in !important;
+    transition: opacity 0.05 ease-in !important;
+  }
+}
+
+.ant-modal {
+  &.modal-confirm {
+    .ant-modal-body {
+      @apply flex flex-col gap-[20px];
+      .content-icon {
+        @apply flex flex-col justify-center items-center;
+        span {
+          &.my-icon {
+            @apply rounded-[50%] bg-red-200 p-[10px];
+            svg {
+              @apply w-[48px] h-[48px];
+              path {
+                @apply stroke-red-600;
+              }
             }
-            .content-text {
-                @apply flex flex-col justify-center items-center text-center;
-                p {
-                    @apply text-base;
-                    span {
-                        @apply font-bold;
-                    }
-                }
-            }
-            .content-footer {
-                @apply flex items-center gap-[10px];
-            }
+          }
         }
+      }
+      .content-text {
+        @apply flex flex-col justify-center items-center text-center;
+        p {
+          @apply text-base;
+          span {
+            @apply font-bold;
+          }
+        }
+      }
+      .content-footer {
+        @apply flex items-center gap-[10px];
+      }
     }
+  }
+  &.modal-full {
+    @apply !max-w-full !w-full m-0 p-0;
+    .ant-modal-content {
+      @apply h-screen m-0 top-0 rounded-none;
+      .ant-modal-body {
+        @apply w-full h-full flex flex-col gap-[8px];
+        overflow-y: auto;
+        .content-body {
+          @apply h-full overflow-auto border border-gray-300;
+        }
+        .content-footer {
+          @apply flex items-center gap-[8px];
+        }
+      }
+    }
+  }
 }
 
 @media (max-width: 767px) {
-    .ant-modal {
-      &.modal-form {
-        @apply !max-w-full !w-full m-0 p-0;
-        &.map {
-          .ant-modal-content {
-            @apply h-full m-0 top-0 rounded-none;
-            .ant-modal-body {
-              @apply w-full flex  flex-col gap-[8px];
-              .content-form {
-                @apply !flex-col justify-start items-start  h-full;
-                .form-input {
-                  @apply w-full  h-full;
-                }
-                .form-map {
-                  @apply w-full h-[300px];
-                }
+  .ant-modal {
+    &.modal-form {
+      @apply !max-w-full !w-full m-0 p-0;
+      &.map {
+        .ant-modal-content {
+          @apply h-full m-0 top-0 rounded-none;
+          .ant-modal-body {
+            @apply w-full flex  flex-col gap-[8px];
+            .content-form {
+              @apply !flex-col justify-start items-start  h-full;
+              .form-input {
+                @apply w-full  h-full;
+              }
+              .form-map {
+                @apply w-full h-[300px];
               }
             }
           }
         }
       }
     }
+  }
 }
 
 .ant-modal {
-    &.modal-form {
-        .ant-modal-content {
-          @apply p-0;
-          .ant-modal-header {
-            @apply !border-b-gray-300 p-[20px] mb-0;
-            border-bottom: 1px solid;
-          }
-          .ant-modal-body {
-            @apply flex flex-col;
-            .content-form {
-              @apply flex flex-col gap-[10px]  p-[20px];
-            }
-            .content-footer {
-              @apply flex items-center gap-[10px] border-t border-t-gray-300  p-[20px];
-            }
-          }
+  &.modal-form {
+    .ant-modal-content {
+      @apply p-0;
+      .ant-modal-header {
+        @apply !border-b-gray-300 p-[20px] mb-0;
+        border-bottom: 1px solid;
+      }
+      .ant-modal-body {
+        @apply flex flex-col;
+        .content-form {
+          @apply flex flex-col gap-[10px]  p-[20px];
         }
+        .content-footer {
+          @apply flex items-center gap-[10px] border-t border-t-gray-300  p-[20px];
+        }
+      }
     }
-      
+  }
 }

@@ -48,6 +48,16 @@ button {
       }
     }
 
+    &.btn-success {
+      @apply !bg-green-600 !text-white;
+      svg {
+        @apply h-[18px] w-[18px];
+        path {
+          @apply stroke-white;
+        }
+      }
+    }
+
     &.btn-outline-neutral {
       @apply !bg-white !text-neutral-700 border !border-neutral-400 font-semibold;
       &:hover {
@@ -115,6 +125,16 @@ a {
     @apply flex items-center gap-[3px] px-[15px] py-[5px] !h-[33px] !text-[13px]/[13px] rounded-[4px];
     &.btn-primary {
       @apply !bg-primary !text-white;
+      svg {
+        @apply h-[18px] w-[18px];
+        path {
+          @apply stroke-white;
+        }
+      }
+    }
+
+    &.btn-success {
+      @apply !bg-green-600 !text-white;
       svg {
         @apply h-[18px] w-[18px];
         path {

@@ -6,14 +6,16 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Truck01 } from '@untitled-ui/icons-react';
+import { ClipboardCheck, Truck01 } from '@untitled-ui/icons-react';
 import Image from 'next/image';
 import ModalPhoto from '@/@core/components/modal/modal-photo';
+import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
 
 const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
   const [openModalPhoto, setOpenModalPhoto] = useState(false);
+  const [openModalDO, setOpenModalDO] = useState(false);
   const [urlPhoto, setUrlPhoto] = useState('');
 
   const fetchData = useCallback(async () => {
@@ -37,6 +39,15 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <div className="flex items-center gap-[4px]">
+          <a
+            className="btn btn-success cursor-pointer w-full h-[28px] rounded"
+            onClick={() => setOpenModalDO(true)}
+          >
+            <span className="my-icon icon-sm">
+              <ClipboardCheck />
+            </span>
+            Surat Jalan
+          </a>
           <Link
             href={`/transaksi/emas-fisik`}
             className="btn btn-outline-neutral"
@@ -352,13 +363,18 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
               </tbody>
             </table>
           </div>
-          <ModalPhoto
-            isModalOpen={openModalPhoto}
-            setIsModalOpen={setOpenModalPhoto}
-            url={urlPhoto}
-          />
         </>
       )}
+      <ModalPhoto
+        isModalOpen={openModalPhoto}
+        setIsModalOpen={setOpenModalPhoto}
+        url={urlPhoto}
+      />
+      <ModalDO
+        isModalOpen={openModalDO}
+        setIsModalOpen={setOpenModalDO}
+        orderId={paramsId}
+      />
     </div>
   );
 };
