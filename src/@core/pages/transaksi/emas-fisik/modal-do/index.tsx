@@ -128,15 +128,15 @@ const ModalDO = (props: {
               <table className="w-full border border-gray-300 mb-3 ">
                 <tbody>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
-                      Nama Penerima
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
+                      Nama Penerima, (No. Telepon)
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
-                      {data.user.name}
+                      {data.user.name} ({data.user.phone_number})
                     </td>
                   </tr>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
                       Alamat Tujuan
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
@@ -147,15 +147,7 @@ const ModalDO = (props: {
                     </td>
                   </tr>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
-                      No. Telepon
-                    </th>
-                    <td className="px-2 py-1 border text-[11px]">
-                      {data.user.phone_number}
-                    </td>
-                  </tr>
-                  <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
                       Nomor Order / Invoice
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
@@ -163,23 +155,16 @@ const ModalDO = (props: {
                     </td>
                   </tr>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
-                      Ekspedisi
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
+                      Ekspedisi, (No. Resi)
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
-                      {data.tracking_courier_name}
+                      {data.tracking_courier_name} ({' '}
+                      {data.tracking_number ?? '-'})
                     </td>
                   </tr>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
-                      No. Resi
-                    </th>
-                    <td className="px-2 py-1 border text-[11px]">
-                      {data.tracking_number ?? '-'}
-                    </td>
-                  </tr>
-                  <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
                       Metode Pengiriman
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
@@ -187,7 +172,7 @@ const ModalDO = (props: {
                     </td>
                   </tr>
                   <tr className="h-[30px]">
-                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px]">
+                    <th className="bg-gray-100 text-left px-2 py-1 border text-[11px] w-[30%]">
                       Asuransi
                     </th>
                     <td className="px-2 py-1 border text-[11px]">
@@ -200,90 +185,101 @@ const ModalDO = (props: {
               {/* ITEM LIST */}
               <div className="flex flex-col gap-[8px]">
                 <h5 className="font-semibold">Rincian Barang Dikirim</h5>
-                <table className="w-full border border-gray-300 text-sm">
-                  <thead className="bg-gray-100">
-                    <tr className="h-[30px]">
-                      <th className="border p-1 text-[11px] w-10">No</th>
-                      <th className="border p-1 text-[11px]">Nama Produk</th>
-                      <th className="border p-1 text-[11px] w-20">Kadar</th>
-                      <th className="border p-1 text-[11px] w-24">
-                        Berat (gram)
-                      </th>
-                      <th className="border p-1 text-[11px] w-14">Qty</th>
-                      <th className="border p-1 text-[11px]">No Seri</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.order_gold_details.map((item, index: number) => (
-                      <tr className="h-[30px]" key={item.order_gold_detail_id}>
-                        <td className="border p-1 text-[11px] text-center">
-                          {index + 1}
-                        </td>
-                        <td className="border p-1 text-[11px]">{`Emas Batangan ${item.gold_brand} (${item.cert_brand})`}</td>
-                        <td className="border p-1 text-[11px]">99.99%</td>
-                        <td className="border p-1 text-[11px] text-center">
-                          {item.weight}
-                        </td>
-                        <td className="border p-1 text-[11px] text-center">
-                          {item.qty}
-                        </td>
-                        <td className="border p-1 text-[11px]">
-                          {item.delivery_details?.gold_cert_code}
-                        </td>
+                <div className="flex flex-col">
+                  <table className="w-full border border-gray-300 text-sm">
+                    <thead className="bg-gray-100">
+                      <tr className="h-[30px]">
+                        <th className="border p-1 text-[11px] w-10">No</th>
+                        <th className="border p-1 text-[11px]">Nama Produk</th>
+                        <th className="border p-1 text-[11px] w-20">Kadar</th>
+                        <th className="border p-1 text-[11px] w-24">
+                          Berat (gr)
+                        </th>
+                        <th className="border p-1 text-[11px] w-14">Qty</th>
+                        <th className="border p-1 text-[11px] w-[20%]">
+                          No Seri
+                        </th>
                       </tr>
-                    ))}
-                    <tr className="font-semibold h-[30px]">
-                      <td
-                        colSpan={3}
-                        className="text-right border p-1 text-[11px]"
-                      >
-                        Total
-                      </td>
-                      <td className="border p-1 text-[11px] text-center">
-                        {totalWeight} gr
-                      </td>
-                      <td className="border p-1 text-[11px] text-center">
-                        {totalQty}
-                      </td>
-                      <td className="border p-1 text-[11px]"></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {data.order_gold_details.map((item, index: number) => (
+                        <tr
+                          className="h-[30px]"
+                          key={item.order_gold_detail_id}
+                        >
+                          <td className="border p-1 text-[11px] text-center">
+                            {index + 1}
+                          </td>
+                          <td className="border p-1 text-[11px]">{`Emas Batangan ${item.gold_brand} (${item.cert_brand})`}</td>
+                          <td className="border p-1 text-[11px]">99.99%</td>
+                          <td className="border p-1 text-[11px] text-center">
+                            {item.weight}gr
+                          </td>
+                          <td className="border p-1 text-[11px] text-center">
+                            {item.qty}
+                          </td>
+                          <td className="border p-1 text-[11px] w-[20%]">
+                            {item.delivery_details?.gold_cert_code}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold h-[30px]">
+                        <td
+                          colSpan={3}
+                          className="text-right border p-1 text-[11px]"
+                        >
+                          Total
+                        </td>
+                        <td className="border p-1 text-[11px] text-center">
+                          {totalWeight} gr
+                        </td>
+                        <td className="border p-1 text-[11px] text-center">
+                          {totalQty}
+                        </td>
+                        <td className="border p-1 text-[11px]"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
-              {/* NOTES */}
-              <div className="mt-4 text-xs leading-5 whitespace-pre-line">
-                - Barang telah diverifikasi oleh bagian QC dan disegel dengan
-                segel keamanan NEMAS.
-                {'\n'}- Mohon pastikan segel dalam kondisi utuh saat diterima.
-                {'\n'}- Setiap kerusakan atau kehilangan wajib disertai berita
-                acara dari pihak {data.tracking_courier_name} dalam waktu 1x24
-                jam.
-                {'\n'}- Barang dikirim dalam kondisi terasuransi penuh sesuai
-                nilai invoice.
+                {/* NOTES */}
+                <div className="text-xs leading-5 whitespace-pre-line">
+                  - Barang telah diverifikasi oleh bagian QC dan disegel dengan
+                  segel keamanan NEMAS.
+                  {'\n'}- Mohon pastikan segel dalam kondisi utuh saat diterima.
+                  {'\n'}- Setiap kerusakan atau kehilangan wajib disertai berita
+                  acara dari pihak {data.tracking_courier_name} dalam waktu 1x24
+                  jam.
+                  {'\n'}- Barang dikirim dalam kondisi terasuransi penuh sesuai
+                  nilai invoice.
+                </div>
               </div>
 
               {/* SIGNATURES */}
-              <div className="grid grid-cols-4 gap-3 text-center mt-10 text-sm">
+              <div className="grid grid-cols-4 gap-[40px] text-center mt-10 text-sm">
                 <div>
                   <div>Dibuat Oleh</div>
-                  <div className="border-t border-black mt-12 pt-1">Admin</div>
+                  <div className="border-t border-black mt-[80px] pt-1">
+                    Admin
+                  </div>
                 </div>
                 <div>
                   <div>Mengetahui</div>
-                  <div className="border-t border-black mt-12 pt-1">
+                  <div className="border-t border-black mt-[80px] pt-1">
                     Kepala Operasional
                   </div>
                 </div>
                 <div>
                   <div>PIC Kurir</div>
-                  <div className="border-t border-black mt-12 pt-1">
+                  <div className="border-t border-black mt-[80px] pt-1">
                     {data.tracking_courier_name ?? '-'}
                   </div>
                 </div>
                 <div>
                   <div>Diterima Oleh</div>
-                  <div className="border-t border-black mt-12 pt-1">&nbsp;</div>
+                  <div className="border-t border-black mt-[80px] pt-1">
+                    &nbsp;
+                  </div>
                 </div>
               </div>
             </div>
