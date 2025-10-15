@@ -42,16 +42,16 @@ const DeliveryPartnerPageForm = (props: { paramsId: string }) => {
     try {
       let desc = '';
       if (paramsId == 'form') {
-        desc = 'Data method Telah Disimpan';
+        desc = 'Data partner Telah Disimpan';
         await axiosInstance.post(`${url}/create`, body);
         clearForm();
       } else {
-        desc = 'Data method Telah Diupdate';
+        desc = 'Data partner Telah Diupdate';
         await axiosInstance.patch(`${url}/${paramsId}`, body);
       }
       setIsModalLoading(false);
       api.info({
-        message: 'Data method',
+        message: 'Data partner',
         description: desc,
         placement: 'bottomRight',
       });
