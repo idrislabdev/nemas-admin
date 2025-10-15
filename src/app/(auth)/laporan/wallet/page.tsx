@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
-import LaporanTopupPage from '@/@core/pages/laporan/top-up';
+import LaporanWalletTablePage from '@/@core/pages/laporan/top-up';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanStockPage() {
+export default function LaporanWalletPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +20,7 @@ export default function LaporanStockPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> TopUp Saldo
+              <FolderOpenIcon /> Wallet / Saldo
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanStockPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>TopUp Saldo</p>
+            <p>Wallet / Saldo</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabPage activeTab="wallet_topup" />
+          <LaporanTabPage activeTab="wallet" />
           <div className="flex flex-col gap-[10px]">
-            <LaporanTopupPage />
+            <LaporanWalletTablePage />
           </div>
         </div>
       </div>

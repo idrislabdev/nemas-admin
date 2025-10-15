@@ -12,15 +12,32 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { IReportWalletTopupSummary } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-const WalletTopupSummaryTable = () => {
-  const url = `/reports/wallet-topup/summary`;
+// 🧱 Interface untuk laporan disbursement
+export interface IReportWalletDisburst {
+  disburst_transaction_id: string;
+  disburst_timestamp: string;
+  user_id: string;
+  user_name: string;
+  user_member_number: string;
+  disburst_number: string;
+  disburst_payment_bank_number: string;
+  disburst_payment_bank_code: string;
+  disburst_payment_bank_account_holder_name: string;
+  disburst_total_amount: number;
+  disburst_admin: number;
+  disburst_amount: number;
+  disburst_status: string;
+  disburst_payment_ref: string;
+}
 
-  const [dataTable, setDataTable] = useState<IReportWalletTopupSummary[]>([]);
+const WalletDisburstTable = () => {
+  const url = `/reports/wallet-disburst`;
+
+  const [dataTable, setDataTable] = useState<IReportWalletDisburst[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
@@ -33,35 +50,94 @@ const WalletTopupSummaryTable = () => {
   });
 
   // 🧱 Kolom tabel
-  const columns: ColumnsType<IReportWalletTopupSummary> = [
+  const columns: ColumnsType<IReportWalletDisburst> = [
+    {
+      title: 'Tanggal',
+      dataIndex: 'disburst_timestamp',
+      key: 'disburst_timestamp',
+      width: 180,
+      render: (_, record) =>
+        moment(record.disburst_timestamp).format('DD MMMM YYYY HH:mm'),
+    },
+    {
+      title: 'Nomor Disburst',
+      dataIndex: 'disburst_number',
+      key: 'disburst_number',
+      width: 200,
+    },
     {
       title: 'Nama User',
       dataIndex: 'user_name',
       key: 'user_name',
-      width: 250,
+      width: 200,
     },
     {
-      title: 'Jumlah Transaksi',
-      dataIndex: 'jumlah_transaksi',
-      key: 'jumlah_transaksi',
+      title: 'Nomor Member',
+      dataIndex: 'user_member_number',
+      key: 'user_member_number',
       width: 180,
-      render: (val) => val?.toLocaleString('id-ID'),
     },
     {
-      title: 'Total Topup',
-      dataIndex: 'total_topup',
-      key: 'total_topup',
-      width: 180,
-      render: (val) =>
-        val ? `Rp${formatDecimal(parseFloat(val.toString()))}` : '-',
+      title: 'Kode Bank',
+      dataIndex: 'disburst_payment_bank_code',
+      key: 'disburst_payment_bank_code',
+      width: 100,
     },
     {
-      title: 'Total Diterima',
-      dataIndex: 'total_diterima',
-      key: 'total_diterima',
+      title: 'Nomor Rekening',
+      dataIndex: 'disburst_payment_bank_number',
+      key: 'disburst_payment_bank_number',
       width: 180,
-      render: (val) =>
-        val ? `Rp${formatDecimal(parseFloat(val.toString()))}` : '-',
+    },
+    {
+      title: 'Nama Pemilik Rekening',
+      dataIndex: 'disburst_payment_bank_account_holder_name',
+      key: 'disburst_payment_bank_account_holder_name',
+      width: 220,
+    },
+    {
+      title: 'Nominal Disburst',
+      dataIndex: 'disburst_amount',
+      key: 'disburst_amount',
+      width: 180,
+      render: (_, record) =>
+        record.disburst_amount
+          ? `Rp${formatDecimal(parseFloat(record.disburst_amount.toString()))}`
+          : '-',
+    },
+    {
+      title: 'Admin Fee',
+      dataIndex: 'disburst_admin',
+      key: 'disburst_admin',
+      width: 150,
+      render: (_, record) =>
+        record.disburst_admin
+          ? `Rp${formatDecimal(parseFloat(record.disburst_admin.toString()))}`
+          : '-',
+    },
+    {
+      title: 'Total Disburst',
+      dataIndex: 'disburst_total_amount',
+      key: 'disburst_total_amount',
+      width: 180,
+      render: (_, record) =>
+        record.disburst_total_amount
+          ? `Rp${formatDecimal(
+              parseFloat(record.disburst_total_amount.toString())
+            )}`
+          : '-',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'disburst_status',
+      key: 'disburst_status',
+      width: 150,
+    },
+    {
+      title: 'Kode Referensi',
+      dataIndex: 'disburst_payment_ref',
+      key: 'disburst_payment_ref',
+      width: 200,
     },
   ];
 
@@ -126,27 +202,39 @@ const WalletTopupSummaryTable = () => {
         return;
       }
 
-      const dataToExport = rows.map((item: IReportWalletTopupSummary) => ({
+      const dataToExport = rows.map((item: IReportWalletDisburst) => ({
+        'Tanggal Transaksi': moment(item.disburst_timestamp).format(
+          'DD MMMM YYYY HH:mm'
+        ),
+        'Nomor Disburst': item.disburst_number,
         'Nama User': item.user_name,
-        'Jumlah Transaksi': item.jumlah_transaksi,
-        'Total Topup': `Rp${formatDecimal(
-          parseFloat(item.total_topup.toString())
+        'Nomor Member': item.user_member_number,
+        'Kode Bank': item.disburst_payment_bank_code,
+        'Nomor Rekening': item.disburst_payment_bank_number,
+        'Nama Pemilik Rekening': item.disburst_payment_bank_account_holder_name,
+        'Nominal Disburst': `Rp${formatDecimal(
+          parseFloat(item.disburst_amount.toString())
         )}`,
-        'Total Diterima': `Rp${formatDecimal(
-          parseFloat(item.total_diterima.toString())
+        'Admin Fee': `Rp${formatDecimal(
+          parseFloat(item.disburst_admin.toString())
         )}`,
+        'Total Disburst': `Rp${formatDecimal(
+          parseFloat(item.disburst_total_amount.toString())
+        )}`,
+        Status: item.disburst_status,
+        'Kode Referensi': item.disburst_payment_ref,
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Summary Topup Wallet');
+      const worksheet = workbook.addWorksheet('Laporan Disburst Wallet');
 
-      worksheet.mergeCells('A1:D1');
-      worksheet.getCell('A1').value = 'LAPORAN RINGKASAN TOPUP WALLET';
+      worksheet.mergeCells('A1:L1');
+      worksheet.getCell('A1').value = 'LAPORAN DISBURST WALLET';
       worksheet.getCell('A1').alignment = { horizontal: 'center' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:D2');
+        worksheet.mergeCells('A2:L2');
         worksheet.getCell('A2').value = `Periode: ${dayjs(
           params.start_date
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
@@ -176,13 +264,15 @@ const WalletTopupSummaryTable = () => {
         };
       });
 
-      // 🔧 perbaikan border agar tetap muncul walaupun cell kosong
+      // 🔧 border tetap muncul meskipun sel kosong
       dataToExport.forEach((row) => {
         const values = header.map((key) => {
           const val = row[key as keyof typeof row];
           return val !== undefined && val !== null && val !== '' ? val : '';
         });
+
         const newRow = worksheet.addRow(values);
+
         newRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -204,7 +294,7 @@ const WalletTopupSummaryTable = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_ringkasan_topup_wallet_${dayjs().format(
+      const fileName = `laporan_disburst_wallet_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
       saveAs(new Blob([buffer]), fileName);
@@ -241,7 +331,7 @@ const WalletTopupSummaryTable = () => {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="user_id"
+          rowKey="disburst_transaction_id"
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
@@ -261,4 +351,4 @@ const WalletTopupSummaryTable = () => {
   );
 };
 
-export default WalletTopupSummaryTable;
+export default WalletDisburstTable;

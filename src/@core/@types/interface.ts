@@ -845,3 +845,11 @@ export interface IReportWalletTopUP {
   topup_payment_number: string;
   topup_payment_ref: string;
 }
+
+export interface IReportWalletTopupSummary {
+  user_id: string;
+  user_name: string;
+  jumlah_transaksi: number;
+  total_topup: number;
+  total_diterima: number;
+}
