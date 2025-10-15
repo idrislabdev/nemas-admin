@@ -42,8 +42,7 @@ const GoldCertPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    cert_code__icontains: '',
-    cert_brand__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -144,8 +143,7 @@ const GoldCertPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      cert_code__icontains: value,
-      cert_brand__icontains: value,
+      search: value,
     });
   };
 
@@ -190,7 +188,7 @@ const GoldCertPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        cert_code__icontains: '',
+        search: '',
         cert_brand__icontains: '',
       };
 
