@@ -31,7 +31,12 @@ const ModalDO = (props: {
       `/reports/gold-sales-order/${orderId}`
     );
 
+    const respDetail = await axiosInstance.get(
+      `/reports/gold-sales-order/${orderId}/detail`
+    );
+
     const temp: IOrderGold = resp.data;
+    temp.order_gold_details = respDetail.data.order_gold_detail_groups;
 
     const tempWeight = temp.order_gold_details.reduce(
       (sum, i) => sum + (i.weight || 0),
@@ -41,7 +46,7 @@ const ModalDO = (props: {
       (sum, i) => sum + (i.qty || 0),
       0
     );
-    setData(resp.data);
+    setData(temp);
     setTotalQty(tempQty);
     setTotalWeight(tempWeight);
   }, [orderId]);

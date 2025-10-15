@@ -132,7 +132,7 @@ const ComEmasFisikPage = () => {
       title: 'Status Pesanan',
       dataIndex: 'order_status',
       key: 'order_status',
-      width: 150,
+      width: 200,
       fixed: 'right',
       render: (_, record) => (
         <div className="flex flex-col gap-[4px]">
@@ -175,7 +175,7 @@ const ComEmasFisikPage = () => {
       title: 'Status Pengiriman',
       dataIndex: 'order_gold_payment_status_pengiriman',
       key: 'order_gold_payment_status_pengiriman',
-      width: 165,
+      width: 135,
       fixed: 'right',
       align: 'center',
       render: (_, record) => (
@@ -423,7 +423,7 @@ const ComEmasFisikPage = () => {
       </div>
       <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <div className="overflow-x-auto rounded-tr-[8px] rounded-tl-[8px] max-h-[600px]">
-          <table className="min-w-full text-sm border-collapse">
+          <table className="min-w-full text-sm border-collapse table-fixed">
             <thead className="bg-gray-100 sticky top-0 z-10">
               <tr>
                 {columns.map((col: any) => (

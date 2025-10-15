@@ -6,7 +6,11 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ClipboardCheck, Truck01 } from '@untitled-ui/icons-react';
+import {
+  CalendarCheck01,
+  ClipboardCheck,
+  Truck01,
+} from '@untitled-ui/icons-react';
 import Image from 'next/image';
 import ModalPhoto from '@/@core/components/modal/modal-photo';
 import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
@@ -23,7 +27,14 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
       `/reports/gold-sales-order/${paramsId}`
     );
 
-    setData(resp.data);
+    const respDetail = await axiosInstance.get(
+      `/reports/gold-sales-order/${paramsId}/detail`
+    );
+    let temp: IOrderGold = {} as IOrderGold;
+    temp = resp.data;
+    temp.order_gold_details = respDetail.data.order_gold_details;
+
+    setData(temp);
   }, [paramsId]);
 
   useEffect(() => {
@@ -39,15 +50,28 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <div className="flex items-center gap-[4px]">
-          <a
-            className="btn btn-success cursor-pointer w-full h-[28px] rounded"
-            onClick={() => setOpenModalDO(true)}
-          >
-            <span className="my-icon icon-sm">
-              <ClipboardCheck />
-            </span>
-            Surat Jalan
-          </a>
+          {data.is_picked_up && (
+            <a
+              className="btn btn-success cursor-pointer w-full h-[28px] rounded"
+              onClick={() => setOpenModalDO(true)}
+            >
+              <span className="my-icon icon-sm">
+                <ClipboardCheck />
+              </span>
+              Surat Jalan
+            </a>
+          )}
+          {!data.is_picked_up && (
+            <Link
+              href={`/transaksi/emas-fisik/${paramsId}/delivery`}
+              className="btn btn-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
+            >
+              <span className="my-icon icon-sm">
+                <CalendarCheck01 />
+              </span>
+              Proses
+            </Link>
+          )}
           <Link
             href={`/transaksi/emas-fisik`}
             className="btn btn-outline-neutral"

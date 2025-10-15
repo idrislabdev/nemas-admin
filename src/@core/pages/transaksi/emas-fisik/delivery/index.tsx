@@ -11,7 +11,7 @@ import { formatterNumber } from '@/@core/utils/general';
 // import { notification } from 'antd';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
-import { CalendarCheck01, Truck01 } from '@untitled-ui/icons-react';
+import { FileAttachment01, Truck01 } from '@untitled-ui/icons-react';
 import UploadMiniForm from '@/@core/components/forms/upload-mini-form';
 import { notification } from 'antd';
 import ModalSertifikat from '../modal-sertifikat';
@@ -44,8 +44,11 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(
       `/reports/gold-sales-order/${paramsId}`
     );
+    const respDetail = await axiosInstance.get(
+      `/reports/gold-sales-order/${paramsId}/detail`
+    );
     const details: IOrderGoldDetailPayload[] = [] as IOrderGoldDetailPayload[];
-    resp.data.order_gold_details.forEach((item: IOrderGoldDetail) => {
+    respDetail.data.order_gold_details.forEach((item: IOrderGoldDetail) => {
       const obj: IOrderGoldDetailPayload = {
         order_detail_id: item.order_gold_detail_id,
         gold_type: item.gold_type,
@@ -187,13 +190,13 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
         <div className="flex items-center gap-[4px]">
           {!data.is_picked_up && data.order_gold_payment_status == 'PAID' && (
             <a
-              className="btn btn-primary cursor-pointer w-full h-[28px] rounded"
+              className="btn btn-outline-primary cursor-pointer w-full h-[28px] rounded"
               onClick={() => handleSubmit()}
             >
               <span className="my-icon icon-sm">
-                <CalendarCheck01 />
+                <FileAttachment01 />
               </span>
-              Proses Pesanan
+              Buat Surat Jalan
             </a>
           )}
           <Link

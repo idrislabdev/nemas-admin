@@ -35,6 +35,7 @@ select {
   }
 }
 
+a,
 button {
   &.btn {
     @apply flex items-center gap-[4px] px-[15px] py-[5px] h-[33px] !text-[13px]/[13px] !rounded-[4px];
@@ -47,7 +48,6 @@ button {
         }
       }
     }
-
     &.btn-success {
       @apply !bg-green-600 !text-white;
       svg {
@@ -100,14 +100,14 @@ button {
         @apply !text-white !bg-primary;
         svg {
           path {
-            @apply !fill-white;
+            @apply text-white;
           }
         }
       }
       svg {
         @apply h-[15px] w-[15px];
         path {
-          @apply fill-primary;
+          @apply text-primary;
         }
       }
     }
