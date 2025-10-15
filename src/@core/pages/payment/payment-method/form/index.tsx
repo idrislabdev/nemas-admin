@@ -101,7 +101,7 @@ const PaymentMethodPageForm = (props: { paramsId: string }) => {
           </div>
           <div className="input-area">
             <label>
-              Descripsi{' '}
+              Deskripsi{' '}
               {required.payment_method_description && (
                 <span className="text-red-500 text-[10px]/[14px] italic">
                   ({required.payment_method_description?.toString()})
