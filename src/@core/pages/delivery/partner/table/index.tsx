@@ -41,8 +41,8 @@ const DeliveryPartnerPageTable = () => {
     {
       title: 'No',
       width: 70,
-      dataIndex: 'payment_id',
-      key: 'payment_id',
+      dataIndex: 'delivery_partner_id',
+      key: 'delivery_partner_id',
       fixed: 'left',
       align: 'center',
       render: (_, record, index) => index + params.offset + 1,
@@ -249,7 +249,7 @@ const DeliveryPartnerPageTable = () => {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="payment_method_id"
+          rowKey="delivery_partner_id"
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
