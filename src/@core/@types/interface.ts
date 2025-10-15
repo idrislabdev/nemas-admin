@@ -827,3 +827,21 @@ export interface IDeliveryDetails {
   pre_packing_photo_url: string;
   post_packing_photo_url: string;
 }
+
+export interface IReportWalletTopUP {
+  topup_transaction_id: string;
+  create_date: string; // ISO timestamp format (e.g., 2025-10-15T03:49:29.206Z)
+  user_id: string;
+  user_name: string;
+  user_member_number: string;
+  topup_number: string;
+  topup_payment_bank: number;
+  topup_payment_ref_code: string;
+  topup_payment_bank_name: string;
+  topup_total_amount: number;
+  topup_admin: number;
+  topup_amount: number;
+  topup_status: string;
+  topup_payment_number: string;
+  topup_payment_ref: string;
+}
