@@ -380,6 +380,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
       {paramsId != 'form' && (
         <GoldCertDetailTable
           goldId={paramsId}
+          goldWeight={goldWeight}
           certificateId={certificateId.toString()}
         />
       )}

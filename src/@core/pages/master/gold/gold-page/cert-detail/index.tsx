@@ -12,9 +12,10 @@ import ModalAddCertificate from './modal-add';
 
 const GoldCertDetailTable = (props: {
   goldId: string;
+  goldWeight: string;
   certificateId: string;
 }) => {
-  const { goldId, certificateId } = props;
+  const { goldId, goldWeight, certificateId } = props;
   const url = `/core/gold/cert_price_detail/?gold_id=${goldId}`;
   const [dataTable, setDataTable] = useState<Array<IGoldCertPrice>>([]);
   const [total, setTotal] = useState(0);
@@ -185,6 +186,7 @@ const GoldCertDetailTable = (props: {
           setIsModalOpen={setIsModalOpen}
           paramsId={paramsId}
           goldId={goldId}
+          goldWeight={goldWeight}
           certificateId={certificateId}
           onConfirm={() => onConfirmUpdateCert()}
         />

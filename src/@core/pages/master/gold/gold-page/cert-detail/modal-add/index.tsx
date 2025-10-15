@@ -8,6 +8,7 @@ const ModalAddCertificate = (props: {
   isModalOpen: boolean;
   setIsModalOpen: Dispatch<SetStateAction<boolean>>;
   goldId: string;
+  goldWeight: string;
   certificateId: string;
   paramsId: string;
   onConfirm: () => void;
@@ -16,6 +17,7 @@ const ModalAddCertificate = (props: {
     isModalOpen,
     setIsModalOpen,
     goldId,
+    goldWeight,
     certificateId,
     paramsId,
     onConfirm,
@@ -26,7 +28,7 @@ const ModalAddCertificate = (props: {
   );
   const [goldCertCode, setGoldCertCode] = useState('');
   const [includeStock, setIncludeStock] = useState(true);
-  const [goldWeight, setGoldWeight] = useState('');
+  // const [goldWeight, setGoldWeight] = useState('');
 
   const onSave = async () => {
     // const user = JSON.parse(localStorage.getItem("user") || "{}")
@@ -64,7 +66,6 @@ const ModalAddCertificate = (props: {
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
     setGoldCertCode(data.gold_cert_code);
-    setGoldWeight(data.gold_weight.toString());
     setIncludeStock(data.include_stock);
   };
 
@@ -74,7 +75,7 @@ const ModalAddCertificate = (props: {
 
   const clearForm = () => {
     setGoldCertCode('');
-    setGoldWeight('');
+    // setGoldWeight('');
     setIncludeStock(true);
     // setCertCode("");
     // setGoldWeight("");
@@ -126,15 +127,6 @@ const ModalAddCertificate = (props: {
                 <input
                   value={goldWeight}
                   disabled
-                  onChange={(e) =>
-                    setGoldWeight(
-                      e.target.value
-                        .replace(/(?!\,)\D/g, '')
-                        .replace(/(?<=\,,*)\,/g, '')
-                        .replace(/(?<=\,\d\d).*/g, '')
-                        .replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-                    )
-                  }
                   className={`base ${required.gold_weight ? 'error' : ''}`}
                 />
               </div>
