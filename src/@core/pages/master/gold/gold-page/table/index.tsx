@@ -167,7 +167,7 @@ const GoldPageTable = () => {
   };
 
   const confirmDelete = async () => {
-    await axiosInstance.delete(`${url}${selectedId}/`);
+    await axiosInstance.delete(`/core/gold/${selectedId}`);
     setOpenModalConfirm(false);
     setParams({ ...params, offset: 0, limit: 10, type__icontains: '' });
     api.info({

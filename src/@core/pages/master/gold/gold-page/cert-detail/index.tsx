@@ -33,8 +33,8 @@ const GoldCertDetailTable = (props: {
     {
       title: 'No',
       width: 70,
-      dataIndex: 'cert_id',
-      key: 'cert_id',
+      dataIndex: 'id',
+      key: 'id',
       fixed: 'left',
       align: 'center',
       render: (_, record, index) => index + params.offset + 1,
@@ -162,7 +162,7 @@ const GoldCertDetailTable = (props: {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="cert_id"
+          rowKey="id"
         />
         <div className="flex justify-end p-[12px]">
           <Pagination

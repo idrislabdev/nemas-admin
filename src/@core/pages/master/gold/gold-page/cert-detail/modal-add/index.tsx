@@ -70,7 +70,7 @@ const ModalAddCertificate = (props: {
 
   useEffect(() => {
     if (paramsId != '') fetchData();
-  });
+  }, [paramsId]);
 
   const clearForm = () => {
     setGoldCertCode('');
@@ -125,6 +125,7 @@ const ModalAddCertificate = (props: {
                 <span className="prepend !top-[5px]">gr</span>
                 <input
                   value={goldWeight}
+                  disabled
                   onChange={(e) =>
                     setGoldWeight(
                       e.target.value
