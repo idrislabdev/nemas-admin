@@ -57,7 +57,6 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
         await axiosInstance.patch(`${url}/${paramsId}/`, body);
         desc = 'Data Gold Cert Price Telah Diupdate';
       }
-      clearForm();
       api.info({
         message: 'Data Gold Cert Price',
         description: desc,
@@ -76,7 +75,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
     setCertCode(data.cert_code);
-    setCertBrand(data.cert_name);
+    setCertBrand(data.cert_brand);
     setGoldWeight(data.gold_weight.toString());
     setCertPrice(data.cert_price.toString());
   };
