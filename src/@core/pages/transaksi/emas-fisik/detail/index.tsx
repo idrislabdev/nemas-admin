@@ -61,7 +61,7 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
               Surat Jalan
             </a>
           )}
-          {!data.is_picked_up && (
+          {!data.is_picked_up && data.order_gold_payment_status == 'PAID' && (
             <Link
               href={`/transaksi/emas-fisik/${paramsId}/delivery`}
               className="btn btn-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
@@ -103,8 +103,16 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                       </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
-                      <span className="w-40 text-gray-500">Status</span>
+                      <span className="w-40 text-gray-500">Status Order</span>
                       <span className="font-medium">: {data.order_status}</span>
+                    </div>
+                    <div className="flex px-4 h-[30px] items-center">
+                      <span className="w-40 text-gray-500">
+                        Status Pembayaran
+                      </span>
+                      <span className="font-medium">
+                        : {data.order_gold_payment_status}
+                      </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
                       <span className="w-40 text-gray-500">
@@ -170,7 +178,6 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                           : '-'}
                       </span>
                     </div>
-                    <div className="flex px-4 h-[30px]"></div>
                   </div>
                 </div>
               </div>
