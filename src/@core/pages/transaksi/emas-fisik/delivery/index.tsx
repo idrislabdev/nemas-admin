@@ -230,8 +230,16 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                       </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
-                      <span className="w-40 text-gray-500">Status</span>
+                      <span className="w-40 text-gray-500">Status Order</span>
                       <span className="font-medium">: {data.order_status}</span>
+                    </div>
+                    <div className="flex px-4 h-[30px] items-center">
+                      <span className="w-40 text-gray-500">
+                        Status Pembayaran
+                      </span>
+                      <span className="font-medium">
+                        : {data.order_gold_payment_status}
+                      </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
                       <span className="w-40 text-gray-500">
@@ -297,7 +305,6 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                           : '-'}
                       </span>
                     </div>
-                    <div className="flex px-4 h-[30px]"></div>
                   </div>
                 </div>
               </div>
