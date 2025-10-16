@@ -103,15 +103,23 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
                       </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
-                      <span className="w-40 text-gray-500">Status Order</span>
-                      <span className="font-medium">: {data.order_status}</span>
+                      <span className="w-40 text-gray-500">Status Pesanan</span>
+                      <span className="font-medium flex items-center gap-[4px]">
+                        :
+                        <span className="bg-yellow-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+                          {data.order_status}
+                        </span>
+                      </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
                       <span className="w-40 text-gray-500">
                         Status Pembayaran
                       </span>
-                      <span className="font-medium">
-                        : {data.order_gold_payment_status}
+                      <span className="font-medium flex items-center gap-[4px]">
+                        :{' '}
+                        <span className="bg-blue-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
+                          {data.order_gold_payment_status}
+                        </span>
                       </span>
                     </div>
                     <div className="flex px-4 h-[30px] items-center">
