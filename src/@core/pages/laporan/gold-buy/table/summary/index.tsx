@@ -15,7 +15,6 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-// 🧱 Interface summary per user
 export interface IGoldBuySummaryUser {
   user_id: string;
   user_name: string;
@@ -31,6 +30,9 @@ export interface IGoldBuySummaryUser {
 const GoldBuySummaryUserTable = () => {
   const url = `/reports/gold-buy-transaction/summary-user`;
 
+  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  const today = dayjs().format('YYYY-MM-DD');
+
   const [dataTable, setDataTable] = useState<IGoldBuySummaryUser[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -39,11 +41,16 @@ const GoldBuySummaryUserTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: startOfMonth,
+    end_date: today,
     order_by: 'jumlah_transaksi',
     order_direction: 'DESC',
   });
+
+  const [rangeValue, setRangeValue] = useState<[Dayjs, Dayjs]>([
+    dayjs(startOfMonth),
+    dayjs(today),
+  ]);
 
   // 🔁 Fetch data
   const fetchData = useCallback(async () => {
@@ -61,6 +68,8 @@ const GoldBuySummaryUserTable = () => {
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
+    if (!dates || !dates[0] || !dates[1]) return;
+    setRangeValue([dates[0], dates[1]]);
     setParams({
       ...params,
       start_date: dateStrings[0],
@@ -116,13 +125,12 @@ const GoldBuySummaryUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Pembelian Emas');
 
-      // === HEADER JUDUL LAPORAN ===
+      // === HEADER JUDUL (rata kiri) ===
       worksheet.mergeCells('A1:H1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PEMBELIAN EMAS PER USER';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // === PERIODE LAPORAN ===
       worksheet.mergeCells('A2:H2');
       const periodeText =
         params.start_date && params.end_date
@@ -131,15 +139,14 @@ const GoldBuySummaryUserTable = () => {
             )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
           : 'Periode: Semua Tanggal';
       worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
-      // === WAKTU CETAK ===
       worksheet.mergeCells('A3:H3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'center' };
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
       worksheet.getCell('A3').font = { italic: true };
 
       worksheet.addRow([]);
@@ -198,14 +205,14 @@ const GoldBuySummaryUserTable = () => {
         });
       });
 
-      // === OTOMATIS LEBAR KOLOM ===
+      // === FIT WIDTH KOLOM ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 40); // batasi agar tidak terlalu lebar
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -287,6 +294,7 @@ const GoldBuySummaryUserTable = () => {
         <RangePicker
           size="small"
           className="w-[300px] h-[40px]"
+          value={rangeValue}
           onChange={onRangeChange}
         />
         <button

@@ -34,6 +34,10 @@ export interface IGoldSellTransaction {
 const GoldSellTransactionDetailsTable = () => {
   const url = `/reports/gold-sell-transaction/details`;
 
+  // 📅 Default tanggal awal dan akhir
+  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  const today = dayjs().format('YYYY-MM-DD');
+
   const [dataTable, setDataTable] = useState<IGoldSellTransaction[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -41,8 +45,8 @@ const GoldSellTransactionDetailsTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: startOfMonth,
+    end_date: today,
     order_by: 'transaction_date',
     order_direction: 'DESC',
   });
@@ -125,7 +129,7 @@ const GoldSellTransactionDetailsTable = () => {
       // === HEADER JUDUL LAPORAN ===
       worksheet.mergeCells('A1:K1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // === PERIODE LAPORAN ===
@@ -137,14 +141,14 @@ const GoldSellTransactionDetailsTable = () => {
             )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
           : 'Periode: Semua Tanggal';
       worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
       worksheet.mergeCells('A3:K3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'center' };
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
       worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
 
       worksheet.addRow([]);
@@ -208,14 +212,14 @@ const GoldSellTransactionDetailsTable = () => {
         });
       });
 
-      // === LEBAR KOLOM ===
+      // === LEBAR KOLOM (auto-fit tapi tidak terlalu lebar) ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.max(maxLength + 2, 12);
+        col.width = Math.min(Math.max(maxLength + 2, 12), 40); // batas max 40
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -309,6 +313,7 @@ const GoldSellTransactionDetailsTable = () => {
           size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
         />
         <button
           className="btn btn-primary"

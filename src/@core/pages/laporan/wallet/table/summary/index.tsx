@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -20,6 +19,10 @@ const { RangePicker } = DatePicker;
 const WalletTopupSummaryTable = () => {
   const url = `/reports/wallet-topup/summary`;
 
+  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
+  const firstDay = dayjs().startOf('month');
+  const today = dayjs();
+
   const [dataTable, setDataTable] = useState<IReportWalletTopupSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -28,8 +31,8 @@ const WalletTopupSummaryTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: firstDay.format('YYYY-MM-DD'),
+    end_date: today.format('YYYY-MM-DD'),
   });
 
   // 🧱 Kolom tabel
@@ -140,20 +143,20 @@ const WalletTopupSummaryTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Topup Wallet');
 
+      // 🧾 Judul rata kiri
       worksheet.mergeCells('A1:D1');
       worksheet.getCell('A1').value = 'LAPORAN RINGKASAN TOPUP WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:D2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-          'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
-      }
+      // 📅 Periode rata kiri
+      worksheet.mergeCells('A2:D2');
+      worksheet.getCell('A2').value = `Periode: ${dayjs(
+        params.start_date
+      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        'DD-MM-YYYY'
+      )}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -176,12 +179,9 @@ const WalletTopupSummaryTable = () => {
         };
       });
 
-      // 🔧 perbaikan border agar tetap muncul walaupun cell kosong
+      // 🔧 Border + auto-fit width
       dataToExport.forEach((row) => {
-        const values = header.map((key) => {
-          const val = row[key as keyof typeof row];
-          return val !== undefined && val !== null && val !== '' ? val : '';
-        });
+        const values = header.map((key) => row[key as keyof typeof row] ?? '');
         const newRow = worksheet.addRow(values);
         newRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'middle' };
@@ -194,13 +194,14 @@ const WalletTopupSummaryTable = () => {
         });
       });
 
+      // 🧩 Auto-fit column width
       worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+        let maxLength = 10;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 50); // batasi lebar max
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -226,6 +227,7 @@ const WalletTopupSummaryTable = () => {
           size={'small'}
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          defaultValue={[firstDay, today]}
         />
         <button className="btn btn-primary" onClick={exportData}>
           <FileDownload02 />

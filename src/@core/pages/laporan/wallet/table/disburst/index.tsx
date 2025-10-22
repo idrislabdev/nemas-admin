@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -16,7 +15,6 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-// 🧱 Interface untuk laporan disbursement
 export interface IReportWalletDisburst {
   disburst_transaction_id: string;
   disburst_timestamp: string;
@@ -41,15 +39,18 @@ const WalletDisburstTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // 🧭 Default tanggal awal = 1 bulan aktif, akhir = hari ini
+  const startOfMonth = dayjs().startOf('month');
+  const today = dayjs();
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: startOfMonth.format('YYYY-MM-DD'),
+    end_date: today.format('YYYY-MM-DD'),
   });
 
-  // 🧱 Kolom tabel
   const columns: ColumnsType<IReportWalletDisburst> = [
     {
       title: 'Tanggal',
@@ -141,7 +142,6 @@ const WalletDisburstTable = () => {
     },
   ];
 
-  // 🧭 Ambil data dari API
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(url, { params });
     setDataTable(resp.data.results);
@@ -159,21 +159,17 @@ const WalletDisburstTable = () => {
     setParams({
       ...params,
       offset: 0,
-      limit: 10,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
     });
   };
 
-  // 🧾 Ambil semua data untuk ekspor
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
-
     const firstResp = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
-
     allRows = allRows.concat(firstResp.data.results);
     const totalCount = firstResp.data.count;
     const totalPages = Math.ceil(totalCount / limit);
@@ -184,13 +180,12 @@ const WalletDisburstTable = () => {
         params: { ...params, limit, offset },
       });
       allRows = allRows.concat(resp.data.results);
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 150));
     }
 
     return allRows;
   };
 
-  // 📦 Ekspor ke Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -228,20 +223,19 @@ const WalletDisburstTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Disburst Wallet');
 
+      // 🔹 Header rata kiri
       worksheet.mergeCells('A1:L1');
       worksheet.getCell('A1').value = 'LAPORAN DISBURST WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:L2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-          'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
-      }
+      worksheet.mergeCells('A2:L2');
+      worksheet.getCell('A2').value = `Periode: ${dayjs(
+        params.start_date
+      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        'DD-MM-YYYY'
+      )}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -264,15 +258,9 @@ const WalletDisburstTable = () => {
         };
       });
 
-      // 🔧 border tetap muncul meskipun sel kosong
       dataToExport.forEach((row) => {
-        const values = header.map((key) => {
-          const val = row[key as keyof typeof row];
-          return val !== undefined && val !== null && val !== '' ? val : '';
-        });
-
+        const values = header.map((key) => row[key as keyof typeof row] ?? '');
         const newRow = worksheet.addRow(values);
-
         newRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -284,13 +272,14 @@ const WalletDisburstTable = () => {
         });
       });
 
+      // 🔹 Auto fit column width (maksimal 40 karakter)
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -313,13 +302,18 @@ const WalletDisburstTable = () => {
     <>
       <div className="flex items-center justify-between mb-4">
         <RangePicker
-          size={'small'}
+          size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          value={[dayjs(params.start_date), dayjs(params.end_date)]}
         />
-        <button className="btn btn-primary" onClick={exportData}>
+        <button
+          className="btn btn-primary"
+          onClick={exportData}
+          disabled={isModalLoading}
+        >
           <FileDownload02 />
-          Export Excel
+          {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 

@@ -23,13 +23,22 @@ const WalletTopupTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // ✅ Default tanggal: awal bulan & hari ini
+  const defaultStart = dayjs().startOf('month');
+  const defaultEnd = dayjs();
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
   });
+
+  const [selectedRange, setSelectedRange] = useState<[Dayjs, Dayjs]>([
+    defaultStart,
+    defaultEnd,
+  ]);
 
   // 🧱 Kolom tabel
   const columns: ColumnsType<IReportWalletTopUP> = [
@@ -125,13 +134,16 @@ const WalletTopupTable = () => {
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      start_date: dateStrings[0],
-      end_date: dateStrings[1],
-    });
+    if (dates && dates[0] && dates[1]) {
+      setSelectedRange([dates[0], dates[1]]);
+      setParams({
+        ...params,
+        offset: 0,
+        limit: 10,
+        start_date: dateStrings[0],
+        end_date: dateStrings[1],
+      });
+    }
   };
 
   // 🧾 Ambil semua data untuk ekspor
@@ -193,9 +205,10 @@ const WalletTopupTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Topup Wallet');
 
+      // ✅ Header kiri
       worksheet.mergeCells('A1:J1');
       worksheet.getCell('A1').value = 'LAPORAN TOPUP WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       if (params.start_date && params.end_date) {
@@ -205,7 +218,7 @@ const WalletTopupTable = () => {
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+        worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
@@ -215,7 +228,7 @@ const WalletTopupTable = () => {
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -230,15 +243,8 @@ const WalletTopupTable = () => {
       });
 
       dataToExport.forEach((row) => {
-        // Pastikan semua kolom diisi string kosong minimal ''
-        const values = header.map((key) => {
-          const val = row[key as keyof typeof row];
-          return val !== undefined && val !== null && val !== '' ? val : '';
-        });
-
+        const values = header.map((key) => row[key as keyof typeof row] ?? '');
         const newRow = worksheet.addRow(values);
-
-        // Terapkan border ke semua cell, termasuk yang kosong
         newRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -250,13 +256,14 @@ const WalletTopupTable = () => {
         });
       });
 
+      // ✅ Auto-fit kolom, tapi dibatasi max 40 agar tidak terlalu lebar
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLength) maxLength = val.length;
+          maxLength = Math.max(maxLength, val.length);
         });
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -279,11 +286,15 @@ const WalletTopupTable = () => {
     <>
       <div className="flex items-center justify-between mb-4">
         <RangePicker
-          size={'small'}
+          size="small"
           className="w-[300px] h-[40px]"
+          value={selectedRange}
           onChange={onRangeChange}
         />
-        <button className="btn btn-primary" onClick={exportData}>
+        <button
+          className="btn btn-primary flex items-center gap-2"
+          onClick={exportData}
+        >
           <FileDownload02 />
           Export Excel
         </button>

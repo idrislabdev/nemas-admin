@@ -15,7 +15,6 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-// 🧱 Interface data transaksi beli emas
 export interface IGoldBuyTransaction {
   gold_transaction_id: string;
   transaction_date: string;
@@ -37,15 +36,24 @@ export interface IGoldBuyTransaction {
 const GoldBuyDigitalDetailTable = () => {
   const url = `/reports/gold-buy-transaction/details`;
 
+  // 📅 Default tanggal
+  const defaultStart = dayjs().startOf('month');
+  const defaultEnd = dayjs();
+
   const [dataTable, setDataTable] = useState<IGoldBuyTransaction[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+    defaultStart,
+    defaultEnd,
+  ]);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
     order_by: 'transaction_date',
     order_direction: 'DESC',
   });
@@ -66,6 +74,8 @@ const GoldBuyDigitalDetailTable = () => {
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
+    if (!dates || !dates[0] || !dates[1]) return;
+    setDateRange([dates[0], dates[1]]);
     setParams({
       ...params,
       start_date: dateStrings[0],
@@ -124,7 +134,7 @@ const GoldBuyDigitalDetailTable = () => {
       // === HEADER JUDUL LAPORAN ===
       worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PEMBELIAN EMAS';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // === PERIODE LAPORAN ===
@@ -136,14 +146,14 @@ const GoldBuyDigitalDetailTable = () => {
             )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
           : 'Periode: Semua Tanggal';
       worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
       worksheet.mergeCells('A3:M3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'center' };
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
       worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
 
       worksheet.addRow([]);
@@ -211,14 +221,15 @@ const GoldBuyDigitalDetailTable = () => {
         });
       });
 
-      // === LEBAR KOLOM ===
+      // === LEBAR KOLOM AUTO FIT ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.max(maxLength + 2, 12);
+        // Menetapkan lebar minimum 12 agar tidak terlalu sempit
+        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -328,6 +339,7 @@ const GoldBuyDigitalDetailTable = () => {
           size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          value={dateRange}
         />
         <button
           className="btn btn-primary"

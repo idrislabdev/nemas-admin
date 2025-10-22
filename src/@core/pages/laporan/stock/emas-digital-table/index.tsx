@@ -9,7 +9,7 @@ import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
@@ -21,78 +21,90 @@ const StockEmasDigitalTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // 🗓️ Default: tanggal 1 bulan aktif sampai hari ini
+  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  const today = dayjs().format('YYYY-MM-DD');
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: startOfMonth,
+    end_date: today,
   });
-  const columns: ColumnsType<IReportGoldDigital> = [
-    {
-      title: 'Tanggal',
-      dataIndex: 'date',
-      key: 'date',
-      render: (_, record) => moment(record.date).format('DD-MM-YYYY'),
-    },
-    // {
-    //   title: 'Note',
-    //   dataIndex: 'note',
-    //   key: 'note',
-    // },
-    {
-      title: 'Tipe',
-      dataIndex: 'transaction_type_name',
-      key: 'transaction_type_name',
-    },
-    {
-      title: 'Update User',
-      dataIndex: 'user_name',
-      key: 'user_name',
-    },
-    {
-      title: 'Update Time',
-      dataIndex: 'date',
-      key: 'date',
-      render: (_, record) => moment(record.date).format('HH:mm'),
-    },
-    {
-      title: 'Debet',
-      dataIndex: 'debet',
-      key: 'debet',
-      render: (_, record) => (
-        <>
-          {record.weight_debet !== null
-            ? `${formatDecimal(parseFloat(record.weight_debet))} Gram`
-            : '-'}
-        </>
-      ),
-    },
-    {
-      title: 'Credit',
-      dataIndex: 'credit',
-      key: 'credit',
-      render: (_, record) => (
-        <>
-          {record.weight_credit !== null
-            ? `${formatDecimal(parseFloat(record.weight_credit))} Gram`
-            : '-'}
-        </>
-      ),
-    },
-    {
-      title: 'Saldo Akhir',
-      dataIndex: 'credit',
-      key: 'weight',
-      render: (_, record) =>
-        `${formatDecimal(parseFloat(record.weight_credit))} Gram`,
-    },
-  ];
+
+  // 🧱 Kolom tabel (useMemo supaya tidak re-render terus)
+  const columns = useMemo<ColumnsType<IReportGoldDigital>>(
+    () => [
+      {
+        title: 'Tanggal',
+        dataIndex: 'date',
+        key: 'date',
+        render: (_, record) => moment(record.date).format('DD-MM-YYYY'),
+      },
+      {
+        title: 'Tipe',
+        dataIndex: 'transaction_type_name',
+        key: 'transaction_type_name',
+      },
+      {
+        title: 'Update User',
+        dataIndex: 'user_name',
+        key: 'user_name',
+      },
+      {
+        title: 'Update Time',
+        dataIndex: 'date',
+        key: 'date',
+        render: (_, record) => moment(record.date).format('HH:mm'),
+      },
+      {
+        title: 'Debet',
+        dataIndex: 'debet',
+        key: 'debet',
+        render: (_, record) => (
+          <>
+            {record.weight_debet !== null
+              ? `${formatDecimal(parseFloat(record.weight_debet))} Gram`
+              : '-'}
+          </>
+        ),
+      },
+      {
+        title: 'Credit',
+        dataIndex: 'credit',
+        key: 'credit',
+        render: (_, record) => (
+          <>
+            {record.weight_credit !== null
+              ? `${formatDecimal(parseFloat(record.weight_credit))} Gram`
+              : '-'}
+          </>
+        ),
+      },
+      {
+        title: 'Saldo Akhir',
+        dataIndex: 'weight',
+        key: 'weight',
+        render: (_, record) =>
+          record.weight != null
+            ? `${formatDecimal(parseFloat(record.weight))} Gram`
+            : '-',
+      },
+    ],
+    []
+  );
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (err) {
+      console.error('Fetch failed:', err);
+      setDataTable([]);
+      setTotal(0);
+    }
   }, [params, url]);
 
   const onChangePage = async (val: number) => {
@@ -112,36 +124,33 @@ const StockEmasDigitalTable = () => {
     });
   };
 
+  // 🔹 Ambil semua data untuk export
   const fetchAllData = async (url: string, params: any) => {
-    let allRows: any[] = [];
     const limit = 100;
-
-    // 🔹 ambil request pertama untuk tahu count
     const firstResp = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
 
-    allRows = allRows.concat(firstResp.data.results);
     const totalCount = firstResp.data.count;
-
-    // 🔹 hitung total page
     const totalPages = Math.ceil(totalCount / limit);
+    const allRows = [...firstResp.data.results];
 
-    // 🔹 loop page berikutnya (mulai dari 1 karena page 0 sudah diambil)
+    const requests = [];
     for (let i = 1; i < totalPages; i++) {
-      const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
-      });
-      allRows = allRows.concat(resp.data.results);
-
-      // optional: delay supaya aman dari throttle
-      await new Promise((r) => setTimeout(r, 200));
+      requests.push(
+        axiosInstance.get(url, {
+          params: { ...params, limit, offset: i * limit },
+        })
+      );
     }
+
+    const responses = await Promise.all(requests);
+    responses.forEach((r) => allRows.push(...r.data.results));
 
     return allRows;
   };
 
+  // 🧾 Export ke Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -176,11 +185,11 @@ const StockEmasDigitalTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Stock Emas Digital');
 
-      // 🔹 Tambahkan Judul
+      // 🔹 Judul (rata kiri)
       worksheet.mergeCells('A1:F1');
       worksheet.getCell('A1').value = 'LAPORAN EMAS STOCK DIGITAL';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
@@ -192,7 +201,7 @@ const StockEmasDigitalTable = () => {
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+        worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]); // baris kosong
@@ -201,7 +210,6 @@ const StockEmasDigitalTable = () => {
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
-      // Style header
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -214,7 +222,7 @@ const StockEmasDigitalTable = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' }, // abu-abu muda
+          fgColor: { argb: 'FFE5E5E5' },
         };
       });
 
@@ -222,7 +230,6 @@ const StockEmasDigitalTable = () => {
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
-
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -234,15 +241,16 @@ const StockEmasDigitalTable = () => {
         });
       });
 
-      // 🔹 Atur lebar kolom otomatis
+      // 🔹 Atur lebar kolom fit (tapi tidak terlalu lebar)
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
+        if (col) {
           let maxLength = 0;
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          col.width = maxLength + 2;
+          // Batasi antara 10 - 30 karakter
+          col.width = Math.min(Math.max(maxLength + 2, 10), 30);
         }
       });
 
@@ -262,19 +270,26 @@ const StockEmasDigitalTable = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   return (
     <>
       <div className="flex items-center justify-between">
         <RangePicker
-          size={'small'}
+          size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
         />
-        <button className="btn btn-primary" onClick={exportData}>
+        <button
+          className="btn btn-primary"
+          onClick={exportData}
+          disabled={isModalLoading}
+        >
           <FileDownload02 />
-          Export Excel
+          {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
+
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
@@ -294,6 +309,7 @@ const StockEmasDigitalTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"

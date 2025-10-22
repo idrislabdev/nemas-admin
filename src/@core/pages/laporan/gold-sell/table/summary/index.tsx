@@ -15,7 +15,6 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-// 🧱 Interface summary user penjualan emas
 export interface IGoldSellSummaryUser {
   user_id: string;
   user_name: string;
@@ -30,6 +29,15 @@ export interface IGoldSellSummaryUser {
 const GoldSellSummaryUserTable = () => {
   const url = `/reports/gold-sell-transaction/summary-user`;
 
+  // 📆 Default tanggal: 1 awal bulan -> hari ini
+  const defaultStart = dayjs().startOf('month');
+  const defaultEnd = dayjs();
+
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
+    defaultStart,
+    defaultEnd,
+  ]);
+
   const [dataTable, setDataTable] = useState<IGoldSellSummaryUser[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -37,8 +45,8 @@ const GoldSellSummaryUserTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
     order_by: 'transaksi_terakhir',
     order_direction: 'DESC',
   });
@@ -59,6 +67,8 @@ const GoldSellSummaryUserTable = () => {
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
+    if (!dates || !dates[0] || !dates[1]) return;
+    setDateRange([dates[0], dates[1]]);
     setParams({
       ...params,
       start_date: dateStrings[0],
@@ -97,7 +107,7 @@ const GoldSellSummaryUserTable = () => {
     }
   };
 
-  // 📦 Export Excel (disamakan style-nya)
+  // 📦 Export Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -117,7 +127,7 @@ const GoldSellSummaryUserTable = () => {
       // === HEADER JUDUL LAPORAN ===
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PENJUALAN EMAS';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' }; // rata kiri
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // === PERIODE LAPORAN ===
@@ -129,16 +139,16 @@ const GoldSellSummaryUserTable = () => {
             )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
           : 'Periode: Semua Tanggal';
       worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
-      worksheet.getCell('A2').font = { italic: true }; // sama seperti GoldSellTransactionDetailsTable
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      worksheet.getCell('A2').font = { italic: true };
 
       // === DICETAK PADA ===
       worksheet.mergeCells('A3:G3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'center' };
-      worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } }; // bukan italic
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
 
       worksheet.addRow([]);
 
@@ -194,14 +204,15 @@ const GoldSellSummaryUserTable = () => {
         });
       });
 
-      // === LEBAR KOLOM OTOMATIS ===
+      // === LEBAR KOLOM OTOMATIS FIT ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = maxLength + 2;
+        // batas minimal & maksimal agar tidak terlalu sempit/lebar
+        col.width = Math.min(Math.max(maxLength + 2, 12), 30);
       });
 
       // === SIMPAN FILE ===
@@ -223,20 +234,9 @@ const GoldSellSummaryUserTable = () => {
 
   const columns: ColumnsType<IGoldSellSummaryUser> = useMemo(
     () => [
-      {
-        title: 'Nama User',
-        dataIndex: 'user_name',
-        sorter: true,
-      },
-      {
-        title: 'Nomor Member',
-        dataIndex: 'user_member_number',
-        sorter: true,
-      },
-      {
-        title: 'Kode Seller',
-        dataIndex: 'user_seller_unique_code',
-      },
+      { title: 'Nama User', dataIndex: 'user_name', sorter: true },
+      { title: 'Nomor Member', dataIndex: 'user_member_number', sorter: true },
+      { title: 'Kode Seller', dataIndex: 'user_seller_unique_code' },
       {
         title: 'Jumlah Transaksi',
         dataIndex: 'jumlah_transaksi',
@@ -271,6 +271,8 @@ const GoldSellSummaryUserTable = () => {
           size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          value={dateRange}
+          allowClear={false}
         />
         <button
           className="btn btn-primary"

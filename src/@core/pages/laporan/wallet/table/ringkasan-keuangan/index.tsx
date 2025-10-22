@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DatePicker, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -16,7 +15,6 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-// 🧱 Interface data summary
 export interface IWalletSummaryItem {
   total_transaction: number;
   total_amount: number;
@@ -32,12 +30,17 @@ export interface IWalletFinancialSummary {
 const WalletFinancialSummary = () => {
   const url = `/reports/wallet-transaction/financial-summary`;
 
+  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
+  const firstDay = dayjs().startOf('month');
+  const today = dayjs();
+
   const [dataSummary, setDataSummary] =
     useState<IWalletFinancialSummary | null>(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [params, setParams] = useState({
-    start_date: '',
-    end_date: '',
+    start_date: firstDay.format('YYYY-MM-DD'),
+    end_date: today.format('YYYY-MM-DD'),
   });
 
   // 🧭 Ambil data dari API
@@ -71,21 +74,20 @@ const WalletFinancialSummary = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Ringkasan Keuangan Wallet');
 
-      // Judul
+      // 🧾 Judul rata kiri
       worksheet.mergeCells('A1:E1');
       worksheet.getCell('A1').value = 'LAPORAN RINGKASAN KEUANGAN WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:E2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-          'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
-      }
+      // 📅 Periode rata kiri
+      worksheet.mergeCells('A2:E2');
+      worksheet.getCell('A2').value = `Periode: ${dayjs(
+        params.start_date
+      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        'DD-MM-YYYY'
+      )}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -116,14 +118,8 @@ const WalletFinancialSummary = () => {
 
       // Data rows
       const mapData = [
-        {
-          type: 'Topup',
-          ...rows.topup,
-        },
-        {
-          type: 'Disburst',
-          ...rows.disburst,
-        },
+        { type: 'Topup', ...rows.topup },
+        { type: 'Disburst', ...rows.disburst },
       ];
 
       mapData.forEach((item) => {
@@ -146,14 +142,14 @@ const WalletFinancialSummary = () => {
         });
       });
 
-      // Auto width
+      // 🧩 Auto-fit column width
       worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+        let maxLength = 10;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 50); // batasi max width
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -200,12 +196,7 @@ const WalletFinancialSummary = () => {
 
   const columns: ColumnsType<any> = useMemo(
     () => [
-      {
-        title: 'Tipe Transaksi',
-        dataIndex: 'type',
-        key: 'type',
-        width: 150,
-      },
+      { title: 'Tipe Transaksi', dataIndex: 'type', key: 'type', width: 150 },
       {
         title: 'Total Transaksi',
         dataIndex: 'total_transaction',
@@ -244,6 +235,7 @@ const WalletFinancialSummary = () => {
           size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          defaultValue={[firstDay, today]}
         />
         <button
           className="btn btn-primary"

@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldLoan } from '@/@core/@types/interface'; // ✅ pakai IGoldLoan
+import { IGoldLoan } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -25,12 +25,16 @@ const PinjamanEmasTablePage = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // 🟢 Default tanggal: awal bulan hingga hari ini
+  const defaultStart = dayjs().startOf('month');
+  const defaultEnd = dayjs();
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
   });
 
   const columns: ColumnsType<IGoldLoan> = [
@@ -192,15 +196,7 @@ const PinjamanEmasTablePage = () => {
     try {
       setIsModalLoading(true);
 
-      const param = {
-        format: 'json',
-        offset: 0,
-        limit: 10,
-        start_date: params.start_date,
-        end_date: params.end_date,
-      };
-
-      const rows = await fetchAllData(url, param);
+      const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IGoldLoan) => ({
         'No. Pinjaman': item.loan_ref_number,
@@ -225,10 +221,11 @@ const PinjamanEmasTablePage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Pinjaman Emas');
 
+      // 🔹 Judul rata kiri
       worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN PINJAMAN EMAS';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
@@ -240,7 +237,7 @@ const PinjamanEmasTablePage = () => {
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+        worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
@@ -266,7 +263,6 @@ const PinjamanEmasTablePage = () => {
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
-
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -278,15 +274,15 @@ const PinjamanEmasTablePage = () => {
         });
       });
 
+      // 🔹 Lebar kolom otomatis (fit)
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+        if (!col) return;
+        let maxLength = 0;
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+        col.width = Math.min(maxLength + 2, 40); // batas agar tidak terlalu lebar
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -312,6 +308,7 @@ const PinjamanEmasTablePage = () => {
           size={'small'}
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          value={[defaultStart, defaultEnd]}
         />
         <button
           className="btn btn-primary flex items-center gap-2"

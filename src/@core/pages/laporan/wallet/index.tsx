@@ -1,7 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import WalletTopupTable from './table';
-import { CheckDone01, CoinsHand, Wallet03 } from '@untitled-ui/icons-react';
+import {
+  CheckDone01,
+  CoinsHand,
+  LayoutAlt02,
+  Wallet03,
+} from '@untitled-ui/icons-react';
 import WalletTopupSummaryTable from '@/@core/pages/laporan/wallet/table/summary';
 import WalletDisburstTable from '@/@core/pages/laporan/wallet/table/disburst';
 import WalletFinancialSummary from '@/@core/pages/laporan/wallet/table/ringkasan-keuangan';
@@ -77,7 +82,7 @@ const LaporanWalletTablePage = () => {
                 : 'text-neutral-500'
             }`}
           >
-            <CoinsHand />
+            <LayoutAlt02 />
           </span>
           <h5 className="font-semibold text-[17px]/[21px]">
             Ringkasan Keuangan
