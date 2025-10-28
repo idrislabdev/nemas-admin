@@ -32,6 +32,7 @@ const Home = () => {
             <p>Dashboard Nemas</p>
           </div>
         </div>
+        <hr />
         <div className="main-body">
           <DashboardPage />
         </div>
