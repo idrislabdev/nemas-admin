@@ -29,8 +29,9 @@ const options = {
       color: '#0A0A07',
     },
     labels: {
+      step: 2,
       style: {
-        fontSize: '11px', // Adjust this value to your desired font size
+        fontSize: '12px', // Adjust this value to your desired font size
       },
     },
     // opposite: true,

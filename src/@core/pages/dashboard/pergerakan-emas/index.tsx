@@ -2,7 +2,9 @@ import ChartSpline from '@/@core/pages/dashboard/components/chart-spline';
 import axiosInstance from '@/@core/utils/axios';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
+import 'moment/locale/id';
 
+moment.locale('id');
 const PergerakanEmas = () => {
   const [dataChart, setDataChart] = useState<{
     categories: string[];
@@ -16,7 +18,7 @@ const PergerakanEmas = () => {
     const dataVal: number[] = [];
     data.forEach(
       (item: { hour: string; gold_price_buy: number; day: string }) => {
-        categories.push(moment(item.day).format('DD/MM'));
+        categories.push(moment(item.day).format('DD MMM'));
         dataVal.push(item.gold_price_buy);
       }
     );
