@@ -50,7 +50,7 @@ const MainSidebar = () => {
       {globals.userLogin && globals.userLogin.menus && (
         <div className="main-sidebar">
           <div className="header-area">
-            <div className="header-info">
+            <Link href={'/'} className="header-info cursor-pointer">
               <Image
                 src="/images/main/nemas-logo.png"
                 alt="logo nemas"
@@ -59,7 +59,7 @@ const MainSidebar = () => {
                 sizes="100%"
               />
               <label>Nemas Admin</label>
-            </div>
+            </Link>
           </div>
           <div className="menu-area">
             <span className="label">Master</span>
