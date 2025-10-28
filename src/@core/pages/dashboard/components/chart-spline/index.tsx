@@ -28,6 +28,11 @@ const options = {
       width: 1,
       color: '#0A0A07',
     },
+    labels: {
+      style: {
+        fontSize: '11px', // Adjust this value to your desired font size
+      },
+    },
     // opposite: true,
     tickInterval: 1,
     tickmarkPlacement: 'on',
@@ -111,7 +116,7 @@ const ChartSpline = (props: {
       Highcharts.charts.forEach((chart) => {
         if (chart) {
           // console.log(chart)
-          // chart.redraw()
+          chart.redraw();
         }
       });
     });
