@@ -17,7 +17,7 @@ const SummaryCards = () => {
 
   useEffect(() => {
     fetchData();
-  });
+  }, []);
 
   return (
     <div className="flex items-center gap-[8px]">
