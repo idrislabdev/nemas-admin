@@ -272,7 +272,6 @@ const GoldSellSummaryUserTable = () => {
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
           value={dateRange}
-          allowClear={false}
         />
         <button
           className="btn btn-primary"

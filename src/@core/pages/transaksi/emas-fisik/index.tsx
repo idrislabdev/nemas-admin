@@ -27,20 +27,26 @@ moment.locale('id');
 const { RangePicker } = DatePicker;
 
 const ComEmasFisikPage = () => {
-  const url = `/reports/gold-sales-order/list`;
+  const url = `/reports/gold-sales-order/list?order_type=buy`;
+
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [isModalDO, setIsModalDO] = useState(false);
   const [selectedId, setSelectedId] = useState('');
+  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
+  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  const today = dayjs().format('YYYY-MM-DD');
+
+  // 🔹 Default parameter tanggal
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: '',
-    end_date: '',
-    // is_picked_up: null,
+    start_date: startOfMonth,
+    end_date: today,
   });
+
   const columns: ColumnsType<ISalesOrder> = [
     {
       title: 'Nomor Order',
@@ -136,15 +142,6 @@ const ComEmasFisikPage = () => {
       fixed: 'right',
       render: (_, record) => (
         <div className="flex flex-col gap-[4px]">
-          {/* <label>
-            Pesanan :
-            <span className="bg-green-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
-              <span className="my-icon icon-xs">
-                <Truck01 />
-              </span>
-              Dikirim
-            </span>
-          </label> */}
           <label className="flex items-center gap-[4px]">
             Pesanan :
             <span className="bg-yellow-600 text-white text-[11px] rounded-md flex gap-[4px] items-center justify-center w-[70px] h-[20px] italic">
@@ -234,36 +231,28 @@ const ComEmasFisikPage = () => {
     });
   };
 
+  // 🔹 Fungsi ambil semua data untuk export
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
-
-    // 🔹 ambil request pertama untuk tahu count
     const firstResp = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
-
     allRows = allRows.concat(firstResp.data.results);
     const totalCount = firstResp.data.count;
-
-    // 🔹 hitung total page
     const totalPages = Math.ceil(totalCount / limit);
-
-    // 🔹 loop page berikutnya (mulai dari 1 karena page 0 sudah diambil)
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
       const resp = await axiosInstance.get(url, {
         params: { ...params, limit, offset },
       });
       allRows = allRows.concat(resp.data.results);
-
-      // optional: delay supaya aman dari throttle
       await new Promise((r) => setTimeout(r, 200));
     }
-
     return allRows;
   };
 
+  // 🔹 Export Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -272,7 +261,6 @@ const ComEmasFisikPage = () => {
         format: 'json',
         offset: 0,
         limit: 10,
-        is_picked_up: true,
         start_date: params.start_date,
         end_date: params.end_date,
       };
@@ -316,11 +304,9 @@ const ComEmasFisikPage = () => {
         'Status Pembayaran': item.order_gold_payment_status,
       }));
 
-      // 🔹 Buat workbook baru
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
 
-      // 🔹 Tambahkan Judul
       worksheet.mergeCells('A1:L1');
       worksheet.getCell('A1').value = 'LAPORAN PENJUALAN EMAS FISIK';
       worksheet.getCell('A1').alignment = {
@@ -339,13 +325,9 @@ const ComEmasFisikPage = () => {
         worksheet.getCell('A2').alignment = { horizontal: 'center' };
       }
 
-      worksheet.addRow([]); // baris kosong
-
-      // 🔹 Header kolom
+      worksheet.addRow([]);
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
-      // Style header
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -358,15 +340,13 @@ const ComEmasFisikPage = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' }, // abu-abu muda
+          fgColor: { argb: 'FFE5E5E5' },
         };
       });
 
-      // 🔹 Data rows
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
-
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -378,7 +358,6 @@ const ComEmasFisikPage = () => {
         });
       });
 
-      // 🔹 Atur lebar kolom otomatis
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
@@ -390,7 +369,6 @@ const ComEmasFisikPage = () => {
         }
       });
 
-      // 🔹 Simpan file
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_penjualan_emas_fisik${dayjs().format(
         'YYYYMMDD_HHmmss'
@@ -406,13 +384,16 @@ const ComEmasFisikPage = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   return (
     <>
       <div className="flex items-center justify-between">
+        {/* 🔹 RangePicker tampil default bulan ini */}
         <RangePicker
-          size={'small'}
+          size="small"
           className="w-[300px] h-[40px]"
           onChange={onRangeChange}
+          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
         />
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
@@ -421,7 +402,8 @@ const ComEmasFisikPage = () => {
           </button>
         </div>
       </div>
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <div className="overflow-x-auto rounded-tr-[8px] rounded-tl-[8px] max-h-[600px]">
           <table className="min-w-full text-sm border-collapse table-fixed">
             <thead className="bg-gray-100 sticky top-0 z-10">
@@ -462,7 +444,6 @@ const ComEmasFisikPage = () => {
                     const cellContent = col.render
                       ? col.render(rawValue, record, 0)
                       : rawValue;
-
                     return (
                       <td
                         key={col.key?.toString() || col.dataIndex?.toString()}
@@ -493,6 +474,7 @@ const ComEmasFisikPage = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"

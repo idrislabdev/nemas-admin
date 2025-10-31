@@ -1,8 +1,8 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import TransaksiTabPage from '@/@core/pages/transaksi/components/tab-page';
-import ComEmasFisikPage from '@/@core/pages/transaksi/emas-fisik';
-import { Coins01 } from '@untitled-ui/icons-react';
+import ComTarikEmasPage from '@/@core/pages/transaksi/tarik-emas';
+import { CoinsHand } from '@untitled-ui/icons-react';
 
 export default function DeliveryOrderPage() {
   return (
@@ -20,7 +20,7 @@ export default function DeliveryOrderPage() {
               <FolderIcon /> Transaksi
             </li>
             <li>
-              <FolderOpenIcon /> Penjualan Emas Fisik
+              <FolderOpenIcon /> Tarik Emas
             </li>
           </ul>
         </div>
@@ -29,17 +29,17 @@ export default function DeliveryOrderPage() {
       <div className="container-body">
         <div className="title-body">
           <div className="logo-area">
-            <Coins01 />
+            <CoinsHand />
           </div>
           <div className="text-area">
             <h5>Halaman Transaksi</h5>
-            <p>Penjualan Emas Fisik</p>
+            <p>Tarik Emas</p>
           </div>
         </div>
         <div className="main-body">
-          <TransaksiTabPage activeTab="emas_fisik" />
+          <TransaksiTabPage activeTab="tarik_emas" />
           <div className="flex flex-col gap-[10px]">
-            <ComEmasFisikPage />
+            <ComTarikEmasPage />
           </div>
         </div>
       </div>

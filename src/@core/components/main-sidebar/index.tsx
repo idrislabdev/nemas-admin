@@ -4,6 +4,7 @@ import { IUser } from '@/@core/@types/interface';
 import { useGlobals } from '@/@core/hoc/useGlobals';
 import {
   BankNote01,
+  BarChartSquare01,
   Building07,
   CoinsHand,
   CreditCard01,
@@ -62,9 +63,16 @@ const MainSidebar = () => {
             </Link>
           </div>
           <div className="menu-area">
-            <span className="label">Master</span>
             <div className="list-menu">
               <ul>
+                <li
+                  className={`${pathname.split('/')[1] === '' ? 'active' : ''}`}
+                >
+                  <Link href="/">
+                    <BarChartSquare01 />
+                    Dashboard
+                  </Link>
+                </li>
                 {checkMenu('Data Emas') && (
                   <li
                     className={`${
