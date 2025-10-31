@@ -27,7 +27,7 @@ const PergerakanEmas = () => {
 
   useEffect(() => {
     fetchData();
-  });
+  }, []);
 
   return (
     <div className="shadow-custom-1 rounded-md p-4 flex flex-col gap-4">
