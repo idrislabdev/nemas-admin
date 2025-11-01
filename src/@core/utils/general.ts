@@ -5,11 +5,16 @@ export const formatterNumber = (val: number) => {
     .replace(/\.(?=\d{0,2}$)/g, ',');
 };
 
-export const formatDecimal = (num: number) => {
-  const desimal = num.toString().split('.')[1];
+export const formatDecimal = (num?: number | string | null): string => {
+  if (num === null || num === undefined || num === '') return '0';
+
+  const value = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(value)) return '0';
+
+  const desimal = value.toString().split('.')[1];
   const digitDesimal = desimal ? desimal.length : 0;
 
-  return num.toLocaleString('id-ID', {
+  return value.toLocaleString('id-ID', {
     minimumFractionDigits: digitDesimal,
     maximumFractionDigits: digitDesimal,
   });

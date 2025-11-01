@@ -593,6 +593,17 @@ export interface IGoldInvestmentReport {
   upd_time?: string;
 }
 
+export interface IGoldInvestmentSummary {
+  investor_id: string;
+  investor_member_number: string;
+  investor_name: string;
+  jumlah_transaksi: number;
+  total_invested_weight: number;
+  total_invested_amount: number;
+  total_return_weight: number;
+  total_active_weight: number;
+}
+
 export interface IMenu {
   id: number;
   name: string;
@@ -848,6 +859,7 @@ export interface IReportWalletTopUP {
 
 export interface IReportWalletTopupSummary {
   user_id: string;
+  user_member_number: string;
   user_name: string;
   jumlah_transaksi: number;
   total_topup: number;

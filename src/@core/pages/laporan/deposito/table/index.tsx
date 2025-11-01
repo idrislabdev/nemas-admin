@@ -206,11 +206,11 @@ const GoldInvestmentTable = () => {
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
+      const worksheet = workbook.addWorksheet('Laporan Deposito');
 
       // 🔹 Judul rata kiri
       worksheet.mergeCells('A1:K1');
-      worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS';
+      worksheet.getCell('A1').value = 'LAPORAN DEPOSITO';
       worksheet.getCell('A1').alignment = {
         horizontal: 'left',
         vertical: 'middle',

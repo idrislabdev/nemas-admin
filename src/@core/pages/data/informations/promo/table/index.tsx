@@ -6,13 +6,12 @@ import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 
-import { Pagination, Table, notification } from 'antd';
+import { DatePicker, Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import debounce from 'debounce';
 import Link from 'next/link';
-// import Image from 'next/image';
 
 import {
   Edit05,
@@ -24,14 +23,19 @@ import {
 
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-
 moment.locale('id');
+
+const { RangePicker } = DatePicker;
 
 const InformationPromoPageTable = () => {
   const url = `/core/information/promo/`;
+
+  // 🔹 default tanggal: awal bulan hingga hari ini
+  const defaultStart = dayjs().startOf('month');
+  const defaultEnd = dayjs();
 
   const [dataTable, setDataTable] = useState<Array<IPromo>>([]);
   const [total, setTotal] = useState(0);
@@ -44,6 +48,8 @@ const InformationPromoPageTable = () => {
     offset: 0,
     limit: 10,
     search: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -105,24 +111,6 @@ const InformationPromoPageTable = () => {
       key: 'promo_tag',
       width: 150,
     },
-    // {
-    //   title: 'Promo Background',
-    //   dataIndex: 'promo_url_background',
-    //   key: 'promo_url_background',
-    //   width: 200,
-    //   render: (_, record) =>
-    //     record.promo_url_background ? (
-    //       <Image
-    //         src={record.promo_url_background}
-    //         alt="image background"
-    //         width={120}
-    //         height={60}
-    //         className="object-cover border border-gray-200 rounded-md"
-    //       />
-    //     ) : (
-    //       ''
-    //     ),
-    // },
     {
       title: 'Promo Diskon',
       dataIndex: 'promo_diskon',
@@ -213,6 +201,21 @@ const InformationPromoPageTable = () => {
   };
 
   // ========================
+  // Date Range Filter
+  // ========================
+  const onRangeChange = (
+    dates: null | (Dayjs | null)[],
+    dateStrings: string[]
+  ) => {
+    setParams({
+      ...params,
+      offset: 0,
+      start_date: dateStrings[0],
+      end_date: dateStrings[1],
+    });
+  };
+
+  // ========================
   // Delete Data
   // ========================
   const deleteData = (id: number | undefined) => {
@@ -250,10 +253,9 @@ const InformationPromoPageTable = () => {
       setIsModalLoading(true);
 
       const exportParams = {
-        format: 'json',
+        ...params,
         offset: 0,
-        limit: 100,
-        search: '',
+        limit: 1000, // ambil lebih banyak data saat export
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
@@ -281,16 +283,27 @@ const InformationPromoPageTable = () => {
       worksheet.mergeCells('A1:L1');
       worksheet.getCell('A1').value = 'DATA PROMO';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      // 🔹 Tambahkan periode
+      worksheet.mergeCells('A2:L2');
+      worksheet.getCell('A2').value = `Periode: ${dayjs(
+        params.start_date
+      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        'DD-MM-YYYY'
+      )}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
       worksheet.addRow([]);
 
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -328,7 +341,7 @@ const InformationPromoPageTable = () => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          col.width = maxLength + 2;
+          col.width = Math.min(maxLength + 2, 35);
         }
       });
 
@@ -349,20 +362,28 @@ const InformationPromoPageTable = () => {
   return (
     <>
       {contextHolder}
-      <div className="flex items-center justify-between">
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[280px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[defaultStart, defaultEnd]}
           />
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="color-1 base"
+              placeholder="cari data"
+              onChange={debounce(
+                (event) => handleFilter(event.target.value),
+                1000
+              )}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
@@ -378,7 +399,8 @@ const InformationPromoPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+
+      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] mt-2">
         <Table
           columns={columns}
           dataSource={dataTable}
@@ -398,6 +420,7 @@ const InformationPromoPageTable = () => {
           />
         </div>
       </div>
+
       <ModalConfirm
         isModalOpen={openModalConfirm}
         setIsModalOpen={setOpenModalConfirm}

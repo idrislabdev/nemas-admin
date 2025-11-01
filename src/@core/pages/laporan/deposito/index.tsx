@@ -39,7 +39,7 @@ const LaporanGoldInvestment = () => {
             <CoinsStacked02 />
           </span>
           <div className="flex flex-col">
-            <h5 className="font-semibold text-xl">Investasi Emas</h5>
+            <h5 className="font-semibold text-xl">Deposito</h5>
             <label className="text-sm">
               Total Investasi :{' '}
               <span>

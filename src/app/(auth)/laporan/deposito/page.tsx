@@ -1,7 +1,7 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
-import LaporanGoldInvestment from '@/@core/pages/laporan/gold-investment';
+import LaporanGoldInvestment from '@/@core/pages/laporan/deposito';
 import { Printer } from '@untitled-ui/icons-react';
 
 export default function LaporanStockPage() {
@@ -20,7 +20,7 @@ export default function LaporanStockPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Investasi Emas
+              <FolderOpenIcon /> Deposito
             </li>
           </ul>
         </div>
@@ -33,7 +33,7 @@ export default function LaporanStockPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Investasi Emas</p>
+            <p>Deposito</p>
           </div>
         </div>
         <div className="main-body">
