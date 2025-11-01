@@ -60,7 +60,7 @@ const SummaryCards = () => {
 
   return (
     <div className="flex items-center gap-[8px]">
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <UsersCheck />
@@ -71,7 +71,7 @@ const SummaryCards = () => {
         </div>
         <label className="text-sm text-green-700">Total Pengguna Aktif</label>
       </div>
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <Users01 />
@@ -82,7 +82,7 @@ const SummaryCards = () => {
         </div>
         <label className="text-sm text-green-700">Total Pengguna</label>
       </div>
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <Building02 />
@@ -93,7 +93,7 @@ const SummaryCards = () => {
         </div>
         <label className="text-sm text-green-700">Total Toko Terdaftar</label>
       </div>
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <CoinsStacked01 />
@@ -104,7 +104,7 @@ const SummaryCards = () => {
         </div>
         <label className="text-sm text-green-700">Saaldo Emas (Nemas)</label>
       </div>
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <CoinsStacked02 />
@@ -115,7 +115,7 @@ const SummaryCards = () => {
         </div>
         <label className="text-sm text-green-700">Saaldo Emas (User)</label>
       </div>
-      <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+      <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
           <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
             <Wallet02 />
