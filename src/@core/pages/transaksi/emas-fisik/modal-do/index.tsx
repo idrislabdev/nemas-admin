@@ -237,7 +237,7 @@ const ModalDO = (props: {
                             {item.qty}
                           </td>
                           <td className="border p-1 text-[11px] w-[20%]">
-                            {item.delivery_details?.gold_cert_code}
+                            {item.gold_cert_codes}
                           </td>
                         </tr>
                       ))}

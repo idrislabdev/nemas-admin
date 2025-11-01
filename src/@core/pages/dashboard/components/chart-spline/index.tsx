@@ -126,7 +126,7 @@ const ChartSpline = (props: {
     <HighchartsReact
       highcharts={Highcharts}
       options={data}
-      containerProps={{ className: 'w-full' }}
+      containerProps={{ className: 'w-full h-[320px]' }}
       ref={chartComponentRef}
     />
   );

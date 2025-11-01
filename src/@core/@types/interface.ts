@@ -795,6 +795,7 @@ export interface IOrderGoldDetail {
   pre_packing_file: string;
   post_packing_file: string;
   delivery_details: IDeliveryDetails;
+  gold_cert_codes: string;
 }
 
 export interface IOrderGoldDetailPayload {
