@@ -15,6 +15,9 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
+// ==============================
+// Interface sesuai response baru
+// ==============================
 export interface IGoldSellTransaction {
   gold_transaction_id: string;
   transaction_date: string;
@@ -27,6 +30,8 @@ export interface IGoldSellTransaction {
   weight: number;
   gold_history_price_sell: number;
   total_price: number;
+  weight_before: string;
+  weight_after: string;
   status: string;
   user_seller_unique_code: string;
 }
@@ -127,13 +132,13 @@ const GoldSellTransactionDetailsTable = () => {
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas');
 
       // === HEADER JUDUL LAPORAN ===
-      worksheet.mergeCells('A1:K1');
+      worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // === PERIODE LAPORAN ===
-      worksheet.mergeCells('A2:K2');
+      worksheet.mergeCells('A2:M2');
       const periodeText =
         params.start_date && params.end_date
           ? `Periode: ${dayjs(params.start_date).format(
@@ -144,7 +149,7 @@ const GoldSellTransactionDetailsTable = () => {
       worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
-      worksheet.mergeCells('A3:K3');
+      worksheet.mergeCells('A3:M3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
@@ -163,6 +168,8 @@ const GoldSellTransactionDetailsTable = () => {
         'Email',
         'No. HP',
         'Berat (gram)',
+        'Berat Sebelum (gram)',
+        'Berat Sesudah (gram)',
         'Harga Emas /gr',
         'Total Harga',
         'Status',
@@ -195,6 +202,8 @@ const GoldSellTransactionDetailsTable = () => {
           item.user_email,
           item.user_phone_number,
           item.weight,
+          item.weight_before,
+          item.weight_after,
           `Rp${formatDecimal(item.gold_history_price_sell)}`,
           `Rp${formatDecimal(item.total_price)}`,
           item.status,
@@ -212,14 +221,14 @@ const GoldSellTransactionDetailsTable = () => {
         });
       });
 
-      // === LEBAR KOLOM (auto-fit tapi tidak terlalu lebar) ===
+      // === AUTO WIDTH ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.min(Math.max(maxLength + 2, 12), 40); // batas max 40
+        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -277,6 +286,19 @@ const GoldSellTransactionDetailsTable = () => {
         dataIndex: 'weight',
         key: 'weight',
         sorter: true,
+        render: (val) => formatDecimal(val),
+      },
+      {
+        title: 'Berat Sebelum (gram)',
+        dataIndex: 'weight_before',
+        key: 'weight_before',
+        width: 150,
+      },
+      {
+        title: 'Berat Sesudah (gram)',
+        dataIndex: 'weight_after',
+        key: 'weight_after',
+        width: 150,
       },
       {
         title: 'Harga Emas /gr',

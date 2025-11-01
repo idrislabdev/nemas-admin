@@ -28,6 +28,8 @@ export interface IGoldBuyTransaction {
   gold_history_price_buy: number;
   total_price: number;
   status: string;
+  weight_before: string;
+  weight_after: string;
   user_seller_unique_code: string;
   commission_percentage: string;
   commission_amount: string;
@@ -62,12 +64,16 @@ const GoldBuyDigitalDetailTable = () => {
   const fetchData = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(url, { params });
-      setDataTable(resp.data.results);
-      setTotal(resp.data.count);
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
     } catch (error) {
       console.error('Fetch failed:', error);
     }
   }, [params, url]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // 📆 Range date filter
   const onRangeChange = (
@@ -132,13 +138,13 @@ const GoldBuyDigitalDetailTable = () => {
       const worksheet = workbook.addWorksheet('Laporan Pembelian Emas');
 
       // === HEADER JUDUL LAPORAN ===
-      worksheet.mergeCells('A1:M1');
+      worksheet.mergeCells('A1:O1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PEMBELIAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // === PERIODE LAPORAN ===
-      worksheet.mergeCells('A2:M2');
+      worksheet.mergeCells('A2:O2');
       const periodeText =
         params.start_date && params.end_date
           ? `Periode: ${dayjs(params.start_date).format(
@@ -149,7 +155,7 @@ const GoldBuyDigitalDetailTable = () => {
       worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
-      worksheet.mergeCells('A3:M3');
+      worksheet.mergeCells('A3:O3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
       )}`;
@@ -168,6 +174,8 @@ const GoldBuyDigitalDetailTable = () => {
         'Email',
         'No. HP',
         'Berat (gram)',
+        'Berat Sebelum',
+        'Berat Sesudah',
         'Harga Emas /gr',
         'Total Harga',
         'Status',
@@ -202,12 +210,14 @@ const GoldBuyDigitalDetailTable = () => {
           item.user_email,
           item.user_phone_number,
           item.weight,
+          item.weight_before,
+          item.weight_after,
           `Rp${formatDecimal(item.gold_history_price_buy)}`,
           `Rp${formatDecimal(item.total_price)}`,
           item.status,
           item.user_seller_unique_code,
-          `${item.commission_percentage}%`,
-          `Rp${formatDecimal(parseFloat(item.commission_amount))}`,
+          `${item.commission_percentage || 0}%`,
+          `Rp${formatDecimal(parseFloat(item.commission_amount || '0'))}`,
         ]);
 
         row.eachCell({ includeEmpty: true }, (cell) => {
@@ -228,7 +238,6 @@ const GoldBuyDigitalDetailTable = () => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        // Menetapkan lebar minimum 12 agar tidak terlalu sempit
         col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
@@ -243,10 +252,6 @@ const GoldBuyDigitalDetailTable = () => {
       setIsModalLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // === KOLOM TABEL ===
   const columns: ColumnsType<IGoldBuyTransaction> = useMemo(
@@ -291,6 +296,18 @@ const GoldBuyDigitalDetailTable = () => {
         dataIndex: 'weight',
         key: 'weight',
         sorter: true,
+      },
+      {
+        title: 'Berat Sebelum',
+        dataIndex: 'weight_before',
+        key: 'weight_before',
+        width: 150,
+      },
+      {
+        title: 'Berat Sesudah',
+        dataIndex: 'weight_after',
+        key: 'weight_after',
+        width: 150,
       },
       {
         title: 'Harga Emas /gr',
