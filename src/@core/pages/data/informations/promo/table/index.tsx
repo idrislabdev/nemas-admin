@@ -366,7 +366,7 @@ const InformationPromoPageTable = () => {
         <div className="flex items-center gap-2">
           <RangePicker
             size="small"
-            className="w-[280px] h-[40px]"
+            className="w-[285px] h-[36px]"
             onChange={onRangeChange}
             defaultValue={[defaultStart, defaultEnd]}
           />

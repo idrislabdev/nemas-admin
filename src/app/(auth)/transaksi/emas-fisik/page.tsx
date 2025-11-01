@@ -39,7 +39,11 @@ export default function DeliveryOrderPage() {
         <div className="main-body">
           <TransaksiTabPage activeTab="emas_fisik" />
           <div className="flex flex-col gap-[10px]">
-            <ComEmasFisikPage />
+            <ComEmasFisikPage
+              title="Penjualan Emas Fisik"
+              parentUrl="/transaksi/emas-fisik"
+              urlVal="/reports/gold-sales-order/list?order_type=buy"
+            />
           </div>
         </div>
       </div>

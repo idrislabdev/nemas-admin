@@ -15,8 +15,11 @@ import Image from 'next/image';
 import ModalPhoto from '@/@core/components/modal/modal-photo';
 import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
 
-const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
-  const { paramsId } = props;
+const ComEmasFisikDetailPage = (props: {
+  parentUrl: string;
+  paramsId: string;
+}) => {
+  const { parentUrl, paramsId } = props;
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
   const [openModalPhoto, setOpenModalPhoto] = useState(false);
   const [openModalDO, setOpenModalDO] = useState(false);
@@ -63,7 +66,7 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
           )}
           {!data.is_picked_up && data.order_gold_payment_status == 'PAID' && (
             <Link
-              href={`/transaksi/emas-fisik/${paramsId}/delivery`}
+              href={`${parentUrl}/${paramsId}/delivery`}
               className="btn btn-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
             >
               <span className="my-icon icon-sm">
@@ -72,10 +75,7 @@ const ComEmasFisikDetailPage = (props: { paramsId: string }) => {
               Proses
             </Link>
           )}
-          <Link
-            href={`/transaksi/emas-fisik`}
-            className="btn btn-outline-neutral"
-          >
+          <Link href={`${parentUrl}`} className="btn btn-outline-neutral">
             <UndoOutlineIcon /> Kembali
           </Link>
         </div>

@@ -17,8 +17,11 @@ import { notification } from 'antd';
 import ModalSertifikat from '../modal-sertifikat';
 import { useRouter } from 'next/navigation';
 
-const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
-  const { paramsId } = props;
+const ComEmasFisikDeliveryPage = (props: {
+  parentUrl: string;
+  paramsId: string;
+}) => {
+  const { parentUrl, paramsId } = props;
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
   //   const [api, contextHolder] = notification.useNotification();
   const [refreshData, setRefresData] = useState(false);
@@ -36,6 +39,8 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
   const [detailErrors, setDetailErrors] = useState<Record<string, string[]>[]>(
     []
   );
+  const [uploadFileError, setUploadFileError] = useState<string[]>([]);
+  const [additionalFileError, setAdditionalFileError] = useState<string[]>([]);
 
   const [api, contextHolder] = notification.useNotification();
   const router = useRouter();
@@ -154,8 +159,9 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
         })
         .catch((error) => {
           if (error.response?.data) {
-            console.log(error.response.data.details);
             setDetailErrors(error.response.data.details); // ← simpan array error dari backend
+            setUploadFileError(error.response.data.upload_file || []);
+            setAdditionalFileError(error.response.data.additional_file || []);
           }
           api.error({
             message: 'Proses Gagal',
@@ -199,10 +205,7 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
               Buat Surat Jalan
             </a>
           )}
-          <Link
-            href={`/transaksi/emas-fisik`}
-            className="btn btn-outline-neutral"
-          >
+          <Link href={`${parentUrl}`} className="btn btn-outline-neutral">
             <UndoOutlineIcon /> Kembali
           </Link>
         </div>
@@ -367,6 +370,7 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                         isOptional={true}
                         initFile={fileData}
                         initUrl={''}
+                        isError={uploadFileError ? true : false}
                         onChange={(val) => setFileData(val)}
                       />
                     </div>
@@ -378,6 +382,7 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                         isOptional={true}
                         initFile={fileAdditionalData}
                         initUrl={''}
+                        isError={additionalFileError ? true : false}
                         onChange={(val) => setFileAdditionalData(val)}
                       />
                     </div>
@@ -459,6 +464,11 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                             isOptional={true}
                             initFile={item.pre_packing_file}
                             initUrl={''}
+                            isError={
+                              detailErrors[index]?.pre_packing_file
+                                ? true
+                                : false
+                            }
                             onChange={(val) =>
                               onChangeDetail('pre_packing_file', index, val)
                             }
@@ -476,6 +486,11 @@ const ComEmasFisikDeliveryPage = (props: { paramsId: string }) => {
                             isOptional={true}
                             initFile={item.post_packing_file}
                             initUrl={''}
+                            isError={
+                              detailErrors[index]?.post_packing_file
+                                ? true
+                                : false
+                            }
                             onChange={(val) =>
                               onChangeDetail('post_packing_file', index, val)
                             }

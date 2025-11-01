@@ -26,8 +26,13 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-const ComEmasFisikPage = () => {
-  const url = `/reports/gold-sales-order/list?order_type=buy`;
+const ComEmasFisikPage = (props: {
+  title: string;
+  parentUrl: string;
+  urlVal: string;
+}) => {
+  const { title, parentUrl, urlVal } = props;
+  const url = urlVal;
 
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
@@ -180,7 +185,7 @@ const ComEmasFisikPage = () => {
           {!record.is_picked_up &&
             record.order_gold_payment_status == 'PAID' && (
               <Link
-                href={`/transaksi/emas-fisik/${record.order_gold_id}/delivery`}
+                href={`${parentUrl}/${record.order_gold_id}/delivery`}
                 className="bg-primary text-white text-[11px] flex-row gap-[4px] w-full h-[28px] rounded"
               >
                 <span className="my-icon icon-sm">
@@ -302,15 +307,16 @@ const ComEmasFisikPage = () => {
         )}`,
         'Status Pesanan': item.order_status,
         'Status Pembayaran': item.order_gold_payment_status,
+        'Status Pengiriman': item.is_picked_up ? 'Dikirim' : '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
+      const worksheet = workbook.addWorksheet(`Laporan ${title}`);
 
       worksheet.mergeCells('A1:L1');
-      worksheet.getCell('A1').value = 'LAPORAN PENJUALAN EMAS FISIK';
+      worksheet.getCell('A1').value = `LAPORAN ${title.toUpperCase()}`;
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
@@ -322,7 +328,7 @@ const ComEmasFisikPage = () => {
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'center' };
+        worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
@@ -330,7 +336,7 @@ const ComEmasFisikPage = () => {
       const headerRow = worksheet.addRow(header);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.alignment = { horizontal: 'left', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -370,7 +376,7 @@ const ComEmasFisikPage = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_penjualan_emas_fisik${dayjs().format(
+      const fileName = `laporan_${title}${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
       saveAs(new Blob([buffer]), fileName);

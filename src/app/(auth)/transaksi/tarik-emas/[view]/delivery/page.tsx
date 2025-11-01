@@ -1,9 +1,9 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
-import ComEmasFisikDetailPage from '@/@core/pages/transaksi/emas-fisik/detail';
-import { CoinsHand } from '@untitled-ui/icons-react';
+import ComEmasFisikDeliveryPage from '@/@core/pages/transaksi/emas-fisik/delivery';
+import { Truck01 } from '@untitled-ui/icons-react';
 
-export default async function TransaksiEmasFisiView({
+export default async function TransaksiEmasFisikDelivery({
   params,
 }: {
   params: Promise<{ view: string }>;
@@ -27,7 +27,7 @@ export default async function TransaksiEmasFisiView({
                   <FolderIcon /> Transaksi
                 </li>
                 <li>
-                  <FolderIcon /> Penjualan Emas Fisik
+                  <FolderIcon /> Tarik Emas
                 </li>
                 <li>
                   <FolderOpenIcon /> Detail
@@ -39,17 +39,17 @@ export default async function TransaksiEmasFisiView({
           <div className="container-body">
             <div className="title-body">
               <div className="logo-area">
-                <CoinsHand />
+                <Truck01 />
               </div>
               <div className="text-area">
                 <h5>Halaman Transaksi</h5>
-                <p>Detail Penjualan Emas Fisik</p>
+                <p>Proses Delivery Order</p>
               </div>
             </div>
             <div className="main-body">
               <div className="flex flex-col gap-[10px] w-full h-full">
-                <ComEmasFisikDetailPage
-                  parentUrl="/transaksi/emas-fisik"
+                <ComEmasFisikDeliveryPage
+                  parentUrl="/transaksi/tarik-emas"
                   paramsId={paramsId}
                 />
               </div>

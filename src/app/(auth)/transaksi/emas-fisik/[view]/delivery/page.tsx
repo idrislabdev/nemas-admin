@@ -48,7 +48,10 @@ export default async function TransaksiEmasFisikDelivery({
             </div>
             <div className="main-body">
               <div className="flex flex-col gap-[10px] w-full h-full">
-                <ComEmasFisikDeliveryPage paramsId={paramsId} />
+                <ComEmasFisikDeliveryPage
+                  parentUrl="/transaksi/emas-fisik"
+                  paramsId={paramsId}
+                />
               </div>
             </div>
           </div>

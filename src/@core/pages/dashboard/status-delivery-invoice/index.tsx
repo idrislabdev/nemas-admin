@@ -22,7 +22,7 @@ const StatusDeliveryInvoice = () => {
       );
       setStatus(resp.data);
     } catch (error) {
-      console.error('Gagal memuat data status delivery & invoice:', error);
+      console.error('Gagal memuat data status delivery & payment:', error);
     }
   }, []);
 
@@ -37,7 +37,7 @@ const StatusDeliveryInvoice = () => {
       </div>
 
       <h5 className="text-yellow-700 font-semibold text-lg mb-2 text-center">
-        Status Delivery & Invoice
+        Status Delivery & Payment
       </h5>
 
       <div className="text-sm text-gray-700 text-center leading-relaxed">

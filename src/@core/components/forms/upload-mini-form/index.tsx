@@ -12,9 +12,19 @@ const UploadMiniForm = (props: {
   initFile?: File | null;
   initUrl?: string;
   height?: number;
+  isError?: boolean;
   onChange: (value: File | null) => void;
 }) => {
-  const { index, withFile, label, initFile, initUrl, onChange, height } = props;
+  const {
+    index,
+    withFile,
+    label,
+    initFile,
+    initUrl,
+    isError,
+    onChange,
+    height,
+  } = props;
   const [photoUrl, setPhotoUrl] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
 
@@ -54,7 +64,11 @@ const UploadMiniForm = (props: {
   return (
     <div className="flex flex-col gap-[4px] w-full h-full relative">
       <div
-        className="border border-gray-200 rounded-[4px] p-[4px] bg-white flex flex-col justify-center h-full"
+        className={`border rounded-[4px] p-[4px] bg-white flex flex-col justify-center h-full ${
+          isError
+            ? 'border-red-500 border-dashed text-red-500'
+            : 'border-gray-200'
+        }`}
         style={{ height: height }}
       >
         {photoUrl == '' && (

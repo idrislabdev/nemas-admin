@@ -27,7 +27,7 @@ export default async function TransaksiEmasFisiView({
                   <FolderIcon /> Transaksi
                 </li>
                 <li>
-                  <FolderIcon /> Penjualan Emas Fisik
+                  <FolderIcon /> Tarik Emas
                 </li>
                 <li>
                   <FolderOpenIcon /> Detail
@@ -43,13 +43,13 @@ export default async function TransaksiEmasFisiView({
               </div>
               <div className="text-area">
                 <h5>Halaman Transaksi</h5>
-                <p>Detail Penjualan Emas Fisik</p>
+                <p>Detail Tarik Emas</p>
               </div>
             </div>
             <div className="main-body">
               <div className="flex flex-col gap-[10px] w-full h-full">
                 <ComEmasFisikDetailPage
-                  parentUrl="/transaksi/emas-fisik"
+                  parentUrl="/transaksi/tarik-emas"
                   paramsId={paramsId}
                 />
               </div>

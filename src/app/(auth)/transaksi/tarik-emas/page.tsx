@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import TransaksiTabPage from '@/@core/pages/transaksi/components/tab-page';
-import ComTarikEmasPage from '@/@core/pages/transaksi/tarik-emas';
-import { CoinsHand } from '@untitled-ui/icons-react';
+import ComEmasFisikPage from '@/@core/pages/transaksi/emas-fisik';
+import { Coins01 } from '@untitled-ui/icons-react';
 
-export default function DeliveryOrderPage() {
+export default function TarikEmasFisikPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -29,7 +29,7 @@ export default function DeliveryOrderPage() {
       <div className="container-body">
         <div className="title-body">
           <div className="logo-area">
-            <CoinsHand />
+            <Coins01 />
           </div>
           <div className="text-area">
             <h5>Halaman Transaksi</h5>
@@ -39,7 +39,11 @@ export default function DeliveryOrderPage() {
         <div className="main-body">
           <TransaksiTabPage activeTab="tarik_emas" />
           <div className="flex flex-col gap-[10px]">
-            <ComTarikEmasPage />
+            <ComEmasFisikPage
+              title="Tarik Emas"
+              parentUrl="/transaksi/tarik-emas"
+              urlVal="/reports/gold-sales-order/list?order_type=redeem"
+            />
           </div>
         </div>
       </div>
