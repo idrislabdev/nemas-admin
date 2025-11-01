@@ -370,7 +370,7 @@ const ComEmasFisikDeliveryPage = (props: {
                         isOptional={true}
                         initFile={fileData}
                         initUrl={''}
-                        isError={uploadFileError ? true : false}
+                        isError={uploadFileError[0] ? true : false}
                         onChange={(val) => setFileData(val)}
                       />
                     </div>
@@ -382,7 +382,7 @@ const ComEmasFisikDeliveryPage = (props: {
                         isOptional={true}
                         initFile={fileAdditionalData}
                         initUrl={''}
-                        isError={additionalFileError ? true : false}
+                        isError={additionalFileError[0] ? true : false}
                         onChange={(val) => setFileAdditionalData(val)}
                       />
                     </div>
