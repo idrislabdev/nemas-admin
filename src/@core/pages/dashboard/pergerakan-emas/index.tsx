@@ -130,7 +130,7 @@ const PergerakanEmas = () => {
       <HighchartsReact
         highcharts={Highcharts}
         options={options}
-        containerProps={{ className: 'w-full h-[320px]' }}
+        containerProps={{ className: 'w-full h-full' }}
         ref={chartRef}
       />
     </div>
