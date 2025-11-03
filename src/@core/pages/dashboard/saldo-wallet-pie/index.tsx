@@ -114,11 +114,6 @@ const SaldoWalletPie = () => {
             Saldo Wallet:{' '}
             <span className="font-medium">{formatRupiah(summary.wallet)}</span>
           </p>
-          <hr className="my-2 border-neutral-200" />
-          <p className="font-semibold text-green-700">
-            Total:{' '}
-            <span className="font-bold">{formatRupiah(summary.total)}</span>
-          </p>
         </div>
       </div>
     </div>

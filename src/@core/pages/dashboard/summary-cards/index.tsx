@@ -102,7 +102,7 @@ const SummaryCards = () => {
             {formatterNumber(dataGold.saldo_nemas)} Gr
           </span>
         </div>
-        <label className="text-sm text-green-700">Saaldo Emas (Nemas)</label>
+        <label className="text-sm text-green-700">Saldo Emas (Nemas)</label>
       </div>
       <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ const SummaryCards = () => {
             {formatterNumber(dataGold.saldo_user)} Gr
           </span>
         </div>
-        <label className="text-sm text-green-700">Saaldo Emas (User)</label>
+        <label className="text-sm text-green-700">Saldo Emas (User)</label>
       </div>
       <div className="w-1/6 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
         <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ const SummaryCards = () => {
             Rp{formatterNumber(dataWallet.balance)}
           </span>
         </div>
-        <label className="text-sm text-green-700">Saaldo Wallet</label>
+        <label className="text-sm text-green-700">Saldo Wallet</label>
       </div>
     </div>
   );
