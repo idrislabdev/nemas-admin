@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import {
@@ -8,7 +10,6 @@ import {
 import { UndoOutlineIcon } from '@/@core/my-icons';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
-// import { notification } from 'antd';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FileAttachment01, Truck01 } from '@untitled-ui/icons-react';
@@ -16,6 +17,7 @@ import UploadMiniForm from '@/@core/components/forms/upload-mini-form';
 import { notification } from 'antd';
 import ModalSertifikat from '../modal-sertifikat';
 import { useRouter } from 'next/navigation';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 
 const ComEmasFisikDeliveryPage = (props: {
   parentUrl: string;
@@ -23,12 +25,9 @@ const ComEmasFisikDeliveryPage = (props: {
 }) => {
   const { parentUrl, paramsId } = props;
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
-  //   const [api, contextHolder] = notification.useNotification();
   const [refreshData, setRefresData] = useState(false);
   const [fileData, setFileData] = useState<File | null>(null);
-  const [payloads, setPayloads] = useState<IOrderGoldDetailPayload[]>(
-    [] as IOrderGoldDetailPayload[]
-  );
+  const [payloads, setPayloads] = useState<IOrderGoldDetailPayload[]>([]);
   const [fileAdditionalData, setFileAdditionalData] = useState<File | null>(
     null
   );
@@ -41,6 +40,7 @@ const ComEmasFisikDeliveryPage = (props: {
   );
   const [uploadFileError, setUploadFileError] = useState<string[]>([]);
   const [additionalFileError, setAdditionalFileError] = useState<string[]>([]);
+  const [isModalLoading, setIsModalLoading] = useState(false);
 
   const [api, contextHolder] = notification.useNotification();
   const router = useRouter();
@@ -52,9 +52,8 @@ const ComEmasFisikDeliveryPage = (props: {
     const respDetail = await axiosInstance.get(
       `/reports/gold-sales-order/${paramsId}/detail`
     );
-    const details: IOrderGoldDetailPayload[] = [] as IOrderGoldDetailPayload[];
-    respDetail.data.order_gold_details.forEach((item: IOrderGoldDetail) => {
-      const obj: IOrderGoldDetailPayload = {
+    const details: IOrderGoldDetailPayload[] =
+      respDetail.data.order_gold_details.map((item: IOrderGoldDetail) => ({
         order_detail_id: item.order_gold_detail_id,
         gold_type: item.gold_type,
         gold_brand: item.gold_brand,
@@ -67,9 +66,7 @@ const ComEmasFisikDeliveryPage = (props: {
         pre_packing_file: null,
         post_packing_file: null,
         gold: item.gold,
-      };
-      details.push(obj);
-    });
+      }));
     setData(resp.data);
     setPayloads(details);
   }, [paramsId]);
@@ -93,91 +90,86 @@ const ComEmasFisikDeliveryPage = (props: {
     });
   };
 
-  const handleSubmit = async () => {
+  const uploadFile = async (file: File | null): Promise<string> => {
+    if (!file) return '';
     const formData = new FormData();
-
-    // --- field utama
-    formData.append('order', data.order_gold_id); // id order
-    formData.append('delivery_type', data.tracking_courier_service_name);
-    formData.append(
-      'order_shipping',
-      data.order_shipping[0]?.order_delivery_id ?? ''
-    );
-    formData.append('user', data.user.id);
-    formData.append(
-      'delivery_pickup_request_datetime',
-      data.order_shipping[0]?.delivery_pickup_date ?? ''
-    );
-    formData.append('delivery_tracking_number', '');
-    formData.append('delivery_notes', note);
-
-    // --- file evidence utama
-    if (fileData) {
-      formData.append('upload_file', fileData);
-    }
-    if (fileAdditionalData) {
-      formData.append('additional_file', fileAdditionalData);
-    }
-
-    // --- looping details
-    payloads.forEach((item, index) => {
-      formData.append(`details[${index}]order_detail_id`, item.order_detail_id);
-      if (item.gold_cert_detail_price) {
-        formData.append(
-          `details[${index}]gold_cert_detail_price`,
-          item.gold_cert_detail_price.toString()
-        );
-      }
-
-      if (item.pre_packing_file) {
-        formData.append(
-          `details[${index}]pre_packing_file`,
-          item.pre_packing_file
-        );
-      }
-      if (item.post_packing_file) {
-        formData.append(
-          `details[${index}]post_packing_file`,
-          item.post_packing_file
-        );
-      }
+    formData.append('file', file);
+    const resp = await axiosInstance.post('/delivery/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return resp.data.file_url || resp.data; // API bisa return string atau object {url}
+  };
 
+  const handleSubmit = async () => {
     try {
-      axiosInstance
-        .post(`delivery/create`, formData)
-        .then(() => {
-          api.success({
-            message: 'Proses Sukses',
-            description: 'Data order pengiriman berhasil disimpan',
-            placement: 'bottomRight',
-          });
-          setRefresData(true);
-          setFileData(null);
-          setNote('');
-          router.push(`/transaksi/emas-fisik/${paramsId}`);
+      // Upload utama dan additional
+      setIsModalLoading(true);
+      const deliveryFileUrl = await uploadFile(fileData);
+      const additionalFileUrl = await uploadFile(fileAdditionalData);
+
+      // Upload per detail pre/post packing
+      const uploadedDetails = await Promise.all(
+        payloads.map(async (item) => {
+          const preUrl = await uploadFile(item.pre_packing_file as File | null);
+          const postUrl = await uploadFile(
+            item.post_packing_file as File | null
+          );
+
+          return {
+            order_detail_id: item.order_detail_id,
+            gold_cert_detail_price: item.gold_cert_detail_price,
+            gold_cert_detail: item.gold_cert_detail,
+            pre_packing_photo_url: preUrl,
+            post_packing_photo_url: postUrl,
+          };
         })
-        .catch((error) => {
-          if (error.response?.data) {
-            setDetailErrors(error.response.data.details); // ← simpan array error dari backend
-            setUploadFileError(error.response.data.upload_file || []);
-            setAdditionalFileError(error.response.data.additional_file || []);
-          }
-          api.error({
-            message: 'Proses Gagal',
-            description: 'Data order gagal disimpan',
-            placement: 'bottomRight',
-          });
-        });
-    } catch (ex) {
-      console.log(ex);
+      );
+
+      // Buat payload utama
+      const payload = {
+        order: data.order_gold_id,
+        delivery_type: data.tracking_courier_service_name,
+        order_shipping: data.order_shipping[0]?.order_delivery_id ?? '',
+        user: data.user.id,
+        delivery_pickup_request_datetime:
+          data.order_shipping[0]?.delivery_pickup_date ?? '',
+        delivery_tracking_number: '',
+        delivery_notes: note,
+        delivery_file_url: deliveryFileUrl,
+        additional_file_url: additionalFileUrl,
+        details: uploadedDetails,
+      };
+
+      await axiosInstance.post('/delivery/create', payload);
+
+      api.success({
+        message: 'Proses Sukses',
+        description: 'Data order pengiriman berhasil disimpan',
+        placement: 'bottomRight',
+      });
+      setRefresData(true);
+      setFileData(null);
+      setNote('');
+      setIsModalLoading(false);
+      router.push(`${parentUrl}/${paramsId}`);
+    } catch (error: any) {
+      console.error(error);
+      if (error.response?.data) {
+        setDetailErrors(error.response.data.details || []);
+        setUploadFileError(error.response.data.delivery_file_url || []);
+        setAdditionalFileError(error.response.data.additional_file_url || []);
+      }
+
+      api.error({
+        message: 'Proses Gagal',
+        description: 'Data order gagal disimpan',
+        placement: 'bottomRight',
+      });
     }
   };
 
   useEffect(() => {
-    if (refreshData) {
-      fetchData();
-    }
+    if (refreshData) fetchData();
   }, [refreshData]);
 
   useEffect(() => {
@@ -210,6 +202,7 @@ const ComEmasFisikDeliveryPage = (props: {
           </Link>
         </div>
       </div>
+
       {data.user && data.user.name && (
         <>
           <div className="flex flex-col">
@@ -465,7 +458,7 @@ const ComEmasFisikDeliveryPage = (props: {
                             initFile={item.pre_packing_file}
                             initUrl={''}
                             isError={
-                              detailErrors[index]?.pre_packing_file
+                              detailErrors[index]?.pre_packing_photo_url
                                 ? true
                                 : false
                             }
@@ -487,7 +480,7 @@ const ComEmasFisikDeliveryPage = (props: {
                             initFile={item.post_packing_file}
                             initUrl={''}
                             isError={
-                              detailErrors[index]?.post_packing_file
+                              detailErrors[index]?.post_packing_photo_url
                                 ? true
                                 : false
                             }
@@ -512,6 +505,10 @@ const ComEmasFisikDeliveryPage = (props: {
               onChangeDetail('gold_cert_detail', selectedIndex, value);
               setIsModalSertifikat(false);
             }}
+          />
+          <ModalLoading
+            isModalOpen={isModalLoading}
+            textInfo="Harap tunggu, data sedang diproses"
           />
         </>
       )}

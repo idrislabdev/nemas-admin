@@ -28,8 +28,8 @@ const ComTarikEmasPage = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
-  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  // 🗓️ Default tanggal awal = tanggal 2 bulan aktif, akhir = hari ini
+  const startOfMonth = dayjs().subtract(2, 'month').format('YYYY-MM-DD');
   const today = dayjs().format('YYYY-MM-DD');
 
   // 📦 Parameter API

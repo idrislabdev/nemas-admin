@@ -120,7 +120,7 @@ const ModalSertifikat = (props: {
               scroll={{ x: 'max-content', y: 550 }}
               pagination={false}
               className="table-basic"
-              rowKey="cert_id"
+              rowKey="id"
             />
             <div className="flex justify-end p-[12px]">
               <Pagination

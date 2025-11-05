@@ -39,8 +39,8 @@ const ComEmasFisikPage = (props: {
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [isModalDO, setIsModalDO] = useState(false);
   const [selectedId, setSelectedId] = useState('');
-  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
-  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  // 🗓️ Default tanggal awal = tanggal 2 bulan aktif, akhir = hari ini
+  const startOfMonth = dayjs().subtract(2, 'month').format('YYYY-MM-DD');
   const today = dayjs().format('YYYY-MM-DD');
 
   // 🔹 Default parameter tanggal

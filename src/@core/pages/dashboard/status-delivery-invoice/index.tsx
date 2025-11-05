@@ -7,12 +7,16 @@ import { AlertTriangle } from '@untitled-ui/icons-react'; // gunakan ikon sesuai
 interface DeliveryInvoiceStatus {
   pending_delivery: number;
   pending_invoice: number;
+  pending_loan_payment: number;
+  pending_monthly_cost: number;
 }
 
 const StatusDeliveryInvoice = () => {
   const [status, setStatus] = useState<DeliveryInvoiceStatus>({
     pending_delivery: 0,
     pending_invoice: 0,
+    pending_loan_payment: 0,
+    pending_monthly_cost: 0,
   });
 
   const fetchStatus = useCallback(async () => {
@@ -31,7 +35,7 @@ const StatusDeliveryInvoice = () => {
   }, [fetchStatus]);
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm">
+    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm h-[201px]">
       <div className="flex items-center justify-center text-yellow-600 mb-2">
         <AlertTriangle className="w-6 h-6 mr-2" />
       </div>
@@ -43,6 +47,11 @@ const StatusDeliveryInvoice = () => {
       <div className="text-sm text-gray-700 text-center leading-relaxed">
         <p>Delivery Pending: {status.pending_delivery} transaksi</p>
         <p>Invoice Belum Dibayar: {status.pending_invoice} transaksi</p>
+        <p>Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi</p>
+        <p>
+          Biaya Bulanan Belum Dibayar Dibayar H-3: {status.pending_monthly_cost}{' '}
+          transaksi
+        </p>
       </div>
     </div>
   );

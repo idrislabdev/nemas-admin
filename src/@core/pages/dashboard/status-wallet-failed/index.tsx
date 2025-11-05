@@ -29,7 +29,7 @@ const StatusWalletFailed = () => {
   }, [fetchStatus]);
 
   return (
-    <div className="bg-red-50 border border-red-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm">
+    <div className="bg-red-50 border border-red-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm h-[201px]">
       <div className="flex items-center justify-center text-red-600 mb-2">
         <AlertTriangle className="w-6 h-6 mr-2" />
       </div>
