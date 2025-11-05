@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
 import Highcharts from 'highcharts';
@@ -39,6 +38,11 @@ const baseOptions = {
 };
 
 const CostPie = () => {
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState<string | number>(
+    now.getFullYear()
+  );
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [chartOptions, setChartOptions] = useState(baseOptions);
   const [summary, setSummary] = useState({
     fee_toko: 0,
@@ -46,12 +50,50 @@ const CostPie = () => {
     total: 0,
   });
 
+  const getDateRange = (year: number, month: number) => {
+    const start_date = new Date(year, month - 1, 1);
+    let end_date: Date;
+
+    const today = new Date();
+    if (year === today.getFullYear() && month === today.getMonth() + 1) {
+      end_date = today;
+    } else {
+      end_date = new Date(year, month, 0); // last day of that month
+    }
+
+    const formatDate = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+        d.getDate()
+      ).padStart(2, '0')}`;
+
+    return {
+      start_date: formatDate(start_date),
+      end_date: formatDate(end_date),
+    };
+  };
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/cost`);
+    let params: Record<string, string> = {};
+
+    // Jika bukan "All", maka kirimkan start_date & end_date
+    if (selectedYear !== 'all') {
+      const { start_date, end_date } = getDateRange(
+        Number(selectedYear),
+        selectedMonth
+      );
+      params = { start_date, end_date };
+    }
+
+    const resp = await axiosInstance.get(`/dashboard/cost`, { params });
     const { data } = resp;
 
     const total = data.fee_toko + data.fee_third_party;
-    if (!total) return;
+
+    if (!total) {
+      setSummary({ fee_toko: 0, fee_third_party: 0, total: 0 });
+      setChartOptions(baseOptions);
+      return;
+    }
 
     const arr = [
       {
@@ -68,7 +110,7 @@ const CostPie = () => {
     temp.series[0].data = arr;
     setChartOptions(temp);
     setSummary({ ...data, total });
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     fetchData();
@@ -77,12 +119,62 @@ const CostPie = () => {
   const formatRupiah = (num: number) =>
     'Rp ' + num.toLocaleString('id-ID', { minimumFractionDigits: 0 });
 
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
+  const years = ['all', now.getFullYear() - 1, now.getFullYear()];
+
   return (
     <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
-      <h5 className="text-green-700 font-semibold mb-3">Total Cost</h5>
+      <div className="flex justify-between items-center mb-3">
+        <h5 className="text-green-700 font-semibold">Total Cost</h5>
+
+        {/* Filter Bulan & Tahun */}
+        <div className="flex gap-2">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            disabled={selectedYear === 'all'}
+            className={`border border-neutral-300 rounded-md px-2 h-9 text-sm ${
+              selectedYear === 'all'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : ''
+            }`}
+          >
+            {months.map((m, i) => (
+              <option key={i + 1} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="border border-neutral-300 rounded-md px-2 h-9 text-sm"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y === 'all' ? 'All' : y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="flex flex-row items-center justify-between">
-        {/* Detail */}
+        {/* Detail Kiri */}
         <div className="w-1/2 text-sm text-neutral-700 space-y-1">
           <p>
             Cost Fee Toko:{' '}
@@ -98,12 +190,12 @@ const CostPie = () => {
           </p>
           <hr className="my-2 border-neutral-200" />
           <p className="font-semibold text-green-700">
-            Total Cost:{' '}
+            Total:{' '}
             <span className="font-bold">{formatRupiah(summary.total)}</span>
           </p>
         </div>
 
-        {/* Chart */}
+        {/* Chart Kanan */}
         <div className="w-1/2 flex justify-center">
           <HighchartsReact
             highcharts={Highcharts}

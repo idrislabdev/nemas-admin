@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import Highcharts from 'highcharts';
@@ -7,11 +6,50 @@ import HighchartsReact from 'highcharts-react-official';
 import axiosInstance from '@/@core/utils/axios';
 
 const GoldTransactionBar = () => {
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState<string | number>(
+    now.getFullYear()
+  );
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [chartOptions, setChartOptions] = useState<any>(null);
+
+  const getDateRange = (year: number, month: number) => {
+    const start_date = new Date(year, month - 1, 1);
+    let end_date: Date;
+
+    const today = new Date();
+    if (year === today.getFullYear() && month === today.getMonth() + 1) {
+      end_date = today;
+    } else {
+      end_date = new Date(year, month, 0);
+    }
+
+    const formatDate = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+        d.getDate()
+      ).padStart(2, '0')}`;
+
+    return {
+      start_date: formatDate(start_date),
+      end_date: formatDate(end_date),
+    };
+  };
 
   const fetchData = useCallback(async () => {
     try {
-      const resp = await axiosInstance.get('/dashboard/transaction-summary');
+      let params: Record<string, string> = {};
+
+      if (selectedYear !== 'all') {
+        const { start_date, end_date } = getDateRange(
+          Number(selectedYear),
+          selectedMonth
+        );
+        params = { start_date, end_date };
+      }
+
+      const resp = await axiosInstance.get('/dashboard/transaction-summary', {
+        params,
+      });
       const data = resp.data;
 
       const categories = [
@@ -79,17 +117,65 @@ const GoldTransactionBar = () => {
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
+  const years = ['all', now.getFullYear() - 1, now.getFullYear()];
+
   return (
-    <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px]">
-      <h5 className="text-green-700 font-semibold mb-3">
-        Transaksi Emas (gram)
-      </h5>
+    <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
+      <div className="flex justify-between items-center mb-3">
+        <h5 className="text-green-700 font-semibold">Transaksi Emas (gram)</h5>
+
+        {/* === Filter Bulan & Tahun === */}
+        <div className="flex gap-2">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            disabled={selectedYear === 'all'}
+            className={`border border-neutral-300 rounded-md px-2 h-9 text-sm ${
+              selectedYear === 'all'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : ''
+            }`}
+          >
+            {months.map((m, i) => (
+              <option key={i + 1} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="border border-neutral-300 rounded-md px-2 h-9 text-sm"
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y === 'all' ? 'All' : y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {chartOptions && (
         <HighchartsReact

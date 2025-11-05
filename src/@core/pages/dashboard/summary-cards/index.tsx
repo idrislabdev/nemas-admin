@@ -25,12 +25,24 @@ export interface ISummaryWallet {
   balance: number;
 }
 
+export interface ISummaryLoan {
+  loan_weight: number;
+}
+
+export interface ISummaryInvestment {
+  investment_weight: number;
+}
+
 const SummaryCards = () => {
   const [data, setData] = useState<ISummary>({} as ISummary);
   const [dataGold, setDataGold] = useState<ISummaryGold>({} as ISummaryGold);
   const [dataWallet, setDataWallet] = useState<ISummaryWallet>(
     {} as ISummaryWallet
   );
+  const [dataInvestment, setDataInvestment] = useState<ISummaryInvestment>(
+    {} as ISummaryInvestment
+  );
+  const [dataLoan, setDataLoan] = useState<ISummaryLoan>({} as ISummaryLoan);
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(`/dashboard/user-summary`);
     setData(resp.data);
@@ -46,6 +58,16 @@ const SummaryCards = () => {
     setDataWallet(resp.data);
   }, []);
 
+  const fetchDataGadai = useCallback(async () => {
+    const resp = await axiosInstance.get(`/dashboard/loan`);
+    setDataLoan(resp.data);
+  }, []);
+
+  const fetchDataInvestment = useCallback(async () => {
+    const resp = await axiosInstance.get(`/dashboard/investment`);
+    setDataInvestment(resp.data);
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -56,6 +78,14 @@ const SummaryCards = () => {
 
   useEffect(() => {
     fetchDataWallet();
+  }, []);
+
+  useEffect(() => {
+    fetchDataInvestment();
+  }, []);
+
+  useEffect(() => {
+    fetchDataGadai();
   }, []);
 
   return (
@@ -135,7 +165,35 @@ const SummaryCards = () => {
               <CoinsStacked02 />
             </span>
             <span className="text-neutral-700 font-medium">
-              {formatterNumber(dataGold.saldo_nemas - dataGold.saldo_user)} Gr
+              {formatterNumber(dataLoan.loan_weight)} Gr
+            </span>
+          </div>
+          <label className="text-sm text-green-700">Gadai Emas</label>
+        </div>
+        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+          <div className="flex items-center gap-2">
+            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+              <CoinsStacked02 />
+            </span>
+            <span className="text-neutral-700 font-medium">
+              {formatterNumber(dataInvestment.investment_weight)} Gr
+            </span>
+          </div>
+          <label className="text-sm text-green-700">Deposito</label>
+        </div>
+        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
+          <div className="flex items-center gap-2">
+            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+              <CoinsStacked02 />
+            </span>
+            <span className="text-neutral-700 font-medium">
+              {formatterNumber(
+                dataGold.saldo_nemas -
+                  (dataGold.saldo_user +
+                    dataInvestment.investment_weight +
+                    dataLoan.loan_weight)
+              )}{' '}
+              Gr
             </span>
           </div>
           <label className="text-sm text-green-700">Sisa Stok Emas</label>
