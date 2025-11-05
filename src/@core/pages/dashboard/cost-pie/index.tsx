@@ -117,7 +117,7 @@ const CostPie = () => {
   }, [fetchData]);
 
   const formatRupiah = (num: number) =>
-    'Rp ' + num.toLocaleString('id-ID', { minimumFractionDigits: 0 });
+    'Rp' + num.toLocaleString('id-ID', { minimumFractionDigits: 0 });
 
   const months = [
     'Januari',
