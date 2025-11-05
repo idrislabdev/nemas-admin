@@ -179,13 +179,27 @@ const CostPie = () => {
           <p>
             Cost Fee Toko:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.fee_toko)}
+              {formatRupiah(summary.fee_toko)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.fee_toko / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Cost Pihak Ketiga:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.fee_third_party)}
+              {formatRupiah(summary.fee_third_party)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.fee_third_party / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <hr className="my-2 border-neutral-200" />

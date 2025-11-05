@@ -90,7 +90,6 @@ const SaldoWalletPie = () => {
       params,
     });
     const { data } = resp;
-
     const total = data.wallet + data.topup + data.disburst;
     if (!total) {
       setSummary({ topup: 0, disburst: 0, wallet: 0, total: 0 });
@@ -101,15 +100,15 @@ const SaldoWalletPie = () => {
     const arr = [
       {
         name: 'Topup Saldo',
-        y: parseFloat(((data.topup / total) * 100).toFixed(2)),
+        y: parseFloat(((data.topup / total) * 100).toFixed(1)),
       },
       {
         name: 'Tarik Saldo',
-        y: parseFloat(((data.disburst / total) * 100).toFixed(2)),
+        y: parseFloat(((data.disburst / total) * 100).toFixed(1)),
       },
       {
         name: 'Saldo Wallet',
-        y: parseFloat(((data.wallet / total) * 100).toFixed(2)),
+        y: parseFloat(((data.wallet / total) * 100).toFixed(1)),
       },
     ];
 
@@ -196,23 +195,46 @@ const SaldoWalletPie = () => {
         <div className="w-1/2 text-sm text-neutral-700 space-y-1">
           <p>
             Topup Saldo:{' '}
-            <span className="font-medium">{formatRupiah(summary.topup)}</span>
+            <span className="font-medium">
+              {formatRupiah(summary.topup)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(((summary.topup / summary.total) * 100).toFixed(1))}
+                %)
+              </span>
+            </span>
           </p>
           <p>
             Tarik Saldo:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.disburst)}
+              {formatRupiah(summary.disburst)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.disburst / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Saldo Wallet:{' '}
-            <span className="font-medium">{formatRupiah(summary.wallet)}</span>
+            <span className="font-medium">
+              {formatRupiah(summary.wallet)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.wallet / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
+            </span>
           </p>
-          <hr className="my-2 border-neutral-200" />
+          {/* <hr className="my-2 border-neutral-200" />
           <p className="font-semibold text-green-700">
             Total:{' '}
             <span className="font-bold">{formatRupiah(summary.total)}</span>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

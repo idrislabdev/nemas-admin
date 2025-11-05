@@ -113,23 +113,23 @@ const RevenuePie = () => {
     const arr = [
       {
         name: 'Selisih Beli Emas',
-        y: parseFloat(((data.selisih_beli_emas / total) * 100).toFixed(2)),
+        y: parseFloat(((data.selisih_beli_emas / total) * 100).toFixed(1)),
       },
       {
         name: 'Selisih Jual Emas',
-        y: parseFloat(((data.selisih_jual_emas / total) * 100).toFixed(2)),
+        y: parseFloat(((data.selisih_jual_emas / total) * 100).toFixed(1)),
       },
       {
         name: 'Biaya Admin',
-        y: parseFloat(((data.biaya_admin / total) * 100).toFixed(2)),
+        y: parseFloat(((data.biaya_admin / total) * 100).toFixed(1)),
       },
       {
         name: 'Biaya Transfer',
-        y: parseFloat(((data.biaya_transfer / total) * 100).toFixed(2)),
+        y: parseFloat(((data.biaya_transfer / total) * 100).toFixed(1)),
       },
       {
         name: 'Biaya Bulanan',
-        y: parseFloat(((data.biaya_bulanan / total) * 100).toFixed(2)),
+        y: parseFloat(((data.biaya_bulanan / total) * 100).toFixed(1)),
       },
     ];
 
@@ -206,31 +206,66 @@ const RevenuePie = () => {
           <p>
             Selisih Beli Emas:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.selisih_beli_emas)}
+              {formatRupiah(summary.selisih_beli_emas)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.selisih_beli_emas / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Selisih Jual Emas:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.selisih_jual_emas)}
+              {formatRupiah(summary.selisih_jual_emas)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.selisih_jual_emas / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Biaya Admin:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.biaya_admin)}
+              {formatRupiah(summary.biaya_admin)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.biaya_admin / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Biaya Transfer:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.biaya_transfer)}
+              {formatRupiah(summary.biaya_transfer)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.biaya_transfer / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <p>
             Biaya Bulanan:{' '}
             <span className="font-medium">
-              {formatRupiah(summary.biaya_bulanan)}
+              {formatRupiah(summary.biaya_bulanan)}{' '}
+              <span className="text-green-700 text-xs font-bold">
+                (
+                {parseFloat(
+                  ((summary.biaya_bulanan / summary.total) * 100).toFixed(1)
+                )}
+                %)
+              </span>
             </span>
           </p>
           <hr className="my-2 border-neutral-200" />

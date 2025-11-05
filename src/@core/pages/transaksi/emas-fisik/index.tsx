@@ -12,7 +12,7 @@ import {
   FileDownload02,
   Truck01,
 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination } from 'antd';
+import { DatePicker, Pagination, Select } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -39,17 +39,22 @@ const ComEmasFisikPage = (props: {
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [isModalDO, setIsModalDO] = useState(false);
   const [selectedId, setSelectedId] = useState('');
-  // 🗓️ Default tanggal awal = tanggal 2 bulan aktif, akhir = hari ini
   const startOfMonth = dayjs().subtract(2, 'month').format('YYYY-MM-DD');
   const today = dayjs().format('YYYY-MM-DD');
 
-  // 🔹 Default parameter tanggal
+  // 🔹 Filter tambahan
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterPickedUp, setFilterPickedUp] = useState<string>('Belum Dikirim');
+
+  // 🔹 Default parameter tanggal + filter tambahan
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
     start_date: startOfMonth,
     end_date: today,
+    status: '', // 🟢 baru
+    is_picked_up: '', // 🟢 baru
   });
 
   const columns: ColumnsType<ISalesOrder> = [
@@ -214,12 +219,23 @@ const ComEmasFisikPage = (props: {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const resp = await axiosInstance.get(url, {
+      params: {
+        ...params,
+        status: filterStatus || undefined,
+        is_picked_up:
+          filterPickedUp !== ''
+            ? filterPickedUp === 'true'
+              ? true
+              : false
+            : undefined,
+      },
+    });
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
-  }, [params, url]);
+  }, [params, url, filterStatus, filterPickedUp]);
 
-  const onChangePage = async (val: number) => {
+  const onChangePage = (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
   };
 
@@ -237,23 +253,42 @@ const ComEmasFisikPage = (props: {
   };
 
   // 🔹 Fungsi ambil semua data untuk export
+  // 🔹 Fungsi ambil semua data untuk export (sudah diperbaiki dengan filter)
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
-    const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
-    });
+
+    // Tambahkan filter status & is_picked_up ke parameter
+    const requestParams = {
+      ...params,
+      limit,
+      offset: 0,
+      status: filterStatus || undefined,
+      is_picked_up:
+        filterPickedUp !== ''
+          ? filterPickedUp === 'true'
+            ? true
+            : false
+          : undefined,
+    };
+
+    const firstResp = await axiosInstance.get(url, { params: requestParams });
     allRows = allRows.concat(firstResp.data.results);
+
     const totalCount = firstResp.data.count;
     const totalPages = Math.ceil(totalCount / limit);
+
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
-      });
+      const nextParams = {
+        ...requestParams,
+        offset,
+      };
+      const resp = await axiosInstance.get(url, { params: nextParams });
       allRows = allRows.concat(resp.data.results);
       await new Promise((r) => setTimeout(r, 200));
     }
+
     return allRows;
   };
 
@@ -262,13 +297,7 @@ const ComEmasFisikPage = (props: {
     try {
       setIsModalLoading(true);
 
-      const param = {
-        format: 'json',
-        offset: 0,
-        limit: 10,
-        start_date: params.start_date,
-        end_date: params.end_date,
-      };
+      const param = { ...params, offset: 0, limit: 10 };
 
       const rows = await fetchAllData(url, param);
 
@@ -393,22 +422,55 @@ const ComEmasFisikPage = (props: {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        {/* 🔹 RangePicker tampil default bulan ini */}
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
-        />
-        <div className="flex items-center gap-[4px]">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        {/* 🔹 RangePicker */}
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[dayjs(startOfMonth), dayjs(today)]}
+          />
+          {/* 🔹 Filter Status Pesanan */}
+          {/* 🔹 Filter Status Pesanan */}
+          <Select
+            allowClear
+            size="large"
+            className="w-[180px]"
+            placeholder="Semua Status"
+            value={filterStatus || undefined}
+            onChange={(value) => setFilterStatus(value)}
+            options={[
+              { value: '', label: 'Semua Status' },
+              { value: 'delivered', label: 'Delivered' },
+              { value: 'paid', label: 'Paid' },
+              { value: 'unpaid', label: 'Unpaid' },
+            ]}
+          />
+
+          {/* 🔹 Filter Status Pengiriman */}
+          <Select
+            allowClear
+            size="large"
+            className="w-[180px]"
+            placeholder="Semua Pengiriman"
+            value={filterPickedUp || undefined}
+            onChange={(value) => setFilterPickedUp(value)}
+            options={[
+              { value: 'true', label: 'Sudah Dikirim' },
+              { value: 'false', label: 'Belum Dikirim' },
+            ]}
+          />
+        </div>
+        {/* 🔹 Filter tambahan */}
+        <div className="flex gap-2">
           <button className="btn btn-primary" onClick={exportData}>
-            <FileDownload02 />
-            Export Excel
+            <FileDownload02 /> Export Excel
           </button>
         </div>
       </div>
 
+      {/* 🔹 Table dan pagination tetap */}
       <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <div className="overflow-x-auto rounded-tr-[8px] rounded-tl-[8px] max-h-[600px]">
           <table className="min-w-full text-sm border-collapse table-fixed">
