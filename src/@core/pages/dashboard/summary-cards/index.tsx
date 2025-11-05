@@ -188,10 +188,14 @@ const SummaryCards = () => {
             </span>
             <span className="text-neutral-700 font-medium">
               {formatterNumber(
-                dataGold.saldo_nemas -
-                  (dataGold.saldo_user +
-                    dataInvestment.investment_weight +
-                    dataLoan.loan_weight)
+                Number(
+                  (
+                    dataGold.saldo_nemas -
+                    (dataGold.saldo_user +
+                      dataInvestment.investment_weight +
+                      dataLoan.loan_weight)
+                  ).toFixed(2)
+                )
               )}{' '}
               Gr
             </span>
