@@ -165,6 +165,7 @@ const ComEmasFisikDeliveryPage = (props: {
         description: 'Data order gagal disimpan',
         placement: 'bottomRight',
       });
+      setIsModalLoading(false);
     }
   };
 
