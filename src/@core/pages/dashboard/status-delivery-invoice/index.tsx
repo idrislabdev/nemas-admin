@@ -35,7 +35,7 @@ const StatusDeliveryInvoice = () => {
   }, [fetchStatus]);
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm h-[201px]">
+    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-5 flex flex-col items-center justify-center shadow-sm h-[250px]">
       <div className="flex items-center justify-center text-yellow-600 mb-2">
         <AlertTriangle className="w-6 h-6 mr-2" />
       </div>
@@ -49,8 +49,7 @@ const StatusDeliveryInvoice = () => {
         <p>Invoice Belum Dibayar: {status.pending_invoice} transaksi</p>
         <p>Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi</p>
         <p>
-          Biaya Bulanan Belum Dibayar Dibayar H-3: {status.pending_monthly_cost}{' '}
-          transaksi
+          Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
         </p>
       </div>
     </div>
