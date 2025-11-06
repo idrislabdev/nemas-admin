@@ -15,11 +15,11 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 import { IGoldInvestmentSummary } from '@/@core/@types/interface';
+import { debounce } from 'lodash';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
-
-// 🔹 Interface baru sesuai permintaan
 
 const GoldInvestmentUserTable = () => {
   const url = `/reports/gold-investment/summary-user`;
@@ -38,7 +38,10 @@ const GoldInvestmentUserTable = () => {
     limit: 10,
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
+    search: '',
   });
+
+  const [searchText, setSearchText] = useState('');
 
   // 🔹 Kolom tabel disesuaikan dengan interface baru
   const columns: ColumnsType<IGoldInvestmentSummary> = [
@@ -113,6 +116,18 @@ const GoldInvestmentUserTable = () => {
     });
   };
 
+  // 🔹 Debounce untuk pencarian
+  const handleSearch = useCallback(
+    debounce((val: string) => {
+      setParams((prev) => ({ ...prev, offset: 0, search: val }));
+    }, 500),
+    []
+  );
+
+  useEffect(() => {
+    handleSearch(searchText);
+  }, [searchText, handleSearch]);
+
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
@@ -160,7 +175,6 @@ const GoldInvestmentUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
 
-      // 🔹 Judul
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS - PER INVESTOR';
       worksheet.getCell('A1').alignment = {
@@ -243,14 +257,23 @@ const GoldInvestmentUserTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[defaultStart, defaultEnd]}
-        />
-        <button className="btn btn-primary" onClick={exportData}>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[defaultStart, defaultEnd]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 h-[40px] w-[250px] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+          />
+        </div>
+        <button className="btn !h-[40px] btn-primary" onClick={exportData}>
           <FileDownload02 />
           Export Excel
         </button>

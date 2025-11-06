@@ -38,10 +38,28 @@ const WalletFinancialSummary = () => {
     useState<IWalletFinancialSummary | null>(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // 🔍 Search text + debounce
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [params, setParams] = useState({
     start_date: firstDay.format('YYYY-MM-DD'),
     end_date: today.format('YYYY-MM-DD'),
+    search: '',
   });
+
+  // ⏳ Debounce pencarian
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // 🧭 Update params ketika search berubah
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, search: debouncedSearch }));
+  }, [debouncedSearch]);
 
   // 🧭 Ambil data dari API
   const fetchData = useCallback(async () => {
@@ -59,6 +77,7 @@ const WalletFinancialSummary = () => {
     dateStrings: string[]
   ) => {
     setParams({
+      ...params,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
     });
@@ -74,13 +93,11 @@ const WalletFinancialSummary = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Ringkasan Keuangan Wallet');
 
-      // 🧾 Judul rata kiri
       worksheet.mergeCells('A1:E1');
       worksheet.getCell('A1').value = 'LAPORAN RINGKASAN KEUANGAN WALLET';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // 📅 Periode rata kiri
       worksheet.mergeCells('A2:E2');
       worksheet.getCell('A2').value = `Periode: ${dayjs(
         params.start_date
@@ -91,7 +108,6 @@ const WalletFinancialSummary = () => {
 
       worksheet.addRow([]);
 
-      // Header
       const header = [
         'Tipe Transaksi',
         'Total Transaksi',
@@ -116,7 +132,6 @@ const WalletFinancialSummary = () => {
         };
       });
 
-      // Data rows
       const mapData = [
         { type: 'Topup', ...rows.topup },
         { type: 'Disburst', ...rows.disburst },
@@ -142,14 +157,13 @@ const WalletFinancialSummary = () => {
         });
       });
 
-      // 🧩 Auto-fit column width
       worksheet.columns.forEach((col: any) => {
         let maxLength = 10;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.min(maxLength + 2, 50); // batasi max width
+        col.width = Math.min(maxLength + 2, 50);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -168,7 +182,7 @@ const WalletFinancialSummary = () => {
     fetchData();
   }, [fetchData]);
 
-  // 🧱 Data untuk tabel tampilan
+  // 🧱 Data tabel tampilan
   const tableData = useMemo(
     () =>
       dataSummary
@@ -230,15 +244,25 @@ const WalletFinancialSummary = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[firstDay, today]}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            value={[dayjs(params.start_date), dayjs(params.end_date)]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
         <button
-          className="btn btn-primary"
+          className="btn !h-[40px] btn-primary"
           onClick={exportData}
           disabled={isModalLoading}
         >

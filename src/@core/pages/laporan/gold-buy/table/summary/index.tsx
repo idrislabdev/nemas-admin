@@ -45,12 +45,15 @@ const GoldBuySummaryUserTable = () => {
     end_date: today,
     order_by: 'jumlah_transaksi',
     order_direction: 'DESC',
+    search: '',
   });
 
   const [rangeValue, setRangeValue] = useState<[Dayjs, Dayjs]>([
     dayjs(startOfMonth),
     dayjs(today),
   ]);
+
+  const [searchText, setSearchText] = useState('');
 
   // 🔁 Fetch data
   const fetchData = useCallback(async () => {
@@ -62,6 +65,22 @@ const GoldBuySummaryUserTable = () => {
       console.error('Fetch failed:', error);
     }
   }, [params, url]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // 🕒 Debounce search (500 ms)
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      setParams((prev) => ({
+        ...prev,
+        search: searchText,
+        offset: 0,
+      }));
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchText]);
 
   // 📆 Filter tanggal
   const onRangeChange = (
@@ -125,7 +144,6 @@ const GoldBuySummaryUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Pembelian Emas');
 
-      // === HEADER JUDUL (rata kiri) ===
       worksheet.mergeCells('A1:H1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PEMBELIAN EMAS PER USER';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
@@ -151,7 +169,6 @@ const GoldBuySummaryUserTable = () => {
 
       worksheet.addRow([]);
 
-      // === HEADER KOLOM ===
       const header = [
         'Nama User',
         'Nomor Member',
@@ -179,7 +196,6 @@ const GoldBuySummaryUserTable = () => {
         };
       });
 
-      // === ISI DATA ===
       rows.forEach((item) => {
         const row = worksheet.addRow([
           item.user_name,
@@ -193,7 +209,6 @@ const GoldBuySummaryUserTable = () => {
             ? moment(item.transaksi_terakhir).format('DD MMM YYYY HH:mm')
             : '-',
         ]);
-
         row.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -205,14 +220,13 @@ const GoldBuySummaryUserTable = () => {
         });
       });
 
-      // === FIT WIDTH KOLOM ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.min(maxLength + 2, 40); // batasi agar tidak terlalu lebar
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -227,11 +241,6 @@ const GoldBuySummaryUserTable = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // 📋 Kolom tabel
   const columns: ColumnsType<IGoldBuySummaryUser> = useMemo(
     () => [
       {
@@ -290,13 +299,22 @@ const GoldBuySummaryUserTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          value={rangeValue}
-          onChange={onRangeChange}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            value={rangeValue}
+            onChange={onRangeChange}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
         <button
           className="btn btn-primary"
           onClick={exportData}

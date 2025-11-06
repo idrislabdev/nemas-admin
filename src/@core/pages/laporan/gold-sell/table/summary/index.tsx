@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DatePicker, Pagination, Table } from 'antd';
-import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
@@ -29,46 +29,60 @@ export interface IGoldSellSummaryUser {
 const GoldSellSummaryUserTable = () => {
   const url = `/reports/gold-sell-transaction/summary-user`;
 
-  // 📆 Default tanggal: 1 awal bulan -> hari ini
-  const defaultStart = dayjs().startOf('month');
-  const defaultEnd = dayjs();
-
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    defaultStart,
-    defaultEnd,
-  ]);
+  // 📅 Default tanggal awal dan akhir
+  const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+  const today = dayjs().format('YYYY-MM-DD');
 
   const [dataTable, setDataTable] = useState<IGoldSellSummaryUser[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
-    start_date: defaultStart.format('YYYY-MM-DD'),
-    end_date: defaultEnd.format('YYYY-MM-DD'),
+    start_date: startOfMonth,
+    end_date: today,
     order_by: 'transaksi_terakhir',
     order_direction: 'DESC',
+    search: '',
   });
+
+  // 🔁 Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // Update params saat debounce selesai
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, search: debouncedSearch, offset: 0 }));
+  }, [debouncedSearch]);
 
   // 🔁 Fetch data
   const fetchData = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(url, { params });
-      setDataTable(resp.data.results);
-      setTotal(resp.data.count);
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
     } catch (error) {
       console.error('Fetch failed:', error);
     }
   }, [params, url]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // 📆 Range date filter
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    if (!dates || !dates[0] || !dates[1]) return;
-    setDateRange([dates[0], dates[1]]);
     setParams({
       ...params,
       start_date: dateStrings[0],
@@ -77,12 +91,12 @@ const GoldSellSummaryUserTable = () => {
     });
   };
 
-  // 📄 Pagination
+  // 📑 Pagination
   const onChangePage = (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
   };
 
-  // 📑 Sorting handler
+  // 📊 Sorting handler
   const handleTableChange = (
     pagination: TablePaginationConfig,
     _: any,
@@ -124,13 +138,11 @@ const GoldSellSummaryUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Penjualan Emas');
 
-      // === HEADER JUDUL LAPORAN ===
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PENJUALAN EMAS';
-      worksheet.getCell('A1').alignment = { horizontal: 'left' }; // rata kiri
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // === PERIODE LAPORAN ===
       worksheet.mergeCells('A2:G2');
       const periodeText =
         params.start_date && params.end_date
@@ -142,7 +154,6 @@ const GoldSellSummaryUserTable = () => {
       worksheet.getCell('A2').alignment = { horizontal: 'left' };
       worksheet.getCell('A2').font = { italic: true };
 
-      // === DICETAK PADA ===
       worksheet.mergeCells('A3:G3');
       worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
         'DD MMMM YYYY HH:mm'
@@ -151,8 +162,8 @@ const GoldSellSummaryUserTable = () => {
       worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
 
       worksheet.addRow([]);
+      worksheet.addRow([]);
 
-      // === HEADER KOLOM ===
       const header = [
         'Nama User',
         'Nomor Member',
@@ -165,7 +176,7 @@ const GoldSellSummaryUserTable = () => {
       const headerRow = worksheet.addRow(header);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -175,11 +186,10 @@ const GoldSellSummaryUserTable = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FFDDDDDD' },
         };
       });
 
-      // === ISI DATA ===
       rows.forEach((item) => {
         const row = worksheet.addRow([
           item.user_name,
@@ -194,7 +204,7 @@ const GoldSellSummaryUserTable = () => {
         ]);
 
         row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle' };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -204,18 +214,15 @@ const GoldSellSummaryUserTable = () => {
         });
       });
 
-      // === LEBAR KOLOM OTOMATIS FIT ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        // batas minimal & maksimal agar tidak terlalu sempit/lebar
-        col.width = Math.min(Math.max(maxLength + 2, 12), 30);
+        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
-      // === SIMPAN FILE ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_summary_penjualan_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
@@ -228,35 +235,49 @@ const GoldSellSummaryUserTable = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   const columns: ColumnsType<IGoldSellSummaryUser> = useMemo(
     () => [
-      { title: 'Nama User', dataIndex: 'user_name', sorter: true },
-      { title: 'Nomor Member', dataIndex: 'user_member_number', sorter: true },
-      { title: 'Kode Seller', dataIndex: 'user_seller_unique_code' },
+      {
+        title: 'Nama User',
+        dataIndex: 'user_name',
+        key: 'user_name',
+        sorter: true,
+      },
+      {
+        title: 'Nomor Member',
+        dataIndex: 'user_member_number',
+        key: 'user_member_number',
+        sorter: true,
+      },
+      {
+        title: 'Kode Seller',
+        dataIndex: 'user_seller_unique_code',
+        key: 'user_seller_unique_code',
+      },
       {
         title: 'Jumlah Transaksi',
         dataIndex: 'jumlah_transaksi',
+        key: 'jumlah_transaksi',
         sorter: true,
       },
       {
         title: 'Total Emas Dijual (gram)',
         dataIndex: 'total_emas_dijual',
+        key: 'total_emas_dijual',
         sorter: true,
         render: (val) => formatDecimal(val),
       },
       {
         title: 'Total Penjualan (Rp)',
         dataIndex: 'total_penjualan',
+        key: 'total_penjualan',
         sorter: true,
         render: (val) => `Rp${formatDecimal(val)}`,
       },
       {
         title: 'Transaksi Terakhir',
         dataIndex: 'transaksi_terakhir',
+        key: 'transaksi_terakhir',
         sorter: true,
         render: (val) => (val ? moment(val).format('DD MMMM YYYY HH:mm') : '-'),
       },
@@ -266,15 +287,24 @@ const GoldSellSummaryUserTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          value={dateRange}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[dayjs(startOfMonth), dayjs(today)]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
         <button
-          className="btn btn-primary"
+          className="btn !h-[40px] btn-primary"
           onClick={exportData}
           disabled={isModalLoading}
         >

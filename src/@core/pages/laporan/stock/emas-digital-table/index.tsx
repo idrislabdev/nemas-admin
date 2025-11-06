@@ -21,19 +21,22 @@ const StockEmasDigitalTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // 🗓️ Default: tanggal 1 bulan aktif sampai hari ini
+  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
   const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
   const today = dayjs().format('YYYY-MM-DD');
 
+  // 🧩 Params utama
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
     start_date: startOfMonth,
     end_date: today,
+    search: '', // 🔹 Tambahan param pencarian
   });
 
-  // 🧱 Kolom tabel (useMemo supaya tidak re-render terus)
+  const [searchText, setSearchText] = useState(''); // nilai input pencarian
+
   const columns = useMemo<ColumnsType<IReportGoldDigital>>(
     () => [
       {
@@ -95,6 +98,7 @@ const StockEmasDigitalTable = () => {
     []
   );
 
+  // 🔹 Fetch data dari API
   const fetchData = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(url, { params });
@@ -107,24 +111,44 @@ const StockEmasDigitalTable = () => {
     }
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+  // 🔹 Pagination handler
+  const onChangePage = (val: number) => {
+    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
   };
 
+  // 🔹 Range tanggal handler
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
       limit: 10,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
-    });
+    }));
   };
 
-  // 🔹 Ambil semua data untuk export
+  // 🔹 Debounce pencarian
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setParams((prev) => ({
+        ...prev,
+        offset: 0,
+        search: searchText.trim(),
+      }));
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // 🔹 Fetch data setiap kali params berubah
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // 🔹 Export Excel
   const fetchAllData = async (url: string, params: any) => {
     const limit = 100;
     const firstResp = await axiosInstance.get(url, {
@@ -150,20 +174,11 @@ const StockEmasDigitalTable = () => {
     return allRows;
   };
 
-  // 🧾 Export ke Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const param = {
-        format: 'json',
-        offset: 0,
-        limit: 10,
-        start_date: params.start_date,
-        end_date: params.end_date,
-      };
-
-      const rows = await fetchAllData(url, param);
+      const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IReportGoldDigital) => ({
         Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
@@ -181,11 +196,9 @@ const StockEmasDigitalTable = () => {
         'Saldo Akhir': `${formatDecimal(parseFloat(item.weight))} Gram`,
       }));
 
-      // 🔹 Buat workbook baru
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Stock Emas Digital');
 
-      // 🔹 Judul (rata kiri)
       worksheet.mergeCells('A1:F1');
       worksheet.getCell('A1').value = 'LAPORAN EMAS STOCK DIGITAL';
       worksheet.getCell('A1').alignment = {
@@ -201,47 +214,21 @@ const StockEmasDigitalTable = () => {
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
-      worksheet.addRow([]); // baris kosong
-
-      // 🔹 Header kolom
+      worksheet.addRow([]);
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // 🔹 Data rows
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-        });
+        worksheet.addRow(rowValues);
       });
 
-      // 🔹 Atur lebar kolom fit (tapi tidak terlalu lebar)
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;
@@ -249,12 +236,10 @@ const StockEmasDigitalTable = () => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          // Batasi antara 10 - 30 karakter
           col.width = Math.min(Math.max(maxLength + 2, 10), 30);
         }
       });
 
-      // 🔹 Simpan file
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_stock_emas_digital_${dayjs().format(
         'YYYYMMDD_HHmmss'
@@ -267,21 +252,28 @@ const StockEmasDigitalTable = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   return (
     <>
-      <div className="flex items-center justify-between">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[dayjs(startOfMonth), dayjs(today)]}
+          />
+
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-normal text-neutral-700 w-[220px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+
         <button
-          className="btn btn-primary"
+          className="btn btn-primary !h-[40px] flex items-center gap-2"
           onClick={exportData}
           disabled={isModalLoading}
         >

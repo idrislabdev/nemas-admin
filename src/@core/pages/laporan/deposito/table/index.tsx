@@ -34,7 +34,10 @@ const GoldInvestmentTable = () => {
     limit: 10,
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
+    search: '', // 🔹 Tambahkan parameter pencarian
   });
+
+  const [searchText, setSearchText] = useState(''); // 🔹 State input pencarian
 
   const columns: ColumnsType<IGoldInvestmentReport> = [
     {
@@ -153,6 +156,18 @@ const GoldInvestmentTable = () => {
     });
   };
 
+  // 🔹 Debounce untuk search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setParams((prev) => ({
+        ...prev,
+        offset: 0,
+        search: searchText.trim(),
+      }));
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
@@ -208,7 +223,6 @@ const GoldInvestmentTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Deposito');
 
-      // 🔹 Judul rata kiri
       worksheet.mergeCells('A1:K1');
       worksheet.getCell('A1').value = 'LAPORAN DEPOSITO';
       worksheet.getCell('A1').alignment = {
@@ -228,7 +242,6 @@ const GoldInvestmentTable = () => {
       }
 
       worksheet.addRow([]);
-
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
@@ -262,7 +275,6 @@ const GoldInvestmentTable = () => {
         });
       });
 
-      // 🔹 Lebar kolom lebih proporsional (fit content, tapi dibatasi)
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;
@@ -270,7 +282,6 @@ const GoldInvestmentTable = () => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          // batas maksimal 35 agar tidak terlalu lebar
           col.width = Math.min(maxLength + 2, 35);
         }
       });
@@ -293,19 +304,37 @@ const GoldInvestmentTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[defaultStart, defaultEnd]}
-        />
-        <button className="btn btn-primary" onClick={exportData}>
+      {/* 🔹 Bagian filter dan search */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[defaultStart, defaultEnd]}
+          />
+
+          {/* 🔍 Input search */}
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-normal text-neutral-700 w-[220px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+
+        <button
+          className="btn btn-primary !h-[40px] flex items-center gap-2"
+          onClick={exportData}
+          disabled={isModalLoading}
+        >
           <FileDownload02 />
-          Export Excel
+          {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
+      {/* 🔹 Tabel dan pagination */}
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}

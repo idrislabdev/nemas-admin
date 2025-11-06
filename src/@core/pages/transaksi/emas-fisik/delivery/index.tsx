@@ -12,7 +12,7 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
-import { FileAttachment01, Truck01, X } from '@untitled-ui/icons-react';
+import { FileAttachment01, Truck01 } from '@untitled-ui/icons-react';
 import UploadMiniForm from '@/@core/components/forms/upload-mini-form';
 import { notification } from 'antd';
 import ModalSertifikat from '../modal-sertifikat';

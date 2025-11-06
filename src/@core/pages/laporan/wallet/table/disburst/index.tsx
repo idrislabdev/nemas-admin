@@ -39,9 +39,12 @@ const WalletDisburstTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // 🧭 Default tanggal awal = 1 bulan aktif, akhir = hari ini
   const startOfMonth = dayjs().startOf('month');
   const today = dayjs();
+
+  // 🔍 Search
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [params, setParams] = useState({
     format: 'json',
@@ -49,7 +52,20 @@ const WalletDisburstTable = () => {
     limit: 10,
     start_date: startOfMonth.format('YYYY-MM-DD'),
     end_date: today.format('YYYY-MM-DD'),
+    search: '',
   });
+
+  // Debounce pencarian
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, offset: 0, search: debouncedSearch }));
+  }, [debouncedSearch]);
 
   const columns: ColumnsType<IReportWalletDisburst> = [
     {
@@ -223,7 +239,6 @@ const WalletDisburstTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Disburst Wallet');
 
-      // 🔹 Header rata kiri
       worksheet.mergeCells('A1:L1');
       worksheet.getCell('A1').value = 'LAPORAN DISBURST WALLET';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
@@ -272,7 +287,6 @@ const WalletDisburstTable = () => {
         });
       });
 
-      // 🔹 Auto fit column width (maksimal 40 karakter)
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -300,13 +314,23 @@ const WalletDisburstTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          value={[dayjs(params.start_date), dayjs(params.end_date)]}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            value={[dayjs(params.start_date), dayjs(params.end_date)]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
         <button
           className="btn btn-primary"
           onClick={exportData}

@@ -50,6 +50,8 @@ const GoldBuyDigitalDetailTable = () => {
     defaultEnd,
   ]);
 
+  const [searchText, setSearchText] = useState('');
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -58,6 +60,7 @@ const GoldBuyDigitalDetailTable = () => {
     end_date: defaultEnd.format('YYYY-MM-DD'),
     order_by: 'transaction_date',
     order_direction: 'DESC',
+    search: '',
   });
 
   // 🔁 Fetch data
@@ -74,6 +77,14 @@ const GoldBuyDigitalDetailTable = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // ⌛ Debounce search
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      setParams((prev) => ({ ...prev, search: searchText, offset: 0 }));
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchText]);
 
   // 📆 Range date filter
   const onRangeChange = (
@@ -231,7 +242,6 @@ const GoldBuyDigitalDetailTable = () => {
         });
       });
 
-      // === LEBAR KOLOM AUTO FIT ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -351,15 +361,24 @@ const GoldBuyDigitalDetailTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          value={dateRange}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            value={dateRange}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
         <button
-          className="btn btn-primary"
+          className="btn !h-[40px] btn-primary"
           onClick={exportData}
           disabled={isModalLoading}
         >

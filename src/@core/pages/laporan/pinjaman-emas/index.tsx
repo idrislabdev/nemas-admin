@@ -35,7 +35,18 @@ const PinjamanEmasTablePage = () => {
     limit: 10,
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
+    search: '',
   });
+
+  const [searchText, setSearchText] = useState('');
+
+  // 🔍 Debounce pencarian
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      setParams((prev) => ({ ...prev, offset: 0, search: searchText }));
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchText]);
 
   const columns: ColumnsType<IGoldLoan> = [
     {
@@ -221,7 +232,6 @@ const PinjamanEmasTablePage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Pinjaman Emas');
 
-      // 🔹 Judul rata kiri
       worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN PINJAMAN EMAS';
       worksheet.getCell('A1').alignment = {
@@ -274,7 +284,6 @@ const PinjamanEmasTablePage = () => {
         });
       });
 
-      // 🔹 Lebar kolom otomatis (fit)
       worksheet.columns.forEach((col: any) => {
         if (!col) return;
         let maxLength = 0;
@@ -282,7 +291,7 @@ const PinjamanEmasTablePage = () => {
           const val = cell.value ? cell.value.toString() : '';
           maxLength = Math.max(maxLength, val.length);
         });
-        col.width = Math.min(maxLength + 2, 40); // batas agar tidak terlalu lebar
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -303,15 +312,24 @@ const PinjamanEmasTablePage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size={'small'}
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          value={[defaultStart, defaultEnd]}
-        />
+      <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            value={[defaultStart, defaultEnd]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="h-[40px] w-[250px] pl-9 pr-3 border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+          />
+        </div>
         <button
-          className="btn btn-primary flex items-center gap-2"
+          className="btn !h-[40px] btn-primary flex items-center gap-2"
           onClick={exportData}
         >
           <FileDownload02 />

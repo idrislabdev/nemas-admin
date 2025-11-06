@@ -24,6 +24,8 @@ const PenjualanEmasFisikPage = () => {
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // 📅 Default tanggal: tanggal 1 bulan aktif - hari ini
   const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
@@ -35,7 +37,20 @@ const PenjualanEmasFisikPage = () => {
     limit: 10,
     start_date: defaultStart,
     end_date: defaultEnd,
+    search: '',
   });
+
+  // 🔎 Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, offset: 0, search: debouncedSearch }));
+  }, [debouncedSearch]);
 
   const columns: ColumnsType<ISalesOrder> = [
     {
@@ -176,7 +191,6 @@ const PenjualanEmasFisikPage = () => {
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
-
     const firstResp = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
@@ -191,7 +205,6 @@ const PenjualanEmasFisikPage = () => {
       allRows = allRows.concat(resp.data.results);
       await new Promise((r) => setTimeout(r, 200));
     }
-
     return allRows;
   };
 
@@ -234,7 +247,6 @@ const PenjualanEmasFisikPage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
 
-      // 🧾 Judul rata kiri
       worksheet.mergeCells('A1:L1');
       worksheet.getCell('A1').value = 'LAPORAN PENJUALAN EMAS FISIK';
       worksheet.getCell('A1').alignment = {
@@ -253,11 +265,9 @@ const PenjualanEmasFisikPage = () => {
         worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
-      worksheet.addRow([]); // baris kosong
-
+      worksheet.addRow([]);
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -288,13 +298,12 @@ const PenjualanEmasFisikPage = () => {
         });
       });
 
-      // 🧩 Lebar kolom otomatis (tidak terlalu lebar)
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
-            maxLength = Math.min(Math.max(maxLength, val.length), 30); // batas maksimal 30
+            maxLength = Math.min(Math.max(maxLength, val.length), 30);
           });
           col.width = maxLength + 2;
         }
@@ -318,20 +327,30 @@ const PenjualanEmasFisikPage = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
-        />
-        <button className="btn btn-primary" onClick={exportData}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
+          />
+          <input
+            type="text"
+            placeholder="Cari..."
+            className="pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px] focus:outline-none focus:ring-1 focus:ring-primary"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <button className="btn !h-[40px] btn-primary" onClick={exportData}>
           <FileDownload02 />
           Export Excel
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] mt-3">
         <Table
           columns={columns}
           dataSource={dataTable}

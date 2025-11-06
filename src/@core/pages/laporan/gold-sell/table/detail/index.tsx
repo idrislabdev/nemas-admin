@@ -46,6 +46,9 @@ const GoldSellTransactionDetailsTable = () => {
   const [dataTable, setDataTable] = useState<IGoldSellTransaction[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -54,7 +57,21 @@ const GoldSellTransactionDetailsTable = () => {
     end_date: today,
     order_by: 'transaction_date',
     order_direction: 'DESC',
+    search: '',
   });
+
+  // 🔁 Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  // Update params saat debounce selesai
+  useEffect(() => {
+    setParams((prev) => ({ ...prev, search: debouncedSearch, offset: 0 }));
+  }, [debouncedSearch]);
 
   // 🔁 Fetch data
   const fetchData = useCallback(async () => {
@@ -131,13 +148,11 @@ const GoldSellTransactionDetailsTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas');
 
-      // === HEADER JUDUL LAPORAN ===
       worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // === PERIODE LAPORAN ===
       worksheet.mergeCells('A2:M2');
       const periodeText =
         params.start_date && params.end_date
@@ -159,7 +174,6 @@ const GoldSellTransactionDetailsTable = () => {
       worksheet.addRow([]);
       worksheet.addRow([]);
 
-      // === HEADER TABEL ===
       const header = [
         'Tanggal Transaksi',
         'Nomor Transaksi',
@@ -192,7 +206,6 @@ const GoldSellTransactionDetailsTable = () => {
         };
       });
 
-      // === ISI DATA ===
       rows.forEach((item) => {
         const row = worksheet.addRow([
           moment(item.transaction_date).format('DD MMMM YYYY HH:mm'),
@@ -221,7 +234,6 @@ const GoldSellTransactionDetailsTable = () => {
         });
       });
 
-      // === AUTO WIDTH ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -243,7 +255,6 @@ const GoldSellTransactionDetailsTable = () => {
     }
   };
 
-  // === KOLOM TABEL ===
   const columns: ColumnsType<IGoldSellTransaction> = useMemo(
     () => [
       {
@@ -330,13 +341,22 @@ const GoldSellTransactionDetailsTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <RangePicker
-          size="small"
-          className="w-[300px] h-[40px]"
-          onChange={onRangeChange}
-          defaultValue={[dayjs(startOfMonth), dayjs(today)]}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[300px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[dayjs(startOfMonth), dayjs(today)]}
+          />
+          <input
+            type="text"
+            placeholder="Cari data..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
         <button
           className="btn btn-primary"
           onClick={exportData}
