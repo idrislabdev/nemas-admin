@@ -35,7 +35,7 @@ const StatusWalletFailed = () => {
       </div>
 
       <h5 className="text-red-700 font-semibold text-lg mb-2 text-center">
-        Info transaksi 3rd Party Gagaal
+        Info transaksi 3rd Party Gagal
       </h5>
 
       <div className="text-sm text-gray-700 text-center leading-relaxed">
