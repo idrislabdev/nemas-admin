@@ -12,7 +12,7 @@ import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
-import { FileAttachment01, Truck01 } from '@untitled-ui/icons-react';
+import { FileAttachment01, Truck01, X } from '@untitled-ui/icons-react';
 import UploadMiniForm from '@/@core/components/forms/upload-mini-form';
 import { notification } from 'antd';
 import ModalSertifikat from '../modal-sertifikat';
@@ -431,7 +431,7 @@ const ComEmasFisikDeliveryPage = (props: {
                     <td className="px-3 text-center">
                       {item.gold_cert_detail_price == null ? (
                         <a
-                          className={`underline h-[90px] w-[90px] cursor-pointer ${
+                          className={`underline h-[90px] w-full cursor-pointer flex justify-center items-center ${
                             detailErrors[index]?.gold_cert_detail_price
                               ? 'text-red-500 border border-red-500 rounded-md border-dashed'
                               : 'text-primary'
@@ -445,7 +445,17 @@ const ComEmasFisikDeliveryPage = (props: {
                           Pilih Nomor Seri
                         </a>
                       ) : (
-                        <span>{item.gold_cert_detail}</span>
+                        <a
+                          className={`underline h-[90px] w-full cursor-pointer flex justify-center items-center text-primary'
+                          }`}
+                          onClick={() => {
+                            setSelectGoldId(item.gold);
+                            setSelectedIndex(index);
+                            setIsModalSertifikat(true);
+                          }}
+                        >
+                          {item.gold_cert_detail}
+                        </a>
                       )}
                     </td>
                     <td className="px-3 py-3 text-center flex flex-col">

@@ -442,7 +442,6 @@ const ComEmasFisikPage = (props: {
             onChange={(value) => setFilterStatus(value)}
             options={[
               { value: '', label: 'Semua Status' },
-              { value: 'delivered', label: 'Delivered' },
               { value: 'paid', label: 'Paid' },
               { value: 'unpaid', label: 'Unpaid' },
             ]}

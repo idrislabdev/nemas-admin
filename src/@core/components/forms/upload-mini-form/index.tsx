@@ -4,6 +4,8 @@ import { X } from '@untitled-ui/icons-react';
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
 const UploadMiniForm = (props: {
   index: number;
   withFile: boolean;
@@ -29,22 +31,32 @@ const UploadMiniForm = (props: {
   const [photo, setPhoto] = useState<File | null>(null);
 
   const inputFile = useRef<HTMLInputElement[]>([]);
+
   const removePhoto = () => {
-    console.log(photo);
     setPhoto(null);
     setPhotoUrl('');
     const value = inputFile.current[index]?.value;
     if (value) {
       inputFile.current[index].value = '';
     }
+    onChange(null);
   };
 
   const onChangePhoto = () => {
     const files = inputFile.current[index]?.files;
-    if (files) {
-      setPhotoUrl(URL.createObjectURL(files[0]));
-      setPhoto(files[0]);
-      onChange(files[0]);
+    if (files && files[0]) {
+      const file = files[0];
+
+      // 🔴 Cek ukuran file maksimal 2MB
+      if (file.size > MAX_FILE_SIZE) {
+        window.alert('Ukuran file maksimal 2MB!');
+        inputFile.current[index].value = ''; // reset input
+        return;
+      }
+
+      setPhotoUrl(URL.createObjectURL(file));
+      setPhoto(file);
+      onChange(file);
     }
   };
 
@@ -60,6 +72,10 @@ const UploadMiniForm = (props: {
       setPhotoUrl(initUrl);
     }
   }, [initUrl]);
+
+  useEffect(() => {
+    console.log(photo);
+  }, [photo]);
 
   return (
     <div className="flex flex-col gap-[4px] w-full h-full relative">
@@ -92,6 +108,7 @@ const UploadMiniForm = (props: {
             <button
               className="w-[18px] h-[18px] border border-gray-200 bg-gray-200 flex flex-col justify-center items-center rounded-[4px] text-gray-400 absolute top-[-5px] right-[-5px]"
               onClick={removePhoto}
+              type="button"
             >
               <span className="my-icon icon-xs">
                 <X />
@@ -102,7 +119,7 @@ const UploadMiniForm = (props: {
         <input
           id={`file-upload-${index}`}
           ref={(el: any) => (inputFile.current[index] = el)}
-          accept={`.jpg, .jpeg,.png${withFile ? ',.pdf' : ''}`}
+          accept={`.jpg, .jpeg, .png${withFile ? ',.pdf' : ''}`}
           type="file"
           name="file"
           className="hidden"
