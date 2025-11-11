@@ -208,52 +208,56 @@ const PinjamanEmasTablePage = () => {
       setIsModalLoading(true);
 
       const rows = await fetchAllData(url, params);
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const dataToExport = rows.map((item: IGoldLoan) => ({
-        'No. Pinjaman': item.loan_ref_number,
+        'No. Pinjaman': item.loan_ref_number || '-',
         'Tanggal Pinjaman': moment(item.loan_date_time).format(
           'DD MMMM YYYY HH:mm'
         ),
-        User: item.user_name,
-        'Berat Emas': `${formatDecimal(item.loan_gold_wgt)} Gram`,
-        'Harga Jual Emas': `Rp${formatDecimal(item.loan_gold_price_sell)}`,
-        'Jumlah Pinjaman': `Rp${formatDecimal(item.loan_amt)}`,
-        'Biaya Admin': `Rp${formatDecimal(item.loan_cost_admin)}`,
-        'Biaya Transfer': `Rp${formatDecimal(item.loan_cost_transfer)}`,
-        'Total Pinjaman': `Rp${formatDecimal(item.loan_total_amt)}`,
-        'Jumlah Transfer': `Rp${formatDecimal(item.loan_transfer_amount)}`,
+        User: item.user_name || '-',
+        'Berat Emas (Gram)': Number(item.loan_gold_wgt || 0),
+        'Harga Jual Emas (Rp)': Number(item.loan_gold_price_sell || 0),
+        'Jumlah Pinjaman (Rp)': Number(item.loan_amt || 0),
+        'Biaya Admin (Rp)': Number(item.loan_cost_admin || 0),
+        'Biaya Transfer (Rp)': Number(item.loan_cost_transfer || 0),
+        'Total Pinjaman (Rp)': Number(item.loan_total_amt || 0),
+        'Jumlah Transfer (Rp)': Number(item.loan_transfer_amount || 0),
         'Tanggal Jatuh Tempo': moment(item.loan_due_date).format(
           'DD MMMM YYYY'
         ),
-        Status: item.loan_status_name,
-        Catatan: item.loan_note,
+        Status: item.loan_status_name || '-',
+        Catatan: item.loan_note || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Pinjaman Emas');
 
+      // === Judul ===
       worksheet.mergeCells('A1:M1');
-      worksheet.getCell('A1').value = 'LAPORAN PINJAMAN EMAS';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const title = worksheet.getCell('A1');
+      title.value = 'LAPORAN PINJAMAN EMAS';
+      title.font = { size: 14, bold: true };
+      title.alignment = { horizontal: 'left', vertical: 'middle' };
 
+      // === Periode ===
       if (params.start_date && params.end_date) {
         worksheet.mergeCells('A2:M2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        const period = worksheet.getCell('A2');
+        period.value = `Periode: ${dayjs(params.start_date).format(
           'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+        period.alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
 
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
+      // === Header Tabel ===
+      const headerKeys = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(headerKeys);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -266,34 +270,98 @@ const PinjamanEmasTablePage = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FFEFEFEF' },
         };
       });
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+      // === Baris Data ===
+      dataToExport.forEach((row) => {
+        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+
+        newRow.eachCell((cell, colNumber) => {
+          const header = headerKeys[colNumber - 1];
+          const isNumeric =
+            header.includes('(Rp)') || header.includes('(Gram)');
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: isNumeric ? 'right' : 'left',
+          };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          }
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        if (!col) return;
+      // === Hitung Total ===
+      const totalFields: (keyof (typeof dataToExport)[number])[] = [
+        'Berat Emas (Gram)',
+        'Harga Jual Emas (Rp)',
+        'Jumlah Pinjaman (Rp)',
+        'Biaya Admin (Rp)',
+        'Biaya Transfer (Rp)',
+        'Total Pinjaman (Rp)',
+        'Jumlah Transfer (Rp)',
+      ];
+
+      const totals: Record<string, number> = {};
+      totalFields.forEach((field) => {
+        totals[field] = dataToExport.reduce(
+          (sum, row) => sum + ((row[field] as number) || 0),
+          0
+        );
+      });
+
+      const totalRowValues = headerKeys.map((key) => {
+        if (key === 'No. Pinjaman') return 'TOTAL';
+        if (totalFields.includes(key as any)) {
+          return new Intl.NumberFormat('id-ID').format(totals[key]);
+        }
+        return '';
+      });
+
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.eachCell((cell, colNumber) => {
+        const header: any = headerKeys[colNumber - 1];
+        const isNumeric = totalFields.includes(header);
+        cell.font = { bold: true };
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: isNumeric ? 'right' : 'left',
+        };
+        cell.border = {
+          top: { style: 'medium' },
+          left: { style: 'thin' },
+          bottom: { style: 'medium' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9E79F' },
+        };
+      });
+
+      // === Lebar Kolom Otomatis ===
+      worksheet.columns.forEach((col) => {
+        if (!col) return; // pastikan col tidak undefined
         let maxLength = 0;
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
           maxLength = Math.max(maxLength, val.length);
         });
+
         col.width = Math.min(maxLength + 2, 40);
       });
 
+      // === Simpan File ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_pinjaman_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'

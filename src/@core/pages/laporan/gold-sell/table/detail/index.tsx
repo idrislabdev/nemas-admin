@@ -145,9 +145,22 @@ const GoldSellTransactionDetailsTable = () => {
         return;
       }
 
+      // === Helper format Rupiah ===
+      const formatRupiah = (value: number | string): string => {
+        const num = typeof value === 'string' ? parseFloat(value) : value || 0;
+        return num.toLocaleString('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      };
+
+      // === Buat workbook ===
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas');
 
+      // === Judul & Header ===
       worksheet.mergeCells('A1:M1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
@@ -189,6 +202,7 @@ const GoldSellTransactionDetailsTable = () => {
         'Status',
         'Kode Seller',
       ];
+
       const headerRow = worksheet.addRow(header);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
@@ -206,7 +220,18 @@ const GoldSellTransactionDetailsTable = () => {
         };
       });
 
+      // === Hitung total ===
+      let totalWeight = 0;
+      let totalWeightBefore = 0;
+      let totalWeightAfter = 0;
+      let totalPrice = 0;
+
       rows.forEach((item) => {
+        totalWeight += Number(item.weight) || 0;
+        totalWeightBefore += Number(item.weight_before) || 0;
+        totalWeightAfter += Number(item.weight_after) || 0;
+        totalPrice += Number(item.total_price) || 0;
+
         const row = worksheet.addRow([
           moment(item.transaction_date).format('DD MMMM YYYY HH:mm'),
           item.gold_sell_number,
@@ -217,23 +242,65 @@ const GoldSellTransactionDetailsTable = () => {
           item.weight,
           item.weight_before,
           item.weight_after,
-          `Rp${formatDecimal(item.gold_history_price_sell)}`,
-          `Rp${formatDecimal(item.total_price)}`,
+          formatRupiah(item.gold_history_price_sell),
+          formatRupiah(item.total_price),
           item.status,
           item.user_seller_unique_code,
         ]);
 
-        row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+          if ([7, 8, 9, 10, 11].includes(colNumber)) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
         });
       });
 
+      // === Baris TOTAL ===
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        '',
+        totalWeight,
+        totalWeightBefore,
+        totalWeightAfter,
+        '',
+        formatRupiah(totalPrice),
+        '',
+        '',
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' },
+        };
+        if ([7, 8, 9, 10, 11].includes(colNumber)) {
+          cell.alignment = { horizontal: 'right' };
+        } else {
+          cell.alignment = { horizontal: 'left' };
+        }
+      });
+
+      // === Auto width kolom ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -243,6 +310,7 @@ const GoldSellTransactionDetailsTable = () => {
         col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
+      // === Simpan file ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_gold_sell_${dayjs().format(
         'YYYYMMDD_HHmmss'

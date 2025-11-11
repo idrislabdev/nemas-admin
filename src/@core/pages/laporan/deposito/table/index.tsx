@@ -202,35 +202,31 @@ const GoldInvestmentTable = () => {
         'Nomor Transaksi': item.transaction_number,
         'Tanggal Transaksi': moment(item.date_invested).format('DD MMMM YYYY'),
         'Tanggal Return': moment(item.date_returned).format('DD MMMM YYYY'),
-        'Return Investasi': item.investment_return.name,
+        'Return Investasi': item.investment_return?.name || '-',
         'Nama Investor': item.investor_name,
-        'Nominal Investasi': `Rp${formatDecimal(
-          parseFloat(item.amount_invested.toString())
-        )}`,
-        'Berat Investasi': `${formatDecimal(
-          parseFloat(item.weight_invested.toString())
-        )} Gram`,
-        'Nominal Return': `Rp${formatDecimal(
-          parseFloat(item.return_amount.toString())
-        )}`,
-        'Berat Return': `${formatDecimal(
-          parseFloat(item.return_weight.toString())
-        )} Gram`,
+        'Nominal Investasi': parseFloat(
+          item.amount_invested?.toString() || '0'
+        ),
+        'Berat Investasi': parseFloat(item.weight_invested?.toString() || '0'),
+        'Nominal Return': parseFloat(item.return_amount?.toString() || '0'),
+        'Berat Return': parseFloat(item.return_weight?.toString() || '0'),
         'Status Return': item.is_returned ? 'Sudah' : 'Belum',
         'Status Transaksi': item.status,
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Deposito');
+      const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
 
+      // Judul laporan
       worksheet.mergeCells('A1:K1');
-      worksheet.getCell('A1').value = 'LAPORAN DEPOSITO';
+      worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS';
       worksheet.getCell('A1').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // Periode
       if (params.start_date && params.end_date) {
         worksheet.mergeCells('A2:K2');
         worksheet.getCell('A2').value = `Periode: ${dayjs(
@@ -242,9 +238,10 @@ const GoldInvestmentTable = () => {
       }
 
       worksheet.addRow([]);
+
+      // Header
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -261,11 +258,31 @@ const GoldInvestmentTable = () => {
         };
       });
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+      // Data rows
+      dataToExport.forEach((row) => {
+        const rowValues = header.map((key) => {
+          const val = row[key as keyof typeof row];
+          // Format nominal dan berat dengan Rp/Gram di tampilan Excel
+          if (typeof val === 'number') {
+            if (key.toLowerCase().includes('nominal'))
+              return `Rp${formatDecimal(val)}`;
+            if (key.toLowerCase().includes('berat'))
+              return `${formatDecimal(val)} Gram`;
+          }
+          return val ?? '-';
+        });
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+        newRow.eachCell((cell, colNumber) => {
+          const headerName = header[colNumber - 1];
+          // Nominal rata kanan
+          if (
+            headerName.toLowerCase().includes('nominal') ||
+            headerName.toLowerCase().includes('berat')
+          ) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { vertical: 'middle' };
+          }
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -275,15 +292,68 @@ const GoldInvestmentTable = () => {
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = Math.min(maxLength + 2, 35);
+      // === 🔹 Hitung total untuk kolom nominal ===
+      const totalNominalInvestasi = rows.reduce(
+        (acc, cur) => acc + parseFloat(cur.amount_invested?.toString() || '0'),
+        0
+      );
+      const totalBeratInvestasi = rows.reduce(
+        (acc, cur) => acc + parseFloat(cur.weight_invested?.toString() || '0'),
+        0
+      );
+      const totalNominalReturn = rows.reduce(
+        (acc, cur) => acc + parseFloat(cur.return_amount?.toString() || '0'),
+        0
+      );
+      const totalBeratReturn = rows.reduce(
+        (acc, cur) => acc + parseFloat(cur.return_weight?.toString() || '0'),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        `Rp${formatDecimal(totalNominalInvestasi)}`,
+        `${formatDecimal(totalBeratInvestasi)} Gram`,
+        `Rp${formatDecimal(totalNominalReturn)}`,
+        `${formatDecimal(totalBeratReturn)} Gram`,
+        '',
+        '',
+      ]);
+
+      totalRow.eachCell((cell, colNumber) => {
+        const headerName = header[colNumber - 1];
+        cell.font = { bold: true };
+        if (
+          headerName?.toLowerCase().includes('nominal') ||
+          headerName?.toLowerCase().includes('berat')
+        ) {
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        } else {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+
+      // Auto width
+      worksheet.columns.forEach((col) => {
+        if (!col) return; // pastikan col tidak undefined
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

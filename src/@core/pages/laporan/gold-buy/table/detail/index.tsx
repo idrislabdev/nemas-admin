@@ -5,7 +5,7 @@ import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
-import { formatDecimal } from '@/@core/utils/general';
+import { formatDecimal, formatRupiah } from '@/@core/utils/general';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
@@ -231,17 +231,95 @@ const GoldBuyDigitalDetailTable = () => {
           `Rp${formatDecimal(parseFloat(item.commission_amount || '0'))}`,
         ]);
 
-        row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
+          // kolom numerik rata kanan
+          if (
+            [
+              7,
+              8,
+              9, // berat
+              10,
+              11, // harga, total
+              14,
+              15, // komisi
+            ].includes(colNumber)
+          ) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
         });
       });
 
+      // === BARIS TOTAL ===
+      const totalWeight = rows.reduce((acc, r) => acc + (r.weight || 0), 0);
+      const totalWeightBefore = rows.reduce(
+        (acc, r) => acc + (parseFloat(r.weight_before) || 0),
+        0
+      );
+      const totalWeightAfter = rows.reduce(
+        (acc, r) => acc + (parseFloat(r.weight_after) || 0),
+        0
+      );
+      const historyPrice = rows.reduce(
+        (acc, r) => acc + (r.gold_history_price_buy || 0),
+        0
+      );
+      const totalPrice = rows.reduce((acc, r) => acc + (r.total_price || 0), 0);
+      const totalCommission = rows.reduce(
+        (acc, r) => acc + parseFloat(r.commission_amount || '0'),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        '',
+        totalWeight,
+        totalWeightBefore,
+        totalWeightAfter,
+        `Rp${formatDecimal(historyPrice)}`,
+        `Rp${formatDecimal(totalPrice)}`,
+        '',
+        '',
+        '',
+        `Rp${formatRupiah(totalCommission)}`,
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
+        if (
+          [7, 8, 9, 10, 11, 15].includes(colNumber) // kolom numerik total
+        ) {
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        } else {
+          cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        }
+      });
+
+      // === AUTO WIDTH ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -251,6 +329,7 @@ const GoldBuyDigitalDetailTable = () => {
         col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
+      // === EXPORT FILE ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_gold_buy_${dayjs().format(
         'YYYYMMDD_HHmmss'

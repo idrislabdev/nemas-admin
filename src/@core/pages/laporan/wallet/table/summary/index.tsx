@@ -154,21 +154,18 @@ const WalletTopupSummaryTable = () => {
         'Nomor Member': item.user_member_number,
         'Nama User': item.user_name,
         'Jumlah Transaksi': item.jumlah_transaksi,
-        'Total Topup': `Rp${formatDecimal(
-          parseFloat(item.total_topup.toString())
-        )}`,
-        'Total Diterima': `Rp${formatDecimal(
-          parseFloat(item.total_diterima.toString())
-        )}`,
+        'Total Topup': parseFloat(item.total_topup.toString()),
+        'Total Diterima': parseFloat(item.total_diterima.toString()),
       }));
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Topup Wallet');
 
+      // === Header Utama ===
       worksheet.mergeCells('A1:E1');
       worksheet.getCell('A1').value = 'LAPORAN RINGKASAN TOPUP WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A1').alignment = { horizontal: 'left' };
 
       worksheet.mergeCells('A2:E2');
       worksheet.getCell('A2').value = `Periode: ${dayjs(
@@ -180,12 +177,12 @@ const WalletTopupSummaryTable = () => {
 
       worksheet.addRow([]);
 
+      // === Header Tabel ===
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -199,11 +196,19 @@ const WalletTopupSummaryTable = () => {
         };
       });
 
+      // === Isi Data ===
       dataToExport.forEach((row) => {
         const values = header.map((key) => row[key as keyof typeof row] ?? '');
         const newRow = worksheet.addRow(values);
-        newRow.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle' };
+        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const isNumeric = colNumber >= 3; // kolom 3,4,5 adalah angka
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
+          };
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.value = `${formatDecimal(cell.value)}`;
+          }
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -213,15 +218,59 @@ const WalletTopupSummaryTable = () => {
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 10;
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
+      // === Baris Total ===
+      const totalTransaksi = rows.reduce(
+        (acc, cur) => acc + Number(cur.jumlah_transaksi || 0),
+        0
+      );
+      const totalTopup = rows.reduce(
+        (acc, cur) => acc + Number(cur.total_topup || 0),
+        0
+      );
+      const totalDiterima = rows.reduce(
+        (acc, cur) => acc + Number(cur.total_diterima || 0),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        totalTransaksi,
+        `Rp${formatDecimal(totalTopup)}`,
+        `Rp${formatDecimal(totalDiterima)}`,
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = {
+          horizontal: colNumber >= 3 ? 'right' : 'left',
+          vertical: 'middle',
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' }, // warna kuning lembut
+        };
+      });
+
+      // === Auto Width (dengan optional chaining agar aman) ===
+      worksheet.columns.forEach((col) => {
+        if (!col) return;
+        let maxLength = 0;
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLength) maxLength = val.length;
+          maxLength = Math.max(maxLength, val.length);
         });
         col.width = Math.min(maxLength + 2, 50);
       });
 
+      // === Export File ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_ringkasan_topup_wallet_${dayjs().format(
         'YYYYMMDD_HHmmss'

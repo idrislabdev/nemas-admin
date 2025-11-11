@@ -211,63 +211,57 @@ const PenjualanEmasFisikPage = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
       const rows = await fetchAllData(url, params);
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const dataToExport = rows.map((item: ISalesOrder) => ({
-        'Nomor Order': item.order_number,
+        'Nomor Order': item.order_number || '-',
         'Tanggal Order': moment(item.order_timestamp).format('DD MMMM YYYY'),
-        User: item.user_name,
-        'Berat Emas': `${formatDecimal(
-          parseFloat(item.order_item_weight.toString())
-        )} Gram`,
-        'Nominal Pesanan': `Rp${formatDecimal(
-          parseFloat(item.order_amount.toString())
-        )}`,
-        'Total Harga': `Rp${formatDecimal(
-          parseFloat(item.order_total_price.toString())
-        )}`,
-        'Biaya Admin': `Rp${formatDecimal(
-          parseFloat(item.order_admin_amount.toString())
-        )}`,
-        'Biaya Asuransi': `Rp${formatDecimal(
-          parseFloat(
-            (item.order_tracking_insurance_total_round || 0).toString()
-          )
-        )}`,
-        'Biaya Pengiriman': `Rp${formatDecimal(
-          parseFloat((item.order_tracking_total_amount_round || 0).toString())
-        )}`,
-        'Grand Total': `Rp${formatDecimal(
-          parseFloat(item.order_grand_total_price.toString())
-        )}`,
-        'Status Pesanan': item.order_status,
-        'Status Pembayaran': item.order_gold_payment_status,
+        User: item.user_name || '-',
+        'Berat Emas (Gram)': Number(item.order_item_weight || 0),
+        'Nominal Pesanan (Rp)': Number(item.order_amount || 0),
+        'Total Harga (Rp)': Number(item.order_total_price || 0),
+        'Biaya Admin (Rp)': Number(item.order_admin_amount || 0),
+        'Biaya Asuransi (Rp)': Number(
+          item.order_tracking_insurance_total_round || 0
+        ),
+        'Biaya Pengiriman (Rp)': Number(
+          item.order_tracking_total_amount_round || 0
+        ),
+        'Grand Total (Rp)': Number(item.order_grand_total_price || 0),
+        'Status Pesanan': item.order_status || '-',
+        'Status Pembayaran': item.order_gold_payment_status || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
 
+      // === Header Title ===
       worksheet.mergeCells('A1:L1');
-      worksheet.getCell('A1').value = 'LAPORAN PENJUALAN EMAS FISIK';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const title = worksheet.getCell('A1');
+      title.value = 'LAPORAN PENJUALAN EMAS FISIK';
+      title.font = { size: 14, bold: true };
+      title.alignment = { horizontal: 'left', vertical: 'middle' };
 
+      // === Periode ===
       if (params.start_date && params.end_date) {
         worksheet.mergeCells('A2:L2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        const period = worksheet.getCell('A2');
+        period.value = `Periode: ${dayjs(params.start_date).format(
           'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+        period.alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
+
+      // === Table Header ===
+      const headerKeys = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(headerKeys);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -280,35 +274,102 @@ const PenjualanEmasFisikPage = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FFEFEFEF' },
         };
       });
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+      // === Table Rows ===
+      dataToExport.forEach((row) => {
+        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+
+        newRow.eachCell((cell, colNumber) => {
+          const header = headerKeys[colNumber - 1];
+          const isNumeric =
+            header.includes('(Rp)') || header.includes('(Gram)');
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: isNumeric ? 'right' : 'left',
+          };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+          if (isNumeric && typeof cell.value === 'number') {
+            // Format number sebagai string dengan pemisah ribuan
+            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          }
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            maxLength = Math.min(Math.max(maxLength, val.length), 30);
-          });
-          col.width = maxLength + 2;
-        }
+      // === Hitung Total di akhir ===
+      // === Hitung Total di akhir ===
+      const totalFields: (keyof (typeof dataToExport)[number])[] = [
+        'Berat Emas (Gram)',
+        'Nominal Pesanan (Rp)',
+        'Total Harga (Rp)',
+        'Biaya Admin (Rp)',
+        'Biaya Asuransi (Rp)',
+        'Biaya Pengiriman (Rp)',
+        'Grand Total (Rp)',
+      ];
+
+      const totals: Record<string, number> = {};
+
+      totalFields.forEach((field) => {
+        totals[field] = dataToExport.reduce(
+          (sum, row) => sum + (Number(row[field]) || 0),
+          0
+        );
       });
 
+      const totalRowValues = headerKeys.map((key) => {
+        if (key === 'Nomor Order') return 'TOTAL';
+        if (totalFields.includes(key as any)) {
+          return new Intl.NumberFormat('id-ID').format(totals[key]);
+        }
+        return '';
+      });
+
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.eachCell((cell, colNumber) => {
+        const header: any = headerKeys[colNumber - 1];
+        const isNumeric = totalFields.includes(header);
+
+        cell.font = { bold: true };
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: isNumeric ? 'right' : 'left',
+        };
+        cell.border = {
+          top: { style: 'medium' },
+          left: { style: 'thin' },
+          bottom: { style: 'medium' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF9E79F' }, // Kuning lembut untuk total
+        };
+      });
+
+      // === Auto Width Columns ===
+      worksheet.columns.forEach((col) => {
+        if (!col) return; // pastikan col tidak undefined
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 40);
+      });
+
+      // === Save File ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_penjualan_emas_fisik_${dayjs().format(
         'YYYYMMDD_HHmmss'

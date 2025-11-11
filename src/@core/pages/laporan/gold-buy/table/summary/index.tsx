@@ -5,7 +5,7 @@ import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
-import { formatDecimal } from '@/@core/utils/general';
+import { formatDecimal, formatRupiah } from '@/@core/utils/general';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
@@ -141,9 +141,11 @@ const GoldBuySummaryUserTable = () => {
         return;
       }
 
+      // === Workbook & Worksheet ===
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Pembelian Emas');
 
+      // === HEADER LAPORAN ===
       worksheet.mergeCells('A1:H1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PEMBELIAN EMAS PER USER';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
@@ -165,10 +167,11 @@ const GoldBuySummaryUserTable = () => {
         'DD MMMM YYYY HH:mm'
       )}`;
       worksheet.getCell('A3').alignment = { horizontal: 'left' };
-      worksheet.getCell('A3').font = { italic: true };
+      worksheet.getCell('A3').font = { italic: true, size: 10 };
 
       worksheet.addRow([]);
 
+      // === HEADER TABEL ===
       const header = [
         'Nama User',
         'Nomor Member',
@@ -196,21 +199,37 @@ const GoldBuySummaryUserTable = () => {
         };
       });
 
+      // === DATA ROW ===
+      let totalPembelian = 0;
+      let totalEmas = 0;
+      let totalKomisi = 0;
+
       rows.forEach((item) => {
+        totalPembelian += item.total_pembelian || 0;
+        totalEmas += item.total_emas_dibeli || 0;
+        totalKomisi += item.total_komisi || 0;
+
         const row = worksheet.addRow([
           item.user_name,
           item.user_member_number,
           item.user_seller_unique_code,
           item.jumlah_transaksi,
-          `Rp${formatDecimal(item.total_pembelian)}`,
-          formatDecimal(item.total_emas_dibeli),
-          `Rp${formatDecimal(item.total_komisi)}`,
+          formatRupiah(item.total_pembelian),
+          item.total_emas_dibeli.toLocaleString('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+          formatRupiah(item.total_komisi),
           item.transaksi_terakhir
             ? moment(item.transaksi_terakhir).format('DD MMM YYYY HH:mm')
             : '-',
         ]);
-        row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle' };
+
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: [4, 5, 6, 7].includes(colNumber) ? 'right' : 'left',
+          };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -220,15 +239,50 @@ const GoldBuySummaryUserTable = () => {
         });
       });
 
+      // === TOTAL ROW ===
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        formatRupiah(totalPembelian),
+        totalEmas.toLocaleString('id-ID', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+        formatRupiah(totalKomisi),
+        '',
+      ]);
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: [5, 6, 7].includes(colNumber) ? 'right' : 'left',
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' },
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+
+      // === AUTO WIDTH ===
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
-        col.width = Math.min(maxLength + 2, 40);
+        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
+      // === EXPORT FILE ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_summary_user_${dayjs().format(
         'YYYYMMDD_HHmmss'

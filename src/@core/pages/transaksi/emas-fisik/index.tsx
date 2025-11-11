@@ -5,7 +5,7 @@
 import { ISalesOrder } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import { formatDecimal } from '@/@core/utils/general';
+import { formatDecimal, formatRupiah } from '@/@core/utils/general';
 import {
   CalendarCheck01,
   ClipboardCheck,
@@ -297,43 +297,29 @@ const ComEmasFisikPage = (props: {
     try {
       setIsModalLoading(true);
 
-      const param = { ...params, offset: 0, limit: 10 };
-
+      const param = { ...params, offset: 0, limit: 1000 };
       const rows = await fetchAllData(url, param);
+
+      if (!rows.length) {
+        setIsModalLoading(false);
+        return;
+      }
 
       const dataToExport = rows.map((item: ISalesOrder) => ({
         'Nomor Order': item.order_number,
         'Tanggal Order': moment(item.order_timestamp).format('DD MMMM YYYY'),
         User: item.user_name,
-        'Berat Emas': `${formatDecimal(
-          parseFloat(item.order_item_weight.toString())
-        )} Gram`,
-        'Nominal Pesanan': `Rp${formatDecimal(
-          parseFloat(item.order_amount.toString())
-        )}`,
-        'Total Harga': `Rp${formatDecimal(
-          parseFloat(item.order_total_price.toString())
-        )}`,
-        'Biaya Admin': `Rp${formatDecimal(
-          parseFloat(item.order_admin_amount.toString())
-        )}`,
-        'Biaya Asuransi': `Rp${formatDecimal(
-          parseFloat(
-            item.order_tracking_insurance_total_round
-              ? item.order_tracking_insurance_total_round.toString()
-              : '0'
-          )
-        )}`,
-        'Biaya Pengiriman': `Rp${formatDecimal(
-          parseFloat(
-            item.order_tracking_total_amount_round
-              ? item.order_tracking_total_amount_round.toString()
-              : '0'
-          )
-        )}`,
-        'Grand Total': `Rp${formatDecimal(
-          parseFloat(item.order_grand_total_price.toString())
-        )}`,
+        'Berat Emas': parseFloat(item.order_item_weight.toString()),
+        'Nominal Pesanan': parseFloat(item.order_amount.toString()),
+        'Total Harga': parseFloat(item.order_total_price.toString()),
+        'Biaya Admin': parseFloat(item.order_admin_amount.toString()),
+        'Biaya Asuransi': parseFloat(
+          item.order_tracking_insurance_total_round?.toString() || '0'
+        ),
+        'Biaya Pengiriman': parseFloat(
+          item.order_tracking_total_amount_round?.toString() || '0'
+        ),
+        'Grand Total': parseFloat(item.order_grand_total_price.toString()),
         'Status Pesanan': item.order_status,
         'Status Pembayaran': item.order_gold_payment_status,
         'Status Pengiriman': item.is_picked_up ? 'Dikirim' : '-',
@@ -365,7 +351,7 @@ const ComEmasFisikPage = (props: {
       const headerRow = worksheet.addRow(header);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -379,11 +365,32 @@ const ComEmasFisikPage = (props: {
         };
       });
 
+      // === ISI DATA ===
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const rowValues = header.map((key) => {
+          const value = row[key];
+          if (typeof value === 'number') return `Rp${formatDecimal(value)}`;
+          return value;
+        });
+
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const headerName = header[colNumber - 1];
+          const isNumeric = [
+            'Berat Emas',
+            'Nominal Pesanan',
+            'Total Harga',
+            'Biaya Admin',
+            'Biaya Asuransi',
+            'Biaya Pengiriman',
+            'Grand Total',
+          ].includes(headerName);
+
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: isNumeric ? 'right' : 'left',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -393,19 +400,82 @@ const ComEmasFisikPage = (props: {
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+      // === TOTAL BARIS ===
+      const totalValues: Record<string, number> = {
+        'Berat Emas': rows.reduce(
+          (sum, i) => sum + parseFloat(i.order_item_weight || 0),
+          0
+        ),
+        'Nominal Pesanan': rows.reduce(
+          (sum, i) => sum + parseFloat(i.order_amount || 0),
+          0
+        ),
+        'Total Harga': rows.reduce(
+          (sum, i) => sum + parseFloat(i.order_total_price || 0),
+          0
+        ),
+        'Biaya Admin': rows.reduce(
+          (sum, i) => sum + parseFloat(i.order_admin_amount || 0),
+          0
+        ),
+        'Biaya Asuransi': rows.reduce(
+          (sum, i) =>
+            sum + parseFloat(i.order_tracking_insurance_total_round || 0),
+          0
+        ),
+        'Biaya Pengiriman': rows.reduce(
+          (sum, i) =>
+            sum + parseFloat(i.order_tracking_total_amount_round || 0),
+          0
+        ),
+        'Grand Total': rows.reduce(
+          (sum, i) => sum + parseFloat(i.order_grand_total_price || 0),
+          0
+        ),
+      };
+
+      const totalRowValues = header.map((key) => {
+        if (totalValues[key]) return `Rp${formatRupiah(totalValues[key])}`;
+        if (key === 'Nomor Order') return 'TOTAL';
+        return '';
       });
 
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const headerName = header[colNumber - 1];
+        const isNumeric = Object.keys(totalValues).includes(headerName);
+
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: isNumeric ? 'right' : 'left',
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+
+      // === AUTO WIDTH ===
+      worksheet.columns.forEach((col: any) => {
+        let maxLength = 0;
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+          if (val.length > maxLength) maxLength = val.length;
+        });
+        col.width = Math.min(maxLength + 2, 40);
+      });
+
+      // === SAVE ===
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_${title}${dayjs().format(
+      const fileName = `laporan_${title}_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
       saveAs(new Blob([buffer]), fileName);

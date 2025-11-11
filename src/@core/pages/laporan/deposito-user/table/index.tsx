@@ -161,15 +161,11 @@ const GoldInvestmentUserTable = () => {
       const dataToExport = rows.map((item: IGoldInvestmentSummary) => ({
         'Nomor Anggota': item.investor_member_number,
         'Nama Investor': item.investor_name,
-        'Jumlah Transaksi': formatDecimal(item.jumlah_transaksi),
-        'Total Berat Investasi (Gram)': formatDecimal(
-          item.total_invested_weight
-        ),
-        'Total Nominal Investasi (Rp)': `Rp${formatDecimal(
-          item.total_invested_amount
-        )}`,
-        'Total Berat Return (Gram)': formatDecimal(item.total_return_weight),
-        'Total Berat Aktif (Gram)': formatDecimal(item.total_active_weight),
+        'Jumlah Transaksi': item.jumlah_transaksi ?? 0,
+        'Total Berat Investasi (Gram)': item.total_invested_weight ?? 0,
+        'Total Nominal Investasi (Rp)': item.total_invested_amount ?? 0,
+        'Total Berat Return (Gram)': item.total_return_weight ?? 0,
+        'Total Berat Aktif (Gram)': item.total_active_weight ?? 0,
       }));
 
       const workbook = new ExcelJS.Workbook();
@@ -195,9 +191,9 @@ const GoldInvestmentUserTable = () => {
 
       worksheet.addRow([]);
 
+      // Header
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
-
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -214,11 +210,33 @@ const GoldInvestmentUserTable = () => {
         };
       });
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+      // Data rows
+      dataToExport.forEach((row) => {
+        const rowValues = header.map((key) => {
+          const val = row[key as keyof typeof row];
+          // Format tampilan angka
+          if (typeof val === 'number') {
+            if (key.toLowerCase().includes('nominal'))
+              return `Rp${formatDecimal(val)}`;
+            return formatDecimal(val);
+          }
+          return val ?? '-';
+        });
+
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+
+        newRow.eachCell((cell, colNumber) => {
+          const headerName = header[colNumber - 1];
+          // Rata kanan untuk angka
+          if (
+            headerName.toLowerCase().includes('nominal') ||
+            headerName.toLowerCase().includes('berat') ||
+            headerName.toLowerCase().includes('jumlah')
+          ) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { vertical: 'middle' };
+          }
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -228,15 +246,77 @@ const GoldInvestmentUserTable = () => {
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = Math.min(maxLength + 2, 35);
+      // === 🔹 Hitung total di akhir ===
+      const totalJumlahTransaksi = rows.reduce(
+        (sum, item) => sum + (item.jumlah_transaksi ?? 0),
+        0
+      );
+      const totalBeratInvestasi = rows.reduce(
+        (sum, item) => sum + (item.total_invested_weight ?? 0),
+        0
+      );
+      const totalNominalInvestasi = rows.reduce(
+        (sum, item) => sum + (item.total_invested_amount ?? 0),
+        0
+      );
+      const totalBeratReturn = rows.reduce(
+        (sum, item) => sum + (item.total_return_weight ?? 0),
+        0
+      );
+      const totalBeratAktif = rows.reduce(
+        (sum, item) => sum + (item.total_active_weight ?? 0),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        formatDecimal(totalJumlahTransaksi),
+        formatDecimal(totalBeratInvestasi),
+        `Rp${formatDecimal(totalNominalInvestasi)}`,
+        formatDecimal(totalBeratReturn),
+        formatDecimal(totalBeratAktif),
+      ]);
+
+      totalRow.eachCell((cell, colNumber) => {
+        const headerName = header[colNumber - 1];
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
+        if (
+          headerName?.toLowerCase().includes('nominal') ||
+          headerName?.toLowerCase().includes('berat') ||
+          headerName?.toLowerCase().includes('jumlah')
+        ) {
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        } else {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
+
+        // Tambahkan warna background abu-abu muda
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF2F2F2' },
+        };
+      });
+
+      // Auto width
+      worksheet.columns.forEach((col) => {
+        if (!col) return; // pastikan col tidak undefined
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 40);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

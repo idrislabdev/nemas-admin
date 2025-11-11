@@ -20,6 +20,16 @@ export const formatDecimal = (num?: number | string | null): string => {
   });
 };
 
+export const formatRupiah = (value: number | string): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value || 0;
+  return num.toLocaleString('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export const statusTransaksiLangMap: Record<string, string> = {
   order_buy: 'Produk Emas Fisik',
   order_redeem: 'Tarik Emas',

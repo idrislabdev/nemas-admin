@@ -90,14 +90,28 @@ const WalletFinancialSummary = () => {
       const resp = await axiosInstance.get(url, { params });
       const rows: IWalletFinancialSummary = resp.data;
 
+      // === Helper format rupiah ===
+      const formatRupiah = (num: number): string => {
+        if (isNaN(num)) return 'Rp0,00';
+        return new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          minimumFractionDigits: 2,
+        })
+          .format(num)
+          .replace(/\s/g, '');
+      };
+
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Ringkasan Keuangan Wallet');
 
+      // === Judul ===
       worksheet.mergeCells('A1:E1');
       worksheet.getCell('A1').value = 'LAPORAN RINGKASAN KEUANGAN WALLET';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // === Periode ===
       worksheet.mergeCells('A2:E2');
       worksheet.getCell('A2').value = `Periode: ${dayjs(
         params.start_date
@@ -108,6 +122,7 @@ const WalletFinancialSummary = () => {
 
       worksheet.addRow([]);
 
+      // === Header ===
       const header = [
         'Tipe Transaksi',
         'Total Transaksi',
@@ -118,7 +133,7 @@ const WalletFinancialSummary = () => {
       const headerRow = worksheet.addRow(header);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -132,6 +147,7 @@ const WalletFinancialSummary = () => {
         };
       });
 
+      // === Data ===
       const mapData = [
         { type: 'Topup', ...rows.topup },
         { type: 'Disburst', ...rows.disburst },
@@ -141,31 +157,88 @@ const WalletFinancialSummary = () => {
         const row = worksheet.addRow([
           item.type,
           item.total_transaction,
-          `Rp${formatDecimal(item.total_amount)}`,
-          `Rp${formatDecimal(item.total_admin)}`,
-          `Rp${formatDecimal(item.total_nett)}`,
+          formatRupiah(item.total_amount),
+          formatRupiah(item.total_admin),
+          formatRupiah(item.total_nett),
         ]);
 
-        row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.alignment = { vertical: 'middle' };
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
+          // kolom numerik rata kanan
+          if (colNumber >= 2) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
         });
       });
 
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 10;
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
+      // === Baris Total ===
+      const totalTransaction = mapData.reduce(
+        (acc, item) => acc + (item.total_transaction || 0),
+        0
+      );
+      const totalAmount = mapData.reduce(
+        (acc, item) => acc + (item.total_amount || 0),
+        0
+      );
+      const totalAdmin = mapData.reduce(
+        (acc, item) => acc + (item.total_admin || 0),
+        0
+      );
+      const totalNett = mapData.reduce(
+        (acc, item) => acc + (item.total_nett || 0),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        totalTransaction,
+        formatRupiah(totalAmount),
+        formatRupiah(totalAdmin),
+        formatRupiah(totalNett),
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
+        if (colNumber >= 2) {
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        } else {
+          cell.alignment = { horizontal: 'left', vertical: 'middle' };
+        }
+      });
+
+      // === Auto Width ===
+      worksheet.columns.forEach((col) => {
+        if (!col) return; // pastikan col tidak undefined
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLength) maxLength = val.length;
+          maxLength = Math.max(maxLength, val.length);
         });
-        col.width = Math.min(maxLength + 2, 50);
-      });
 
+        col.width = Math.min(maxLength + 2, 40);
+      });
+      // === Export ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_ringkasan_wallet_${dayjs().format(
         'YYYYMMDD_HHmmss'
