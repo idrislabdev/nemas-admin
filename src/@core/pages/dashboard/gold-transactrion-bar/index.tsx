@@ -106,8 +106,10 @@ const GoldTransactionBar = () => {
             borderRadius: 5,
             dataLabels: {
               enabled: true,
-              formatter: function () {
-                return `${this.y.toFixed(2)}g`;
+              formatter: function (this: Highcharts.Point): string {
+                const value =
+                  typeof this.y === 'number' ? this.y.toFixed(2) : '0.00';
+                return `${value}g`;
               },
               style: {
                 color: '#1B5E20',
