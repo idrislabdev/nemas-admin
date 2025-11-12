@@ -47,7 +47,7 @@ const StatusDeliveryInvoice = () => {
 
       <div className="text-sm text-gray-700 text-center leading-relaxed">
         <p className="flex items-center justify-center gap-2">
-          Delivery Pending: {status.pending_delivery} transaksi{' '}
+          Order Belum Dikirim: {status.pending_delivery} transaksi{' '}
           <div className="flex items-center gap-2">
             (
             <Link
