@@ -22,6 +22,8 @@ import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 import Link from 'next/link';
 import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
+import { useSearchParams, useRouter } from 'next/navigation';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -34,6 +36,9 @@ const ComEmasFisikPage = (props: {
   const { title, parentUrl, urlVal } = props;
   const url = urlVal;
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -44,7 +49,7 @@ const ComEmasFisikPage = (props: {
 
   // 🔹 Filter tambahan
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterPickedUp, setFilterPickedUp] = useState<string>('Belum Dikirim');
+  const [filterPickedUp, setFilterPickedUp] = useState<string>('');
 
   // 🔹 Default parameter tanggal + filter tambahan
   const [params, setParams] = useState({
@@ -53,9 +58,40 @@ const ComEmasFisikPage = (props: {
     limit: 10,
     start_date: startOfMonth,
     end_date: today,
-    status: '', // 🟢 baru
-    is_picked_up: '', // 🟢 baru
+    status: '',
+    is_picked_up: '',
   });
+
+  // === ⏩ Baca query param dari URL saat pertama kali load ===
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    const pickedParam = searchParams.get('is_picked_up');
+
+    if (statusParam) setFilterStatus(statusParam);
+    if (pickedParam === 'true' || pickedParam === 'false') {
+      setFilterPickedUp(pickedParam);
+    }
+  }, [searchParams]);
+
+  const updateQueryParams = (key: string, value: string | null) => {
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.replace(`?${params.toString()}`);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFilterStatus(value || '');
+    updateQueryParams('status', value || null);
+  };
+
+  const handlePickedUpChange = (value: string) => {
+    setFilterPickedUp(value || '');
+    updateQueryParams('is_picked_up', value || null);
+  };
 
   const columns: ColumnsType<ISalesOrder> = [
     {
@@ -252,7 +288,6 @@ const ComEmasFisikPage = (props: {
     });
   };
 
-  // 🔹 Fungsi ambil semua data untuk export
   // 🔹 Fungsi ambil semua data untuk export (sudah diperbaiki dengan filter)
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
@@ -292,7 +327,6 @@ const ComEmasFisikPage = (props: {
     return allRows;
   };
 
-  // 🔹 Export Excel
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -493,45 +527,42 @@ const ComEmasFisikPage = (props: {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        {/* 🔹 RangePicker */}
         <div className="flex items-center gap-2">
           <RangePicker
             size="small"
-            className="w-[300px] h-[40px]"
+            className="w-[300px] h-[38px]"
             onChange={onRangeChange}
             defaultValue={[dayjs(startOfMonth), dayjs(today)]}
           />
           {/* 🔹 Filter Status Pesanan */}
-          {/* 🔹 Filter Status Pesanan */}
           <Select
             allowClear
             size="large"
-            className="w-[180px]"
+            className="w-[180px] select-sm"
             placeholder="Semua Status"
             value={filterStatus || undefined}
-            onChange={(value) => setFilterStatus(value)}
+            onChange={handleStatusChange}
             options={[
               { value: '', label: 'Semua Status' },
               { value: 'paid', label: 'Paid' },
               { value: 'unpaid', label: 'Unpaid' },
             ]}
           />
-
           {/* 🔹 Filter Status Pengiriman */}
           <Select
             allowClear
             size="large"
-            className="w-[180px]"
+            className="w-[180px] select-sm"
             placeholder="Semua Pengiriman"
             value={filterPickedUp || undefined}
-            onChange={(value) => setFilterPickedUp(value)}
+            onChange={handlePickedUpChange}
             options={[
               { value: 'true', label: 'Sudah Dikirim' },
               { value: 'false', label: 'Belum Dikirim' },
             ]}
           />
         </div>
-        {/* 🔹 Filter tambahan */}
+
         <div className="flex gap-2">
           <button className="btn btn-primary" onClick={exportData}>
             <FileDownload02 /> Export Excel
@@ -539,7 +570,7 @@ const ComEmasFisikPage = (props: {
         </div>
       </div>
 
-      {/* 🔹 Table dan pagination tetap */}
+      {/* 🔹 Table & Pagination */}
       <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <div className="overflow-x-auto rounded-tr-[8px] rounded-tl-[8px] max-h-[600px]">
           <table className="min-w-full text-sm border-collapse table-fixed">

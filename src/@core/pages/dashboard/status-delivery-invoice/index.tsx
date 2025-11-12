@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/@core/utils/axios';
 import { AlertTriangle } from '@untitled-ui/icons-react'; // gunakan ikon sesuai setup kamu
+import Link from 'next/link';
 
 interface DeliveryInvoiceStatus {
   pending_delivery: number;
@@ -45,8 +46,46 @@ const StatusDeliveryInvoice = () => {
       </h5>
 
       <div className="text-sm text-gray-700 text-center leading-relaxed">
-        <p>Delivery Pending: {status.pending_delivery} transaksi</p>
-        <p>Invoice Belum Dibayar: {status.pending_invoice} transaksi</p>
+        <p className="flex items-center justify-center gap-2">
+          Delivery Pending: {status.pending_delivery} transaksi{' '}
+          <div className="flex items-center gap-2">
+            (
+            <Link
+              href={`/transaksi/emas-fisik?is_picked_up=false`}
+              className="text-blue-500 underline"
+            >
+              Emas Fisik
+            </Link>
+            <span className="text-blue-500"> | </span>
+            <Link
+              href={`/transaksi/tarik-emas?is_picked_up=false`}
+              className="text-blue-500 underline"
+            >
+              Tarik Emas
+            </Link>
+            )
+          </div>
+        </p>
+        <p className="flex items-center justify-center gap-2">
+          Invoice Belum Dibayar: {status.pending_invoice} transaksi
+          <div className="flex items-center gap-2">
+            (
+            <Link
+              href={`/transaksi/emas-fisik?status=unpaid`}
+              className="text-blue-500 underline"
+            >
+              Emas Fisik
+            </Link>
+            <span className="text-blue-500"> | </span>
+            <Link
+              href={`/transaksi/tarik-emas?status=unpaid`}
+              className="text-blue-500 underline"
+            >
+              Tarik Emas
+            </Link>
+            )
+          </div>
+        </p>
         <p>Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi</p>
         <p>
           Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
