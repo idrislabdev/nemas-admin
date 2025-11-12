@@ -101,12 +101,28 @@ const GoldTransactionBar = () => {
         tooltip: {
           pointFormat: '<b>{point.y:,.2f} gram</b>',
         },
+        plotOptions: {
+          column: {
+            borderRadius: 5,
+            dataLabels: {
+              enabled: true,
+              formatter: function () {
+                return `${this.y.toFixed(2)}g`;
+              },
+              style: {
+                color: '#1B5E20',
+                fontSize: '11px',
+                fontWeight: '600',
+                textOutline: 'none',
+              },
+            },
+          },
+        },
         series: [
           {
             name: 'Transaksi Emas',
             data: values,
             color: '#81C784',
-            borderRadius: 5,
           },
         ],
         legend: { enabled: false },

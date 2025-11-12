@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/@core/utils/axios';
-import { AlertTriangle } from '@untitled-ui/icons-react'; // gunakan ikon sesuai setup kamu
+import { AlertTriangle } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 
 interface DeliveryInvoiceStatus {
@@ -45,9 +45,9 @@ const StatusDeliveryInvoice = () => {
         Status Delivery & Payment
       </h5>
 
-      <div className="text-sm text-gray-700 text-center leading-relaxed">
-        <p className="flex items-center justify-center gap-2">
-          Order Belum Dikirim: {status.pending_delivery} transaksi{' '}
+      <div className="text-sm text-gray-700 text-center leading-relaxed space-y-1">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span>Order Belum Dikirim: {status.pending_delivery} transaksi</span>
           <div className="flex items-center gap-2">
             (
             <Link
@@ -65,9 +65,10 @@ const StatusDeliveryInvoice = () => {
             </Link>
             )
           </div>
-        </p>
-        <p className="flex items-center justify-center gap-2">
-          Invoice Belum Dibayar: {status.pending_invoice} transaksi
+        </div>
+
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <span>Invoice Belum Dibayar: {status.pending_invoice} transaksi</span>
           <div className="flex items-center gap-2">
             (
             <Link
@@ -85,7 +86,8 @@ const StatusDeliveryInvoice = () => {
             </Link>
             )
           </div>
-        </p>
+        </div>
+
         <p>Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi</p>
         <p>
           Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
