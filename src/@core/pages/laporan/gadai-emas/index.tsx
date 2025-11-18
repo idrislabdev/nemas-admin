@@ -19,7 +19,7 @@ moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
-const PinjamanEmasTablePage = () => {
+const GadaiEmasTablePage = () => {
   const url = `/reports/gold-loan/list`;
   const [dataTable, setDataTable] = useState<Array<IGoldLoan>>([]);
   const [total, setTotal] = useState(0);
@@ -50,14 +50,14 @@ const PinjamanEmasTablePage = () => {
 
   const columns: ColumnsType<IGoldLoan> = [
     {
-      title: 'No. Pinjaman',
+      title: 'No. Gadai',
       dataIndex: 'loan_ref_number',
       key: 'loan_ref_number',
       width: 160,
       fixed: 'left',
     },
     {
-      title: 'Tanggal Pinjaman',
+      title: 'Tanggal Gadai',
       dataIndex: 'loan_date_time',
       key: 'loan_date_time',
       width: 180,
@@ -91,7 +91,7 @@ const PinjamanEmasTablePage = () => {
           : '-',
     },
     {
-      title: 'Jumlah Pinjaman',
+      title: 'Jumlah Gadai (Gram)',
       dataIndex: 'loan_amt',
       key: 'loan_amt',
       width: 180,
@@ -119,7 +119,7 @@ const PinjamanEmasTablePage = () => {
           : '-',
     },
     {
-      title: 'Total Pinjaman',
+      title: 'Total Nilai Aktif',
       dataIndex: 'loan_total_amt',
       key: 'loan_total_amt',
       width: 180,
@@ -214,17 +214,17 @@ const PinjamanEmasTablePage = () => {
       }
 
       const dataToExport = rows.map((item: IGoldLoan) => ({
-        'No. Pinjaman': item.loan_ref_number || '-',
-        'Tanggal Pinjaman': moment(item.loan_date_time).format(
+        'No. Gadai': item.loan_ref_number || '-',
+        'Tanggal Gadai': moment(item.loan_date_time).format(
           'DD MMMM YYYY HH:mm'
         ),
         User: item.user_name || '-',
         'Berat Emas (Gram)': Number(item.loan_gold_wgt || 0),
         'Harga Jual Emas (Rp)': Number(item.loan_gold_price_sell || 0),
-        'Jumlah Pinjaman (Rp)': Number(item.loan_amt || 0),
+        'Jumlah Gadai (Gram)': Number(item.loan_amt || 0),
         'Biaya Admin (Rp)': Number(item.loan_cost_admin || 0),
         'Biaya Transfer (Rp)': Number(item.loan_cost_transfer || 0),
-        'Total Pinjaman (Rp)': Number(item.loan_total_amt || 0),
+        'Total Nilai Aktif (Rp)': Number(item.loan_total_amt || 0),
         'Jumlah Transfer (Rp)': Number(item.loan_transfer_amount || 0),
         'Tanggal Jatuh Tempo': moment(item.loan_due_date).format(
           'DD MMMM YYYY'
@@ -234,12 +234,12 @@ const PinjamanEmasTablePage = () => {
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Pinjaman Emas');
+      const worksheet = workbook.addWorksheet('Laporan Gadai Emas');
 
       // === Judul ===
       worksheet.mergeCells('A1:M1');
       const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN PINJAMAN EMAS';
+      title.value = 'LAPORAN GADAI EMAS';
       title.font = { size: 14, bold: true };
       title.alignment = { horizontal: 'left', vertical: 'middle' };
 
@@ -303,10 +303,10 @@ const PinjamanEmasTablePage = () => {
       const totalFields: (keyof (typeof dataToExport)[number])[] = [
         'Berat Emas (Gram)',
         'Harga Jual Emas (Rp)',
-        'Jumlah Pinjaman (Rp)',
+        'Jumlah Gadai (Gram)',
         'Biaya Admin (Rp)',
         'Biaya Transfer (Rp)',
-        'Total Pinjaman (Rp)',
+        'Total Nilai Aktif (Rp)',
         'Jumlah Transfer (Rp)',
       ];
 
@@ -363,7 +363,7 @@ const PinjamanEmasTablePage = () => {
 
       // === Simpan File ===
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_pinjaman_emas_${dayjs().format(
+      const fileName = `laporan_gadai_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
       saveAs(new Blob([buffer]), fileName);
@@ -431,4 +431,4 @@ const PinjamanEmasTablePage = () => {
   );
 };
 
-export default PinjamanEmasTablePage;
+export default GadaiEmasTablePage;

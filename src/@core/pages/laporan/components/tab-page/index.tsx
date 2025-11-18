@@ -21,7 +21,7 @@ const LaporanTabPage = (props: { activeTab: string }) => {
           </Link>
         </li>
         <li className={`${activeTab === 'gold_loan' ? 'active' : ''}`}>
-          <Link href={`/laporan/pinjaman-emas`}>Pinjaman Emas</Link>
+          <Link href={`/laporan/gadai-emas`}>Gadai Emas</Link>
         </li>
         <li className={`${activeTab === 'wallet' ? 'active' : ''}`}>
           <Link href={`/laporan/wallet`}>Wallet / Saldo</Link>

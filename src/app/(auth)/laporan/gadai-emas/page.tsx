@@ -1,7 +1,7 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
-import PinjamanEmasTablePage from '@/@core/pages/laporan/pinjaman-emas';
+import GadaiEmasTablePage from '@/@core/pages/laporan/gadai-emas';
 import { Printer } from '@untitled-ui/icons-react';
 
 export default function LaporanPinjamanEmasPage() {
@@ -20,7 +20,7 @@ export default function LaporanPinjamanEmasPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Pinjaman Emas
+              <FolderOpenIcon /> Gadai Emas
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanPinjamanEmasPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Pinjaman Emas</p>
+            <p>Gadai Emas</p>
           </div>
         </div>
         <div className="main-body">
           <LaporanTabPage activeTab="gold_loan" />
           <div className="flex flex-col gap-[10px]">
-            <PinjamanEmasTablePage />
+            <GadaiEmasTablePage />
           </div>
         </div>
       </div>
