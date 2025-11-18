@@ -25,6 +25,7 @@ const ModalDO = (props: {
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalQty, setTotalQty] = useState(0);
+  const [printCount, setPrintCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(
@@ -51,6 +52,20 @@ const ModalDO = (props: {
     setTotalWeight(tempWeight);
   }, [orderId]);
 
+  const printDo = () => {
+    axiosInstance
+      .post(`/delivery/${data.delivery_transaction[0].delivery_id}/print`)
+      .then((resp) => {
+        const { data } = resp;
+        setPrintCount(data.print_count);
+
+        // TUNDA print agar React render dulu
+        setTimeout(() => {
+          window.print();
+        }, 50);
+      });
+  };
+
   useEffect(() => {
     if (isModalOpen) fetchData();
   }, [fetchData, isModalOpen]);
@@ -74,7 +89,7 @@ const ModalDO = (props: {
           <>
             <div className="flex items-center justify-end print:hidden gap-[10px]">
               <a
-                onClick={() => window.print()}
+                onClick={() => printDo()}
                 className="btn btn-primary cursor-pointer h-[28px] rounded"
               >
                 {' '}
@@ -94,6 +109,12 @@ const ModalDO = (props: {
                 Tutup
               </a>
             </div>
+            {printCount > 1 && (
+              <div className="hidden print:flex print:mb-[20px] items-center justify-end text-xs">
+                Dokumen ini telah dicetak ulang dan merupakan cetakan ke-
+                {printCount}
+              </div>
+            )}
             <div className="flex gap-[12px] mb-[30px]">
               <Image
                 src="/images/main/sjl-logo.png"

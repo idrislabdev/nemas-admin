@@ -33,3 +33,23 @@ body {
     margin: 0 auto 0 auto !important;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .ant-modal,
+  .ant-modal * {
+    visibility: visible !important;
+  }
+
+  .ant-modal {
+    position: static !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  .ant-modal-content {
+    box-shadow: none !important;
+  }
+}
