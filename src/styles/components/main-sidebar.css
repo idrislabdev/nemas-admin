@@ -1,74 +1,100 @@
 .main-sidebar {
-    @apply bg-[#f9fafc] w-[260px] h-full flex flex-col;
-    /* box-shadow: 0 2px 4px rgba(15,34,58,.12); */
-    .header-area {
-        @apply h-[70px] p-[10px] flex flex-col justify-center;
-        .header-info {
-            @apply flex gap-[8px] items-center;
-            img {
-                @apply w-[36px] h-[36px];
-            }
-            label {
-                @apply text-[18px]/[24px] text-neutral-800 font-medium;
-            }
-        }
+  @apply bg-[#f9fafc] w-[260px] h-full flex flex-col overflow-y-auto overflow-hidden;
+  position: relative;
 
+  /* Scrollbar hidden default */
+  &::-webkit-scrollbar {
+    width: 0px;
+    transition: width 0.2s ease-in-out;
+  }
+
+  /* Thumb */
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+  }
+
+  /* Saat hover: scrollbar muncul */
+  &:hover::-webkit-scrollbar {
+    width: 6px; /* ukuran normal */
+  }
+
+  /* box-shadow: 0 2px 4px rgba(15,34,58,.12); */
+  .header-area {
+    @apply h-[70px] p-[10px] flex flex-col justify-center;
+    .header-info {
+      @apply flex gap-[8px] items-center;
+      img {
+        @apply w-[36px] h-[36px];
+      }
+      label {
+        @apply text-[18px]/[24px] text-neutral-800 font-medium;
+      }
     }
-    .menu-area {
-        @apply flex flex-col gap-[10px] flex-1 ;
-        span {
-            @apply px-[10px];
-            &.label {
-                @apply text-[10px]/[17px] text-neutral-500 uppercase;
-            }
-        }
-        .list-menu {
-            @apply px-[10px];
-            ul {
-                @apply flex flex-col gap-[6px];
-                li {
-                    @apply text-md text-gray-500 px-[10px] py-[6px];
-                    &.active {
-                        @apply bg-white rounded text-gray-900;
-                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-                    }
-                    &:hover {
-                        @apply bg-white rounded text-gray-900;
-                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-                    }
-                    a {
-                        @apply flex items-center gap-[8px];
-                        svg {
-                            @apply w-[20px] h-[20px];
-                        }
-                    }
-                }
-            }
-        }
+  }
+  .menu-area {
+    @apply flex flex-col gap-[10px] flex-1;
+    span {
+      @apply px-[10px];
+      &.label {
+        @apply text-[10px]/[17px] text-neutral-500 uppercase;
+      }
     }
-    .info-area {
-        @apply h-[170px] p-[10px] flex flex-col justify-end;
-        .list-menu {
-            ul {
-                @apply flex flex-col gap-[6px];
-                li {
-                    @apply text-md text-gray-500 px-[10px] py-[6px];
-                    &.active {
-                        @apply bg-white rounded text-gray-900;
-                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-                    }
-                    &:hover {
-                        @apply bg-white rounded text-gray-900;
-                        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-                    }
-                    a {
-                        @apply flex items-center gap-[8px] cursor-pointer w-full;
-                        svg {
-                            @apply w-[20px] h-[20px];
-                        }
-                    }
-                }
+    .list-menu {
+      @apply px-[10px];
+      ul {
+        @apply flex flex-col gap-[6px];
+        li {
+          @apply text-md text-gray-500 px-[10px] py-[6px];
+          &.active {
+            @apply bg-white rounded text-gray-900;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+          }
+          &:hover {
+            @apply bg-white rounded text-gray-900;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+          }
+          a {
+            @apply flex items-center gap-[8px];
+            svg {
+              @apply w-[20px] h-[20px];
             }
+          }
+          ul {
+            &.submenu {
+              @apply gap-[4px];
+              li {
+                @apply text-sm;
+              }
+            }
+          }
         }
+      }
     }
+  }
+  .info-area {
+    @apply h-[170px] p-[10px] flex flex-col justify-end;
+    .list-menu {
+      ul {
+        @apply flex flex-col gap-[6px];
+        li {
+          @apply text-md text-gray-500 px-[10px] py-[6px];
+          &.active {
+            @apply bg-white rounded text-gray-900;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+          }
+          &:hover {
+            @apply bg-white rounded text-gray-900;
+            box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+          }
+          a {
+            @apply flex items-center gap-[8px] cursor-pointer w-full;
+            svg {
+              @apply w-[20px] h-[20px];
+            }
+          }
+        }
+      }
+    }
+  }
 }

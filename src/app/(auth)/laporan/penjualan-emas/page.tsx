@@ -1,6 +1,6 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
-import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
+import LaporanTabPenjualanPage from '@/@core/pages/laporan/components/tab-penjualan-page';
 import PenjualanEmasFisikPage from '@/@core/pages/laporan/penjualan-emas-fisik';
 import { Printer } from '@untitled-ui/icons-react';
 
@@ -37,7 +37,7 @@ export default function LaporanSalesOrderPage() {
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabPage activeTab="sales_order" />
+          <LaporanTabPenjualanPage activeTab="fisik" />
           <div className="flex flex-col gap-[10px]">
             <PenjualanEmasFisikPage />
           </div>

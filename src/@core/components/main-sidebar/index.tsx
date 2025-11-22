@@ -6,6 +6,8 @@ import {
   BankNote01,
   BarChartSquare01,
   Building07,
+  ChevronDown,
+  ChevronUp,
   CoinsHand,
   CreditCard01,
   LogOut03,
@@ -22,22 +24,21 @@ import React, { useEffect, useState } from 'react';
 
 const MainSidebar = () => {
   const pathname = usePathname();
-  // const [user, setUser] = useState({name: "", email: ""});
   const { globals, saveGlobals } = useGlobals();
   const [stateDone, setStateDone] = useState(false);
+
+  // STATE EXPAND / COLLAPSE UNTUK LAPORAN
+  const [openReport, setOpenReport] = useState(false);
 
   const logOut = () => {
     localStorage.clear();
     window.location.reload();
   };
 
-  //   useEffect(() => {
-  //     const tempUser = typeof window !== 'undefined'  ? JSON.parse(localStorage.getItem("user") || "{}") : {name: "", email: ""}
-  //     setUser(tempUser)
-  //   },[])
   const checkMenu = (name: string) => {
     return globals.userLogin.menus.some((x) => x.name === name && x.accessible);
   };
+
   useEffect(() => {
     if (!stateDone) {
       const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -45,6 +46,13 @@ const MainSidebar = () => {
       setStateDone(true);
     }
   }, [globals, saveGlobals, stateDone, setStateDone]);
+
+  // AUTO OPEN SUBMENU LAPORAN KETIKA BERADA DI /laporan/xxx
+  useEffect(() => {
+    if (pathname.startsWith('/laporan')) {
+      setOpenReport(true);
+    }
+  }, [pathname]);
 
   return (
     <>
@@ -62,6 +70,7 @@ const MainSidebar = () => {
               <label>Nemas Admin</label>
             </Link>
           </div>
+
           <div className="menu-area">
             <div className="list-menu">
               <ul>
@@ -73,11 +82,12 @@ const MainSidebar = () => {
                     Dashboard
                   </Link>
                 </li>
+
                 {checkMenu('Data Emas') && (
                   <li
                     className={`${
                       pathname.split('/')[1] === 'master' &&
-                      pathname.split('/')[2] == 'gold'
+                      pathname.split('/')[2] === 'gold'
                         ? 'active'
                         : ''
                     }`}
@@ -88,11 +98,12 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
                 {checkMenu('Data Alamat') && (
                   <li
                     className={`${
                       pathname.split('/')[1] === 'master' &&
-                      pathname.split('/')[2] == 'address'
+                      pathname.split('/')[2] === 'address'
                         ? 'active'
                         : ''
                     }`}
@@ -103,6 +114,7 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
                 {checkMenu('Data Payment') && (
                   <li
                     className={`${
@@ -115,6 +127,7 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
                 {checkMenu('Data Delivery') && (
                   <li
                     className={`${
@@ -127,11 +140,12 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
                 {checkMenu('Informasi') && (
                   <li
                     className={`${
                       pathname.split('/')[1] === 'data' &&
-                      pathname.split('/')[2] == 'informations'
+                      pathname.split('/')[2] === 'informations'
                         ? 'active'
                         : ''
                     }`}
@@ -142,6 +156,7 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
                 <li
                   className={`${
                     pathname.split('/')[1] === 'transaksi' ? 'active' : ''
@@ -152,11 +167,12 @@ const MainSidebar = () => {
                     Daftar Transaksi
                   </Link>
                 </li>
+
                 {checkMenu('Pengguna') && (
                   <li
                     className={`${
                       pathname.split('/')[1] === 'data' &&
-                      pathname.split('/')[2] == 'pengguna'
+                      pathname.split('/')[2] === 'pengguna'
                         ? 'active'
                         : ''
                     }`}
@@ -167,21 +183,74 @@ const MainSidebar = () => {
                     </Link>
                   </li>
                 )}
+
+                {/* ============================= */}
+                {/*       MENU LAPORAN EXPAND     */}
+                {/* ============================= */}
+
                 {checkMenu('Laporan') && (
                   <li
                     className={`${
                       pathname.split('/')[1] === 'laporan' ? 'active' : ''
                     }`}
                   >
-                    <Link href="/laporan/stock">
-                      <Printer />
-                      Laporan
-                    </Link>
+                    {/* HEADER LAPORAN */}
+                    <div
+                      onClick={() => setOpenReport(!openReport)}
+                      className="flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Printer />
+                        <span>Laporan</span>
+                      </div>
+                      <span className="my-icon icon-sm">
+                        {openReport ? <ChevronUp /> : <ChevronDown />}
+                      </span>
+                    </div>
+
+                    {/* SUBMENU */}
+                    {openReport && (
+                      <ul className="ml-6 mt-2 submenu">
+                        {[
+                          { href: 'stock', label: 'Stock' },
+                          { href: 'wallet', label: 'Wallet' },
+                          {
+                            href: 'penjualan-emas',
+                            label: 'Penjualan Emas',
+                          },
+                          { href: 'pembelian-emas', label: 'Pembelian Emas' },
+                          { href: 'tarik-emas', label: 'Tarik Emas' },
+                          { href: 'transfer-member', label: 'Transfer Member' },
+                          {
+                            href: 'deposito',
+                            label: 'Deposito / Investasi Emas',
+                          },
+                          { href: 'gadai-emas', label: 'Gadai Emas' },
+                          { href: 'tagihan-bulanan', label: 'Tagihan Bulanan' },
+                          { href: 'history-user', label: 'History User' },
+                          { href: 'fee-toko', label: 'Fee Toko' },
+                        ].map((item) => (
+                          <li
+                            key={item.href}
+                            className={
+                              pathname.startsWith(`/laporan/${item.href}`)
+                                ? 'active'
+                                : ''
+                            }
+                          >
+                            <Link href={`/laporan/${item.href}`}>
+                              {item.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 )}
               </ul>
             </div>
           </div>
+
           <div className="info-area">
             <div className="list-menu">
               <ul>

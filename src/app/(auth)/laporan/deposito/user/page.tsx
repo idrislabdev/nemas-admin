@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
-import LaporanTabPage from '@/@core/pages/laporan/components/tab-page';
-import LaporanGoldDigitalPage from '@/@core/pages/laporan/gold-buy';
+import LaporanTabDepositoPage from '@/@core/pages/laporan/components/tab-deposito-page';
+import LaporanGoldInvestmentUser from '@/@core/pages/laporan/deposito-user';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanWalletPage() {
+export default function LaporanStockPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +20,7 @@ export default function LaporanWalletPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Pembelian Emas Digital
+              <FolderOpenIcon /> Deposito Per User
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanWalletPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Pembelian Emas Digital</p>
+            <p>Deposito User</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabPage activeTab="gold_buy_digital" />
+          <LaporanTabDepositoPage activeTab="deposito_user" />
           <div className="flex flex-col gap-[10px]">
-            <LaporanGoldDigitalPage />
+            <LaporanGoldInvestmentUser />
           </div>
         </div>
       </div>
