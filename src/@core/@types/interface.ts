@@ -866,3 +866,20 @@ export interface IReportWalletTopupSummary {
   total_topup: number;
   total_diterima: number;
 }
+
+export interface ITagihanBulanan {
+  id: string;
+  order_number: string;
+  user_id: string;
+  user_name: string;
+  user_phone_number: string;
+  monthly_cost_issue_date: string; // "2025-11-22"
+  level: number;
+  monthly_cost: number;
+  gold_weight: number;
+  total_cost: number;
+  discount: number;
+  is_paid: boolean;
+  note: string;
+  current_period: string;
+}

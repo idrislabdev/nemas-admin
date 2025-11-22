@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabGadaiPage from '@/@core/pages/laporan/components/tab-gadai-page';
-import GadaiEmasTablePage from '@/@core/pages/laporan/gadai-emas';
+import GadaiEmasRekapTablePage from '@/@core/pages/laporan/gadai-emas/rekap';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanPinjamanEmasPage() {
+export default function LaporanPinjamanEmasRekapPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +20,7 @@ export default function LaporanPinjamanEmasPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Gadai Emas
+              <FolderOpenIcon /> Rekapitulasi Gadai Aktif / User
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanPinjamanEmasPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Gadai Emas</p>
+            <p>Rekapitulasi Gadai Aktif / User</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabGadaiPage activeTab="gadai" />
+          <LaporanTabGadaiPage activeTab="rekap" />
           <div className="flex flex-col gap-[10px]">
-            <GadaiEmasTablePage />
+            <GadaiEmasRekapTablePage />
           </div>
         </div>
       </div>
