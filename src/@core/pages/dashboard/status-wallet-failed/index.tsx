@@ -7,12 +7,20 @@ import { AlertTriangle } from '@untitled-ui/icons-react';
 interface WalletFailedStatus {
   failed_topup: number;
   failed_disburst: number;
+  failed_redeem: number;
+  failed_buy: number;
+  failed_loan: number;
+  failed_monthly_cost: number;
 }
 
 const StatusWalletFailed = () => {
   const [status, setStatus] = useState<WalletFailedStatus>({
     failed_topup: 0,
     failed_disburst: 0,
+    failed_redeem: 0,
+    failed_buy: 0,
+    failed_loan: 0,
+    failed_monthly_cost: 0,
   });
 
   const fetchStatus = useCallback(async () => {
@@ -41,10 +49,10 @@ const StatusWalletFailed = () => {
       <div className="text-sm text-gray-700 text-center leading-relaxed">
         <p>Topup Saldo: {status.failed_topup} transaksi</p>
         <p>Tarik Saldo: {status.failed_disburst} transaksi</p>
-        <p>Pay Tarik Emas: - transaksi</p>
-        <p>Pay Beli Produk Emas: - transaksi</p>
-        <p>Transfer Gadai: - transaksi</p>
-        <p>Pay Cost Bulanan: - transaksi</p>
+        <p>Pay Tarik Emas: {status.failed_redeem} transaksi</p>
+        <p>Pay Beli Produk Emas: {status.failed_buy} transaksi</p>
+        <p>Transfer Gadai: {status.failed_loan} transaksi</p>
+        <p>Pay Cost Bulanan: {status.failed_monthly_cost} transaksi</p>
       </div>
     </div>
   );
