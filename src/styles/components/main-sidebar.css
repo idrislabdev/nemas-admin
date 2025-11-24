@@ -62,7 +62,7 @@
           }
           ul {
             &.submenu {
-              @apply gap-[4px];
+              @apply gap-[2px];
               li {
                 @apply text-sm;
               }

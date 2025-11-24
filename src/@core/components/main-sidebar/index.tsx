@@ -229,6 +229,7 @@ const MainSidebar = () => {
                           { href: 'tagihan-bulanan', label: 'Tagihan Bulanan' },
                           { href: 'history-user', label: 'History User' },
                           { href: 'fee-toko', label: 'Fee Toko' },
+                          { href: 'vendor-3rd', label: 'Vendor 3rd Party' },
                         ].map((item) => (
                           <li
                             key={item.href}
