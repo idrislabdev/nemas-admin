@@ -223,18 +223,39 @@ const StockEmasFisikTable = () => {
       }
 
       worksheet.addRow([]);
+
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
+
+      // --- BORDER UNTUK HEADER ---
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
       });
 
+      // --- BORDER UNTUK SEMUA ROW DATA ---
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
-        worksheet.addRow(rowValues);
+        const newRow = worksheet.addRow(rowValues);
+
+        newRow.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
       });
 
+      // Auto column width
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;

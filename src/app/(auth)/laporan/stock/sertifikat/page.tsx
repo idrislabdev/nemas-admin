@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabStockPage from '@/@core/pages/laporan/components/tab-stock-page';
-import LaporanStockView from '@/@core/pages/laporan/stock';
+import SertifikatListPage from '@/@core/pages/laporan/stock/sertifikat-list';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanStockPage() {
+export default function LaporanStockSertifikatPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -20,7 +20,7 @@ export default function LaporanStockPage() {
               <FolderIcon /> Laporan
             </li>
             <li>
-              <FolderOpenIcon /> Stock Emas
+              <FolderOpenIcon /> Stock Sertifikat
             </li>
           </ul>
         </div>
@@ -33,13 +33,13 @@ export default function LaporanStockPage() {
           </div>
           <div className="text-area">
             <h5>Halaman Laporan</h5>
-            <p>Data Stock Emas Digital dan Fisik</p>
+            <p>Data Stock Sertifikat</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabStockPage activeTab="stock_emas" />
+          <LaporanTabStockPage activeTab="stock_sertifikat" />
           <div className="flex flex-col gap-[10px]">
-            <LaporanStockView />
+            <SertifikatListPage />
           </div>
         </div>
       </div>
