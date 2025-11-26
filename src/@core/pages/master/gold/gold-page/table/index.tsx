@@ -71,16 +71,16 @@ const GoldPageTable = () => {
           record.gold_weight ? record.gold_weight.toString() : '0'
         )} gr`,
     },
-    {
-      title: 'Berat Sertifikat (gr)',
-      dataIndex: 'certificate_weight',
-      key: 'certificate_weight',
-      width: 170,
-      render: (_, record) =>
-        `${parseFloat(
-          record.certificate_weight ? record.certificate_weight.toString() : '0'
-        )} gr`,
-    },
+    // {
+    //   title: 'Berat Sertifikat (gr)',
+    //   dataIndex: 'certificate_weight',
+    //   key: 'certificate_weight',
+    //   width: 170,
+    //   render: (_, record) =>
+    //     `${parseFloat(
+    //       record.certificate_weight ? record.certificate_weight.toString() : '0'
+    //     )} gr`,
+    // },
     { title: 'Tipe Emas', dataIndex: 'type', key: 'type', width: 120 },
     { title: 'Merek', dataIndex: 'brand', key: 'brand', width: 120 },
     {

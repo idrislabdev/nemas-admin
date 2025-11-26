@@ -124,6 +124,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
     setGoldImage3(data.gold_image_3);
     setGoldImage4(data.gold_image_4);
     setGoldImage5(data.gold_image_5);
+    setCertificateId(data.certificate.cert_id);
     setCertficateNumber(data.certificate_number);
   };
 
@@ -131,7 +132,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
     const resp = await axiosInstance.get(`/core/gold/cert/?offset=0&limit=100`);
     const { results } = resp.data;
     setCerts(results);
-    setCertificateId(results[0].cert_id);
   }, [setCerts]);
 
   const uploadFile1 = async (id: string) => {
@@ -300,7 +300,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
             </label>
             <select
               className={`base ${required.type ? 'error' : ''}`}
-              defaultValue={type}
               onChange={(e) => setType(e.target.value)}
               value={type}
             >
@@ -319,7 +318,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
             </label>
             <select
               className={`base ${required.type ? 'error' : ''}`}
-              defaultValue={brand}
               onChange={(e) => setBrand(e.target.value)}
               value={brand}
             >
@@ -355,7 +353,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
               )}
             </label>
             <select
-              defaultValue={certificateId}
+              value={certificateId}
               onChange={(e) => setCertificateId(parseInt(e.target.value))}
             >
               {certs.map((item, index: number) => (
