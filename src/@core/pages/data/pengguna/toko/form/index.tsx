@@ -22,11 +22,11 @@ const PenggunaTokoPageForm = () => {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userName, setUserName] = useState('');
-  const [incomeSource, setIncomeSource] = useState('');
-  const [investmentPurpose, setInvestmenPurpose] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-  const [npwp, setNpwp] = useState('');
-  const [kartuKeluarga, setKartuKeluarga] = useState('');
+  const [incomeSource, setIncomeSource] = useState('-');
+  const [investmentPurpose, setInvestmenPurpose] = useState('-');
+  const [referralCode, setReferralCode] = useState('-');
+  const [npwp, setNpwp] = useState('-');
+  const [kartuKeluarga, setKartuKeluarga] = useState('-');
   const [namaToko, setNamaToko] = useState('');
   const [alamatToko, setAlamatToko] = useState('');
   const [siup, setSiup] = useState('');
@@ -184,7 +184,7 @@ const PenggunaTokoPageForm = () => {
                   )}
                 </div>
               </div>
-              <div className="input-area">
+              {/* <div className="input-area">
                 <label>
                   Sumber Pendapatan{' '}
                   <span className="text-xs text-gray-400">*</span>{' '}
@@ -238,7 +238,7 @@ const PenggunaTokoPageForm = () => {
                     </span>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="w-1/2">
@@ -284,31 +284,33 @@ const PenggunaTokoPageForm = () => {
                   />
                 </div>
               </div>
-              <div className="input-area">
-                <label>
-                  NIB <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={nib}
-                    className={`base`}
-                    onChange={(e) => setNib(e.target.value)}
-                  />
+              <div className="flex items-center gap-2">
+                <div className="input-area">
+                  <label>
+                    NIB <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
+                  <div className="flex flex-col">
+                    <input
+                      value={nib}
+                      className={`base`}
+                      onChange={(e) => setNib(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="input-area">
+                  <label>
+                    NPWP <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
+                  <div className="flex flex-col">
+                    <input
+                      value={npwp}
+                      className={`base`}
+                      onChange={(e) => setNpwp(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="input-area">
-                <label>
-                  NPWP <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={npwp}
-                    className={`base`}
-                    onChange={(e) => setNpwp(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="input-area">
+              {/* <div className="input-area">
                 <label>
                   Kartu Keluarga{' '}
                   <span className="text-xs text-gray-400">*</span>{' '}
@@ -332,7 +334,7 @@ const PenggunaTokoPageForm = () => {
                     onChange={(e) => setSiup(e.target.value)}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
