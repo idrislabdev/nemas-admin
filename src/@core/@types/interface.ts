@@ -394,6 +394,8 @@ export interface IHistoryTransaction {
   upd_user_name?: string;
   create_time?: string;
   upd_time?: string;
+  gold_balance?: number;
+  wallet_balance?: number;
 }
 
 export interface IGoldStockMovement {
