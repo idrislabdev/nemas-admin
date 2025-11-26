@@ -302,9 +302,10 @@ const GoldPageForm = (props: { paramsId: string }) => {
               className={`base ${required.type ? 'error' : ''}`}
               defaultValue={type}
               onChange={(e) => setType(e.target.value)}
+              value={type}
             >
               <option value={'Bar'}>Bar</option>
-              <option value={'Min Bar'}>Mint Bar</option>
+              <option value={'Min Bar'}>Min Bar</option>
             </select>
           </div>
           <div className="input-area">
@@ -320,6 +321,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
               className={`base ${required.type ? 'error' : ''}`}
               defaultValue={brand}
               onChange={(e) => setBrand(e.target.value)}
+              value={brand}
             >
               <option value={'Marga Gold'}>Marva Gold</option>
               <option value={'Antam'}>Antam</option>
