@@ -129,7 +129,7 @@ const SertifikatListPage = () => {
       render: (val) => (val ? 'Ya' : 'Tidak'),
     },
     {
-      title: 'Sudah Redeem',
+      title: 'Terpakai',
       dataIndex: 'is_redeemed',
       key: 'is_redeemed',
       width: 140,
@@ -229,7 +229,7 @@ const SertifikatListPage = () => {
         'Kode Sertifikat Barang': item.cert_code || '-',
         'Harga Sertifikat (Rp)': Number(item.cert_price || 0),
         'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
-        'Sudah Redeem': item.is_redeemed ? 'Sudah' : 'Belum',
+        Terpakai: item.is_redeemed ? 'Sudah' : 'Belum',
         'Dibuat Oleh': item.create_user_name || '-',
         'Waktu Dibuat': moment(item.create_time).format('DD MMMM YYYY HH:mm'),
         'Diupdate Oleh': item.upd_user_name || '-',
