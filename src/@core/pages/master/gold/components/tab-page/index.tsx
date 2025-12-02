@@ -16,7 +16,7 @@ const GoldTabPage = (props: { activeTab: string }) => {
           <Link href={`/master/gold/price`}>Harga Emas</Link>
         </li>
         <li className={`${activeTab === 'cert' ? 'active' : ''}`}>
-          <Link href={`/master/gold/cert`}>Sertifikat</Link>
+          <Link href={`/master/gold/cert`}>Sertifikat Tarik Emas</Link>
         </li>
         <li className={`${activeTab === 'cert_price_detail' ? 'active' : ''}`}>
           <Link href={`/master/gold/cert-price-detail`}>Sertifikat Detail</Link>
