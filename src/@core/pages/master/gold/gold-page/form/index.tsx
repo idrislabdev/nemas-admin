@@ -19,7 +19,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
   const router = useRouter();
   const [goldWeight, setGoldWeight] = useState('0');
   const [type, setType] = useState('Bar');
-  const [brand, setBrand] = useState('Marga Gold');
+  const [brand, setBrand] = useState('MARVA GOLD');
   const [certificateNumber, setCertficateNumber] = useState('');
   const [productCost, setProductCost] = useState('');
   const [required, setRequired] = useState<IGold>({} as IGold);
@@ -321,8 +321,9 @@ const GoldPageForm = (props: { paramsId: string }) => {
               onChange={(e) => setBrand(e.target.value)}
               value={brand}
             >
-              <option value={'Marga Gold'}>Marva Gold</option>
-              <option value={'Antam'}>Antam</option>
+              <option value={'MARVA GOLD'}>MARVA GOLD</option>
+              <option value={'ANTAM'}>ANTAM</option>
+              <option value={'UBS'}>UBS</option>
             </select>
           </div>
           <div className="input-area">

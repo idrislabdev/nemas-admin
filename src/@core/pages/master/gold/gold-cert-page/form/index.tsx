@@ -16,15 +16,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   const [certPrice, setCertPrice] = useState('');
   const [api, contextHolder] = notification.useNotification();
 
-  const brandOptions = [
-    'ANTAM',
-    'MARVA GOLD',
-    'UBS',
-    'LOTUS ARCHI',
-    'KING HALIM',
-    'SAMORA',
-    'HWT',
-  ];
+  const brandOptions = ['ANTAM', 'MARVA GOLD', 'UBS'];
 
   const onCancel = () => {
     if (paramsId == 'form') {
