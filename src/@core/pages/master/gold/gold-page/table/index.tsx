@@ -43,8 +43,7 @@ const GoldPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
-    brand__icontains: '',
+    search: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -151,8 +150,7 @@ const GoldPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
-      brand__icontains: value,
+      search: value,
     });
   };
 
@@ -169,7 +167,7 @@ const GoldPageTable = () => {
   const confirmDelete = async () => {
     await axiosInstance.delete(`/core/gold/${selectedId}`);
     setOpenModalConfirm(false);
-    setParams({ ...params, offset: 0, limit: 10, type__icontains: '' });
+    setParams({ ...params, offset: 0, limit: 10, search: '' });
     api.info({
       message: 'Data Gold',
       description: 'Data Gold Berhasil Dihapus',
@@ -188,8 +186,7 @@ const GoldPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 100,
-        type__icontains: '',
-        brand__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
