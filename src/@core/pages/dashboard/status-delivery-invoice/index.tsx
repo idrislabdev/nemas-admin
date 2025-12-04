@@ -4,12 +4,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/@core/utils/axios';
 import { AlertTriangle } from '@untitled-ui/icons-react';
 import Link from 'next/link';
+import dayjs from 'dayjs';
 
 interface DeliveryInvoiceStatus {
   pending_delivery: number;
   pending_invoice: number;
   pending_loan_payment: number;
   pending_monthly_cost: number;
+  pending_loan_payment_today: number;
 }
 
 const StatusDeliveryInvoice = () => {
@@ -18,7 +20,10 @@ const StatusDeliveryInvoice = () => {
     pending_invoice: 0,
     pending_loan_payment: 0,
     pending_monthly_cost: 0,
+    pending_loan_payment_today: 0,
   });
+
+  const today = dayjs().format('YYYY-MM-DD');
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -92,6 +97,13 @@ const StatusDeliveryInvoice = () => {
         <p>
           Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
         </p>
+        <Link
+          href={`/laporan/gadai-emas?loan_status_name=approved&start_date=${today}&end_date=${today}`}
+          className="text-blue-500 underline"
+        >
+          Gadai Wajib Bayar Hari Ini: {status.pending_loan_payment_today}{' '}
+          transaksi
+        </Link>
       </div>
     </div>
   );
