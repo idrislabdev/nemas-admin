@@ -9,22 +9,28 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   CalendarCheck01,
   ClipboardCheck,
+  FlipBackward,
   Truck01,
 } from '@untitled-ui/icons-react';
 import Image from 'next/image';
 import ModalPhoto from '@/@core/components/modal/modal-photo';
 import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
+import ModalReturn from '@/@core/pages/transaksi/components/modal-return';
+import { useRouter } from 'next/navigation';
 
 const ComEmasFisikDetailPage = (props: {
   parentUrl: string;
   paramsId: string;
 }) => {
   const { parentUrl, paramsId } = props;
+  const router = useRouter();
+
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
   const [openModalPhoto, setOpenModalPhoto] = useState(false);
   const [openModalDO, setOpenModalDO] = useState(false);
+  const [openModalReturn, setOpenModalReturn] = useState(false);
   const [urlPhoto, setUrlPhoto] = useState('');
-
+  const [goldCertDetailPrice, setGoldCertDetailPrice] = useState('');
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(
       `/reports/gold-sales-order/${paramsId}`
@@ -243,7 +249,7 @@ const ComEmasFisikDetailPage = (props: {
                               );
                               setOpenModalPhoto(true);
                             }}
-                            className="cursor-pointer"
+                            className="cursor-pointer w-full h-full"
                           >
                             <Image
                               src={
@@ -269,7 +275,7 @@ const ComEmasFisikDetailPage = (props: {
                               );
                               setOpenModalPhoto(true);
                             }}
-                            className="cursor-pointer"
+                            className="cursor-pointer w-full h-full"
                           >
                             <Image
                               src={
@@ -313,6 +319,7 @@ const ComEmasFisikDetailPage = (props: {
                   <th className="px-3 h-[30px] text-center">
                     Foto Sesudah Packing
                   </th>
+                  <th className="px-3 h-[30px] text-center">Return</th>
                 </tr>
               </thead>
               <tbody>
@@ -349,7 +356,7 @@ const ComEmasFisikDetailPage = (props: {
                                   );
                                   setOpenModalPhoto(true);
                                 }}
-                                className="cursor-pointer"
+                                className="cursor-pointer w-full h-full"
                               >
                                 <Image
                                   src={
@@ -380,7 +387,7 @@ const ComEmasFisikDetailPage = (props: {
                                   );
                                   setOpenModalPhoto(true);
                                 }}
-                                className="cursor-pointer"
+                                className="cursor-pointer w-full h-full"
                               >
                                 <Image
                                   src={
@@ -396,6 +403,24 @@ const ComEmasFisikDetailPage = (props: {
                             )}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-3 py-3 text-center ">
+                      {data.is_picked_up && (
+                        <a
+                          className="flex flex-row items-center gap-2 btn bg-red-500 text-white cursor-pointer"
+                          onClick={() => {
+                            setGoldCertDetailPrice(
+                              item.delivery_details.gold_cert_detail_price
+                            );
+                            setOpenModalReturn(true);
+                          }}
+                        >
+                          <span className="my-icon icon-sm">
+                            <FlipBackward />
+                          </span>
+                          Return
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -413,6 +438,13 @@ const ComEmasFisikDetailPage = (props: {
         isModalOpen={openModalDO}
         setIsModalOpen={setOpenModalDO}
         orderId={paramsId}
+      />
+      <ModalReturn
+        isModalOpen={openModalReturn}
+        setIsModalOpen={setOpenModalReturn}
+        orderGoldId={paramsId}
+        goldCertDetailPrice={goldCertDetailPrice}
+        setRefresData={() => router.replace('/transaksi/return')}
       />
     </div>
   );

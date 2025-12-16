@@ -5,7 +5,7 @@ import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 
-import { Pagination, Table } from 'antd';
+import { Pagination, Table, Select } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 
 import React, { useCallback, useEffect, useState } from 'react';
@@ -37,6 +37,7 @@ const DataPenggunaTokoPageTable = () => {
     email__icontains: '',
     username__icontains: '',
     role__name__icontains: 'Toko',
+    is_active: '', // ← FILTER STATUS
   });
 
   // ========================
@@ -46,18 +47,14 @@ const DataPenggunaTokoPageTable = () => {
     {
       title: 'No',
       width: 70,
-      dataIndex: 'id',
-      key: 'id',
       align: 'center',
       render: (_, __, index) => index + params.offset + 1,
     },
-    { title: 'Nama', dataIndex: 'name', key: 'name', width: 150 },
-    { title: 'Username', dataIndex: 'user_name', key: 'user_name', width: 150 },
-    { title: 'Email', dataIndex: 'email', key: 'email', width: 150 },
+    { title: 'Nama', dataIndex: 'name', width: 150 },
+    { title: 'Username', dataIndex: 'user_name', width: 150 },
+    { title: 'Email', dataIndex: 'email', width: 150 },
     {
       title: 'Alamat',
-      dataIndex: 'address',
-      key: 'address',
       width: 200,
       render: (_, record) =>
         record.address?.address ? record.address.address : '-',
@@ -65,35 +62,41 @@ const DataPenggunaTokoPageTable = () => {
     {
       title: 'Phone Number',
       dataIndex: 'phone_number',
-      key: 'phone_number',
       width: 150,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'is_active',
+      width: 120,
+      align: 'center',
+      render: (val) => (
+        <span className={val ? 'text-green-600' : 'text-red-600'}>
+          {val ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      ),
     },
     {
       title: 'Create By',
       dataIndex: 'create_user_name',
-      key: 'create_user_name',
       width: 150,
     },
     {
       title: 'Create Time',
       dataIndex: 'create_time',
-      key: 'create_time',
       width: 180,
       render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     {
       title: 'Update By',
       dataIndex: 'upd_user_name',
-      key: 'upd_user_name',
       width: 150,
     },
     {
       title: '',
-      key: 'action',
       fixed: 'right',
       width: 80,
       render: (_, record) => (
-        <div className="flex items-center gap-[5px] justify-center">
+        <div className="flex items-center justify-center gap-[5px]">
           <Link
             className="btn-action"
             href={`/data/pengguna/toko/${record.id}`}
@@ -114,18 +117,28 @@ const DataPenggunaTokoPageTable = () => {
     setTotal(resp.data.count);
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+  const onChangePage = (val: number) => {
+    setParams({
+      ...params,
+      offset: (val - 1) * params.limit,
+    });
   };
 
   const handleFilter = (value: string) => {
     setParams({
       ...params,
       offset: 0,
-      limit: 10,
       name__icontains: value,
       username__icontains: value,
       email__icontains: value,
+    });
+  };
+
+  const handleFilterStatus = (value: any) => {
+    setParams({
+      ...params,
+      offset: 0,
+      is_active: value ?? '',
     });
   };
 
@@ -136,13 +149,10 @@ const DataPenggunaTokoPageTable = () => {
     try {
       setIsModalLoading(true);
 
-      const exportParams = {
-        ...params,
-        offset: 0,
-        limit: 100,
-      };
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, offset: 0, limit: 100 },
+      });
 
-      const resp = await axiosInstance.get(url, { params: exportParams });
       const rows = resp.data.results;
 
       const dataToExport = rows.map(
@@ -153,6 +163,7 @@ const DataPenggunaTokoPageTable = () => {
           Email: item.email,
           Alamat: item.address?.address ?? '-',
           'Phone Number': item.phone_number,
+          Status: item.is_active ? 'Aktif' : 'Tidak Aktif',
           'Create By': item.create_user_name,
           'Create Time': item.create_time
             ? moment(item.create_time).format('DD MMM YYYY HH:mm')
@@ -164,24 +175,22 @@ const DataPenggunaTokoPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Pengguna Toko');
 
-      // Judul
-      worksheet.mergeCells('A1:I1');
+      worksheet.mergeCells('A1:J1');
       worksheet.getCell('A1').value = 'DATA PENGGUNA TOKO';
       worksheet.getCell('A1').alignment = {
         horizontal: 'center',
         vertical: 'middle',
       };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A1').font = { bold: true, size: 14 };
 
-      worksheet.addRow([]); // baris kosong
+      worksheet.addRow([]);
 
-      // Header
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.alignment = { horizontal: 'center' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -195,13 +204,9 @@ const DataPenggunaTokoPageTable = () => {
         };
       });
 
-      // Data rows
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
-
+        const newRow = worksheet.addRow(Object.values(row));
         newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -211,26 +216,20 @@ const DataPenggunaTokoPageTable = () => {
         });
       });
 
-      // Auto column width
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+        let max = 0;
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value?.toString() ?? '';
+          max = Math.max(max, val.length);
+        });
+        col.width = max + 2;
       });
 
-      // Save file
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `data_pengguna_toko_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
-      saveAs(new Blob([buffer]), fileName);
-    } catch (err) {
-      console.error('Export failed:', err);
+      saveAs(
+        new Blob([buffer]),
+        `data_pengguna_toko_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
     } finally {
       setIsModalLoading(false);
     }
@@ -242,21 +241,32 @@ const DataPenggunaTokoPageTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="color-1 base"
+              placeholder="cari data"
+              onChange={debounce((e) => handleFilter(e.target.value), 1000)}
+            />
+          </div>
+
+          <Select
+            placeholder="Status"
+            allowClear
+            className="min-w-[140px] h-9"
+            onChange={handleFilterStatus}
+            options={[
+              { label: 'Aktif', value: true },
+              { label: 'Tidak Aktif', value: false },
+            ]}
           />
         </div>
+
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
             <FileDownload02 />
@@ -271,16 +281,18 @@ const DataPenggunaTokoPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+
+      <div className="flex flex-col border border-gray-200 rounded-t-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
           size="small"
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
-          className="table-basic"
           rowKey="id"
+          className="table-basic"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -290,6 +302,7 @@ const DataPenggunaTokoPageTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"

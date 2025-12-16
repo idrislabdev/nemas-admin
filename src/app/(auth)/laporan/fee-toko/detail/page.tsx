@@ -1,7 +1,7 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import LaporanTabFeeTokoPage from '@/@core/pages/laporan/components/tab-fee-toko';
-import RekapitulasiFeeTokoPage from '@/@core/pages/laporan/fee-toko/summary';
+import SellerCommissionListPage from '@/@core/pages/laporan/fee-toko/list';
 import { Printer } from '@untitled-ui/icons-react';
 
 export default function LaporanSalesOrderPage() {
@@ -37,9 +37,9 @@ export default function LaporanSalesOrderPage() {
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabFeeTokoPage activeTab="summary" />
+          <LaporanTabFeeTokoPage activeTab="detail" />
           <div className="flex flex-col gap-[10px]">
-            <RekapitulasiFeeTokoPage />
+            <SellerCommissionListPage />
           </div>
         </div>
       </div>

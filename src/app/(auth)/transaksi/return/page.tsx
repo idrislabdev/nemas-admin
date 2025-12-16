@@ -1,10 +1,10 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
-import LaporanTabFeeTokoPage from '@/@core/pages/laporan/components/tab-fee-toko';
-import RekapitulasiFeeTokoPage from '@/@core/pages/laporan/fee-toko/summary';
-import { Printer } from '@untitled-ui/icons-react';
+import TransaksiTabPage from '@/@core/pages/transaksi/components/tab-page';
+import DaftarReturnEmasPage from '@/@core/pages/transaksi/return';
+import { Coins01 } from '@untitled-ui/icons-react';
 
-export default function LaporanSalesOrderPage() {
+export default function ReturnPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -17,10 +17,10 @@ export default function LaporanSalesOrderPage() {
               <FolderIcon /> Home
             </li>
             <li>
-              <FolderIcon /> Laporan
+              <FolderIcon /> Transaksi
             </li>
             <li>
-              <FolderOpenIcon /> Rekapitulasi Fee Toko
+              <FolderOpenIcon /> Return
             </li>
           </ul>
         </div>
@@ -29,17 +29,17 @@ export default function LaporanSalesOrderPage() {
       <div className="container-body">
         <div className="title-body">
           <div className="logo-area">
-            <Printer />
+            <Coins01 />
           </div>
           <div className="text-area">
-            <h5>Halaman Laporan</h5>
-            <p>Rekapitulasi Fee Toko</p>
+            <h5>Halaman Transaksi</h5>
+            <p>Return</p>
           </div>
         </div>
         <div className="main-body">
-          <LaporanTabFeeTokoPage activeTab="summary" />
+          <TransaksiTabPage activeTab="return" />
           <div className="flex flex-col gap-[10px]">
-            <RekapitulasiFeeTokoPage />
+            <DaftarReturnEmasPage />
           </div>
         </div>
       </div>

@@ -12,6 +12,9 @@ const TransaksiTabPage = (props: { activeTab: string }) => {
         <li className={`${activeTab === 'tarik_emas' ? 'active' : ''}`}>
           <Link href={`/transaksi/tarik-emas`}>Tarik Emas</Link>
         </li>
+        <li className={`${activeTab === 'return' ? 'active' : ''}`}>
+          <Link href={`/transaksi/return`}>Return</Link>
+        </li>
       </ul>
     </div>
   );

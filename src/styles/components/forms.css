@@ -24,6 +24,9 @@ textarea {
   &.color-2 {
     @apply !border-[#fafbfe] bg-[#fafbfe];
   }
+  &.error {
+    @apply border-red-500;
+  }
 }
 select {
   @apply border border-neutral-200 rounded-[4px] !text-neutral-900 !font-medium text-[14px]/[21px] !px-[20px] outline-none h-[41px];

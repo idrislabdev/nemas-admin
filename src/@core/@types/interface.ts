@@ -885,3 +885,33 @@ export interface ITagihanBulanan {
   note: string;
   current_period: string;
 }
+
+export interface IOrderReturn {
+  order_gold: string;
+  return_reason: string;
+  return_date: string;
+  return_type: string;
+  gold_cert_detail_price: string;
+  return_image_1: string;
+  return_image_2: string;
+  return_image_3: string;
+  order_return_id: string;
+  order_number: string;
+  return_status: string;
+  return_notes: string;
+  return_approved_by: string;
+  return_approved_date: string;
+  return_rejected_by: string;
+  return_rejected_date: string;
+  return_number: string;
+  gold_cert_code: string;
+  gold_cert_weight: number;
+  gold_transfer: string;
+  gold_transfer_number: string;
+  gold_transfer_weight: number;
+  gold_transfer_amount: number;
+  create_user: string;
+  create_time: string;
+  update_user: string;
+  update_time: string;
+}

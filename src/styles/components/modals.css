@@ -7,6 +7,9 @@
   }
 }
 .my-modal {
+  .rs-modal-body {
+    overflow: visible !important;
+  }
   .rs-modal-content {
     @apply rounded-sm;
     .rs-modal-header {
