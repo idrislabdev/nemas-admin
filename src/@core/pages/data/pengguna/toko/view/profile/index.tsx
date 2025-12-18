@@ -6,13 +6,14 @@ import {
   IUserBank,
 } from '@/@core/@types/interface';
 import { formatDecimal, formatterNumber } from '@/@core/utils/general';
-import { Download01, Edit05, Upload01 } from '@untitled-ui/icons-react';
+import { ArrowSquareUpRight, Edit05, Upload01 } from '@untitled-ui/icons-react';
 import dynamic from 'next/dynamic';
 import React, { Dispatch, SetStateAction, useRef, useState } from 'react';
 import ModalBank from './modal-bank';
 import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
+import ModalstatusVerify from '@/@core/components/modal/modal-status-verifikasi';
 
 const ModalAddress = dynamic(
   () => import('@/@core/components/modal/modal-address'),
@@ -27,6 +28,7 @@ const PengggunaProfile = (props: {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalBankOpen, setIsModalBankOpen] = useState(false);
   const [isModalStatusOpen, setIsModalStatusOpen] = useState(false);
+  const [isModalStatusOpenVerify, setIsModalStatusOpenVerify] = useState(false);
   const [userAddress, setUserAddress] = useState<IUserAddress>(
     {} as IUserAddress
   );
@@ -172,6 +174,31 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Status Verifikasi
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :
+                  <span className="flex items-center gap-[4px]">
+                    {detail.is_verified ? (
+                      <span className="text-green-600">Sudah Verifikasi</span>
+                    ) : (
+                      <span className="text-red-600">Belum Verifikasi</span>
+                    )}
+                    {!detail.is_verified && (
+                      <a
+                        className="cursor-pointer"
+                        onClick={() => setIsModalStatusOpenVerify(true)}
+                      >
+                        <span className="my-icon icon-sm">
+                          <Edit05 />
+                        </span>
+                      </a>
+                    )}
+                  </span>
+                </p>
+              </div>
               <div className="flex items-center border-b border-r rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
                 <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                   Data Toko
@@ -207,20 +234,34 @@ const PengggunaProfile = (props: {
                     '-'}
                 </p>
               </div>
-              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+              {/* <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   SIUP
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   : {(detail.seller_props && detail.seller_props.siup) ?? '-'}
                 </p>
-              </div>
+              </div> */}
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   NIB
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  : {(detail.seller_props && detail.seller_props.nib) ?? '-'}
+                  :{' '}
+                  {detail.seller_props && detail.seller_props.nib ? (
+                    <a
+                      href={detail.seller_props.file_nib}
+                      className="text-blue-600 flex items-center gap-[4px]"
+                      target="_blank"
+                    >
+                      {detail.seller_props.nib}
+                      <span className="my-icon icon-sm">
+                        <ArrowSquareUpRight />
+                      </span>
+                    </a>
+                  ) : (
+                    '-'
+                  )}
                 </p>
               </div>
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -228,36 +269,62 @@ const PengggunaProfile = (props: {
                   NPWP
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  : {(detail.seller_props && detail.seller_props.npwp) ?? '-'}
+                  :{' '}
+                  {detail.seller_props && detail.seller_props.npwp ? (
+                    <a
+                      href={detail.seller_props.file_npwp}
+                      className="text-blue-600 flex items-center gap-[4px]"
+                      target="_blank"
+                    >
+                      {detail.seller_props.npwp}
+                      <span className="my-icon icon-sm">
+                        <ArrowSquareUpRight />
+                      </span>
+                    </a>
+                  ) : (
+                    '-'
+                  )}
                 </p>
               </div>
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
-                  Kartu Keluarga
+                  Kontak Person
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :{' '}
-                  {(detail.seller_props &&
-                    detail.seller_props.kartu_keluarga) ??
-                    '-'}
-                </p>
-              </div>
-              <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
-                  File Pendukung
-                </label>
-                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  :{' '}
-                  {detail.seller_props && detail.seller_props.file_toko ? (
+                  {detail.seller_props &&
+                  detail.seller_props.file_contact_person ? (
                     <a
-                      href={detail.seller_props.file_toko}
+                      href={detail.seller_props.file_contact_person}
                       className="text-blue-600 flex items-center gap-[4px]"
                       target="_blank"
                     >
-                      <span className="my-icon icon-sm">
-                        <Download01 />
-                      </span>
                       Download
+                      <span className="my-icon icon-sm">
+                        <ArrowSquareUpRight />
+                      </span>
+                    </a>
+                  ) : (
+                    '-'
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center border-b  border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Foto KTP
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{' '}
+                  {detail.photo_ktp_url && detail.photo_ktp_url ? (
+                    <a
+                      href={detail.photo_ktp_url}
+                      className="text-blue-600 flex items-center gap-[4px]"
+                      target="_blank"
+                    >
+                      Download
+                      <span className="my-icon icon-sm">
+                        <ArrowSquareUpRight />
+                      </span>
                     </a>
                   ) : (
                     '-'
@@ -358,6 +425,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
               <div className="flex justify-between items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
                 <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                   Data Alamat
@@ -656,6 +724,12 @@ const PengggunaProfile = (props: {
       <Modalstatus
         isModalOpen={isModalStatusOpen}
         setIsModalOpen={setIsModalStatusOpen}
+        userDetail={detail}
+        setRefresData={setRefresData}
+      />
+      <ModalstatusVerify
+        isModalOpen={isModalStatusOpenVerify}
+        setIsModalOpen={setIsModalStatusOpenVerify}
         userDetail={detail}
         setRefresData={setRefresData}
       />

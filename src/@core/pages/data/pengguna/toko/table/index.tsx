@@ -38,6 +38,7 @@ const DataPenggunaTokoPageTable = () => {
     username__icontains: '',
     role__name__icontains: 'Toko',
     is_active: '', // ← FILTER STATUS
+    is_verified: '', // ← FILTER STATUS verifikasi
   });
 
   // ========================
@@ -72,6 +73,17 @@ const DataPenggunaTokoPageTable = () => {
       render: (val) => (
         <span className={val ? 'text-green-600' : 'text-red-600'}>
           {val ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      ),
+    },
+    {
+      title: 'Status Verifikasi',
+      dataIndex: 'is_verified',
+      width: 150,
+      align: 'center',
+      render: (val) => (
+        <span className={val ? 'text-green-600' : 'text-red-600'}>
+          {val ? 'Sudah Verifikasi' : 'Belum Verifikasi'}
         </span>
       ),
     },
@@ -139,6 +151,14 @@ const DataPenggunaTokoPageTable = () => {
       ...params,
       offset: 0,
       is_active: value ?? '',
+    });
+  };
+
+  const handleFilterStatusVerified = (value: any) => {
+    setParams({
+      ...params,
+      offset: 0,
+      is_verified: value ?? '',
     });
   };
 
@@ -263,6 +283,16 @@ const DataPenggunaTokoPageTable = () => {
             options={[
               { label: 'Aktif', value: true },
               { label: 'Tidak Aktif', value: false },
+            ]}
+          />
+          <Select
+            placeholder="Status Verifikasi"
+            allowClear
+            className="min-w-[150px] h-9"
+            onChange={handleFilterStatusVerified}
+            options={[
+              { label: 'Sudah Verifikasi', value: true },
+              { label: 'Belum Verifikasi', value: false },
             ]}
           />
         </div>

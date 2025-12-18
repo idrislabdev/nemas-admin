@@ -306,6 +306,8 @@ export interface IPenggunaAplikasi {
   investment_purpose: string;
   referal_code: string;
   is_active: boolean;
+  is_verified: boolean;
+  photo_ktp_url: string;
   ktp: {
     nik: string;
     full_name: string;
@@ -368,6 +370,9 @@ export interface IPenggunaAplikasi {
     alamat_toko: string;
     no_telp_toko: string;
     file_toko: string;
+    file_contact_person: string;
+    file_nib: string;
+    file_npwp: string;
   };
   create_user_name?: string;
   upd_user_name?: string;
