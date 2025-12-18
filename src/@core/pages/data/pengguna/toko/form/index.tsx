@@ -1,10 +1,10 @@
 'use client';
 
-import UploadCompressForm from '@/@core/components/forms/upload-compress-form';
+import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { notification } from 'antd';
 import { AxiosError } from 'axios';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 const PenggunaTokoPageForm = () => {
   interface IForm {
@@ -25,23 +25,49 @@ const PenggunaTokoPageForm = () => {
   const [incomeSource, setIncomeSource] = useState('-');
   const [investmentPurpose, setInvestmenPurpose] = useState('-');
   const [referralCode, setReferralCode] = useState('-');
-  const [npwp, setNpwp] = useState('-');
+  const [npwp, setNpwp] = useState('');
   const [kartuKeluarga, setKartuKeluarga] = useState('-');
   const [namaToko, setNamaToko] = useState('');
   const [alamatToko, setAlamatToko] = useState('');
   const [siup, setSiup] = useState('');
   const [nib, setNib] = useState('');
   const [noTelp, setNoTelp] = useState('');
-  const [fileData, setFileData] = useState<File | null>(null);
-  const [fileUrl, setFileUrl] = useState('');
+  const [isModalLoading, setIsModalLoading] = useState(false);
   const [required, setRequired] = useState<IForm>({} as IForm);
   const [api, contextHolder] = notification.useNotification();
+
+  const [fileNpwp, setFileNpwp] = useState<File | null>(null);
+  const [fileNib, setFileNib] = useState<File | null>(null);
+  const [fileContactPerson, setFileContactPerson] = useState<File | null>(null);
+  const [photoKtp, setPhotoKtp] = useState<File | null>(null);
+
+  const fileNibRef = useRef<HTMLInputElement>(null);
+  const fileNpwpRef = useRef<HTMLInputElement>(null);
+  const fileContactPersonRef = useRef<HTMLInputElement>(null);
+  const photoKtpRef = useRef<HTMLInputElement>(null);
 
   const onCancel = () => {
     clearForm();
   };
 
+  const uploadFile = async (file: File | null): Promise<string> => {
+    if (!file) return '';
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await axiosInstance.post(
+      `/users/user/seller/upload`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+
+    return res.data.file_url || res.data;
+  };
+
   const onSave = async () => {
+    setIsModalLoading(true);
     const formData = new FormData();
 
     formData.append('seller_props.npwp', npwp);
@@ -51,8 +77,23 @@ const PenggunaTokoPageForm = () => {
     formData.append('seller_props.alamat_toko', alamatToko);
     formData.append('seller_props.no_telp_toko', noTelp);
 
-    if (fileData) {
-      formData.append('seller_props.file_toko', fileData);
+    if (fileNib) {
+      formData.append('seller_props.file_nib', await uploadFile(fileNib));
+    }
+
+    if (fileNpwp) {
+      formData.append('seller_props.file_npwp', await uploadFile(fileNpwp));
+    }
+
+    if (fileContactPerson) {
+      formData.append(
+        'seller_props.file_contact_person',
+        await uploadFile(fileContactPerson)
+      );
+    }
+
+    if (photoKtp) {
+      formData.append('seller_props.photo_ktp_url', await uploadFile(photoKtp));
     }
 
     // kalau field lain (di luar seller_props) juga mau dikirim
@@ -77,6 +118,7 @@ const PenggunaTokoPageForm = () => {
         description: desc,
         placement: 'bottomRight',
       });
+      setIsModalLoading(false);
       clearForm();
     } catch (error) {
       const err = error as AxiosError;
@@ -84,6 +126,7 @@ const PenggunaTokoPageForm = () => {
         const data: IForm = err.response.data;
         setRequired(data);
       }
+      setIsModalLoading(false);
     }
   };
 
@@ -102,8 +145,15 @@ const PenggunaTokoPageForm = () => {
     setSiup('');
     setAlamatToko('');
     setNoTelp('');
-    setFileData(null);
-    setFileUrl('');
+    setFileNib(null);
+    setFileNpwp(null);
+    setFileContactPerson(null);
+    setPhotoKtp(null);
+
+    if (fileNibRef.current) fileNibRef.current.value = '';
+    if (fileNpwpRef.current) fileNpwpRef.current.value = '';
+    if (fileContactPersonRef.current) fileContactPersonRef.current.value = '';
+    if (photoKtpRef.current) photoKtpRef.current.value = '';
   };
   return (
     <>
@@ -112,10 +162,6 @@ const PenggunaTokoPageForm = () => {
         <div className="flex gap-[20px]">
           <div className="w-1/2">
             <div className="form-area">
-              <div className="flex flex-col">
-                <h5 className="font-[500]">Data Utama</h5>
-                <hr />
-              </div>
               <div className="input-area">
                 <label>
                   Nama <span className="text-xs text-gray-400">*</span>{' '}
@@ -184,69 +230,6 @@ const PenggunaTokoPageForm = () => {
                   )}
                 </div>
               </div>
-              {/* <div className="input-area">
-                <label>
-                  Sumber Pendapatan{' '}
-                  <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={incomeSource}
-                    className={`base ${required.income_source ? 'error' : ''}`}
-                    onChange={(e) => setIncomeSource(e.target.value)}
-                  />
-                  {required.income_source && (
-                    <span className="text-red-500 text-xs italic">
-                      {required.income_source?.toString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="input-area">
-                <label>
-                  Tujuan Investasi{' '}
-                  <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={investmentPurpose}
-                    className={`base ${
-                      required.investment_purpose ? 'error' : ''
-                    }`}
-                    onChange={(e) => setInvestmenPurpose(e.target.value)}
-                  />
-                  {required.investment_purpose && (
-                    <span className="text-red-500 text-xs italic">
-                      {required.investment_purpose?.toString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="input-area">
-                <label>
-                  Kode Referral <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={referralCode}
-                    className={`base ${required.referral_code ? 'error' : ''}`}
-                    onChange={(e) => setReferralCode(e.target.value)}
-                  />
-                  {required.referral_code && (
-                    <span className="text-red-500 text-xs italic">
-                      {required.referral_code?.toString()}
-                    </span>
-                  )}
-                </div>
-              </div> */}
-            </div>
-          </div>
-          <div className="w-1/2">
-            <div className="form-area">
-              <div className="flex flex-col">
-                <h5 className="font-[500]">Data Toko</h5>
-                <hr />
-              </div>
               <div className="input-area">
                 <label>
                   Nama Toko <span className="text-xs text-gray-400">*</span>{' '}
@@ -256,18 +239,6 @@ const PenggunaTokoPageForm = () => {
                     value={namaToko}
                     className="base"
                     onChange={(e) => setNamaToko(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="input-area">
-                <label>
-                  Alamat Toko <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
-                  <input
-                    value={alamatToko}
-                    className={`base`}
-                    onChange={(e) => setAlamatToko(e.target.value)}
                   />
                 </div>
               </div>
@@ -284,20 +255,25 @@ const PenggunaTokoPageForm = () => {
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="input-area">
-                  <label>
-                    NIB <span className="text-xs text-gray-400">*</span>{' '}
-                  </label>
-                  <div className="flex flex-col">
-                    <input
-                      value={nib}
-                      className={`base`}
-                      onChange={(e) => setNib(e.target.value)}
-                    />
-                  </div>
+            </div>
+          </div>
+          <div className="w-1/2">
+            <div className="form-area">
+              <div className="input-area">
+                <label>
+                  Alamat Toko <span className="text-xs text-gray-400">*</span>{' '}
+                </label>
+                <div className="flex flex-col">
+                  <textarea
+                    value={alamatToko}
+                    className={`base`}
+                    onChange={(e) => setAlamatToko(e.target.value)}
+                  />
                 </div>
-                <div className="input-area">
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="input-area w-1/2">
                   <label>
                     NPWP <span className="text-xs text-gray-400">*</span>{' '}
                   </label>
@@ -309,45 +285,77 @@ const PenggunaTokoPageForm = () => {
                     />
                   </div>
                 </div>
-              </div>
-              {/* <div className="input-area">
-                <label>
-                  Kartu Keluarga{' '}
-                  <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
+                <div className="input-area w-1/2">
+                  <label>
+                    File NPWP <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
                   <input
-                    value={kartuKeluarga}
+                    ref={fileNpwpRef}
+                    type="file"
                     className={`base`}
-                    onChange={(e) => setKartuKeluarga(e.target.value)}
+                    accept=".png, .jpg,.jpeg,.pdf"
+                    onChange={(e) => setFileNpwp(e.target.files?.[0] || null)}
                   />
                 </div>
               </div>
-              <div className="input-area">
-                <label>
-                  SIUP <span className="text-xs text-gray-400">*</span>{' '}
-                </label>
-                <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <div className="input-area w-1/2">
+                  <label>
+                    NIB <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
+                  <div className="flex flex-col">
+                    <input
+                      value={nib}
+                      className={`base`}
+                      onChange={(e) => setNib(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="input-area w-1/2">
+                  <label>
+                    File NIB <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
                   <input
-                    value={siup}
+                    ref={fileNibRef}
+                    type="file"
                     className={`base`}
-                    onChange={(e) => setSiup(e.target.value)}
+                    accept=".png, .jpg,.jpeg,.pdf"
+                    onChange={(e) => setFileNib(e.target.files?.[0] || null)}
                   />
                 </div>
-              </div> */}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="input-area w-1/2">
+                  <label>
+                    File Contact Person
+                    <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
+                  <input
+                    ref={fileContactPersonRef}
+                    type="file"
+                    className={`base`}
+                    accept=".png, .jpg,.jpeg,.pdf"
+                    onChange={(e) =>
+                      setFileContactPerson(e.target.files?.[0] || null)
+                    }
+                  />
+                </div>
+                <div className="input-area w-1/2">
+                  <label>
+                    Foto KTP
+                    <span className="text-xs text-gray-400">*</span>{' '}
+                  </label>
+                  <input
+                    ref={photoKtpRef}
+                    type="file"
+                    className={`base`}
+                    accept=".png, .jpg,.jpeg,.pdf"
+                    onChange={(e) => setPhotoKtp(e.target.files?.[0] || null)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="input-area">
-          <label>File Pendukung (.zip / .rar)</label>
-          <UploadCompressForm
-            index={1}
-            label=""
-            isOptional={true}
-            initFile={fileData}
-            initUrl={fileUrl}
-            onChange={(val) => setFileData(val)}
-          />
         </div>
         <div className="form-button">
           <button
@@ -361,6 +369,10 @@ const PenggunaTokoPageForm = () => {
           </button>
         </div>
       </div>
+      <ModalLoading
+        isModalOpen={isModalLoading}
+        textInfo="Harap tunggu, data sedang diproses"
+      />
     </>
   );
 };
