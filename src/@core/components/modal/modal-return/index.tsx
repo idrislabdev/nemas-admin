@@ -8,6 +8,8 @@ import axiosInstance from '@/@core/utils/axios';
 import TextArea from 'antd/es/input/TextArea';
 import UploadMiniForm from '@/@core/components/forms/upload-mini-form';
 import { AxiosError } from 'axios';
+import { IOrderGoldDetail } from '@/@core/@types/interface';
+import { formatterNumber } from '@/@core/utils/general';
 
 const ModalReturn = (props: {
   isModalOpen: boolean;
@@ -15,6 +17,8 @@ const ModalReturn = (props: {
   setRefresData: Dispatch<SetStateAction<boolean>>;
   orderGoldId: string;
   goldCertDetailPrice: string;
+  orderNumber: string;
+  item: IOrderGoldDetail;
 }) => {
   const {
     isModalOpen,
@@ -22,6 +26,8 @@ const ModalReturn = (props: {
     setRefresData,
     orderGoldId,
     goldCertDetailPrice,
+    orderNumber,
+    item,
   } = props;
 
   const [returnReason, setReturnReason] = useState('');
@@ -121,6 +127,37 @@ const ModalReturn = (props: {
       <Modal.Body>
         <Spin spinning={loading}>
           <div className="flex flex-col gap-[8px]">
+            <div className="flex flex-col gap-[2px]">
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Nomor Order</label>
+                <span className="text-sm">: {orderNumber}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Brand</label>
+                <span className="text-sm">: {item.gold_brand}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Tipe</label>
+                <span className="text-sm">: {item.gold_type}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Nomor Seri</label>
+                <span className="text-sm">
+                  : {item.delivery_details.gold_cert_code}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Berat</label>
+                <span className="text-sm">: {item.weight}gr</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="w-[100px]">Total Harga</label>
+                <span className="text-sm">
+                  : Rp{formatterNumber(item.order_detail_total_price)}
+                </span>
+              </div>
+            </div>
+            <hr />
             {/* NOTE */}
             <div className="flex flex-col gap-[4px]">
               <label>Note</label>

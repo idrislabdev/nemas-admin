@@ -1,6 +1,6 @@
 'use client';
 
-import { IOrderGold } from '@/@core/@types/interface';
+import { IOrderGold, IOrderGoldDetail } from '@/@core/@types/interface';
 import { UndoOutlineIcon } from '@/@core/my-icons';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
@@ -15,7 +15,7 @@ import {
 import Image from 'next/image';
 import ModalPhoto from '@/@core/components/modal/modal-photo';
 import ModalDO from '@/@core/pages/transaksi/emas-fisik/modal-do';
-import ModalReturn from '@/@core/pages/transaksi/components/modal-return';
+import ModalReturn from '@/@core/components/modal/modal-return';
 import { useRouter } from 'next/navigation';
 
 const ComEmasFisikDetailPage = (props: {
@@ -26,6 +26,9 @@ const ComEmasFisikDetailPage = (props: {
   const router = useRouter();
 
   const [data, setData] = useState<IOrderGold>({} as IOrderGold);
+  const [selectedItem, setSelectedItem] = useState<IOrderGoldDetail>(
+    {} as IOrderGoldDetail
+  );
   const [openModalPhoto, setOpenModalPhoto] = useState(false);
   const [openModalDO, setOpenModalDO] = useState(false);
   const [openModalReturn, setOpenModalReturn] = useState(false);
@@ -49,10 +52,6 @@ const ComEmasFisikDetailPage = (props: {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
 
   return (
     <div className="flex flex-col gap-[10px]">
@@ -405,10 +404,11 @@ const ComEmasFisikDetailPage = (props: {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-center ">
-                      {data.is_picked_up && (
+                      {data.is_picked_up && !item.is_returned && (
                         <a
                           className="flex flex-row items-center gap-2 btn bg-red-500 text-white cursor-pointer"
                           onClick={() => {
+                            setSelectedItem(item);
                             setGoldCertDetailPrice(
                               item.delivery_details.gold_cert_detail_price
                             );
@@ -444,6 +444,8 @@ const ComEmasFisikDetailPage = (props: {
         setIsModalOpen={setOpenModalReturn}
         orderGoldId={paramsId}
         goldCertDetailPrice={goldCertDetailPrice}
+        orderNumber={data.order_number}
+        item={selectedItem}
         setRefresData={() => router.replace('/transaksi/return')}
       />
     </div>

@@ -177,10 +177,6 @@ const ComEmasFisikDeliveryPage = (props: {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
-
   return (
     <div className="flex flex-col gap-[10px]">
       {contextHolder}

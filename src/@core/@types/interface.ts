@@ -803,6 +803,24 @@ export interface IOrderGoldDetail {
   post_packing_file: string;
   delivery_details: IDeliveryDetails;
   gold_cert_codes: string;
+  is_returned: boolean;
+}
+
+export interface IOrderGoldItem {
+  order_gold_detail_id: string;
+  order_gold_id: string;
+  order_number: string;
+  gold: number;
+  gold_type: string;
+  gold_brand: string;
+  weight: number;
+  order_price: number;
+  qty: number;
+  cert_price: number;
+  order_detail_total_price: number;
+  order_detail_total_price_round: number;
+  delivery_transaction_detail: string;
+  is_returned: boolean;
 }
 
 export interface IOrderGoldDetailPayload {
@@ -901,6 +919,8 @@ export interface IOrderReturn {
   return_image_2: string;
   return_image_3: string;
   order_return_id: string;
+  order_user_id: string;
+  order_user_name: string;
   order_number: string;
   return_status: string;
   return_notes: string;

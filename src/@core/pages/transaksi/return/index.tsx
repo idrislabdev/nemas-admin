@@ -2,11 +2,22 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IOrderReturn } from '@/@core/@types/interface';
+import {
+  IOrderGoldDetail,
+  IOrderGoldItem,
+  IOrderReturn,
+  IPenggunaAplikasi,
+} from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
-import { CheckCircle, FileDownload02, Save02 } from '@untitled-ui/icons-react';
+import {
+  CheckCircle,
+  FileDownload02,
+  Plus,
+  Save02,
+  X,
+} from '@untitled-ui/icons-react';
 import { DatePicker, notification, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -15,8 +26,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
-import ModalApprove from '@/@core/pages/transaksi/components/modal-approve';
 import ModalUpdate from '@/@core/pages/transaksi/components/modal-update';
+import ModalOrderItem from '@/@core/components/modal/modal-order-item';
+import ModalReturn from '@/@core/components/modal/modal-return';
+import ModalApprove from '@/@core/pages/transaksi/components/modal-approve';
+import ModalReject from '@/@core/pages/transaksi/components/modal-reject';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
@@ -28,13 +42,28 @@ const DaftarReturnEmasPage = () => {
   const defaultEnd = dayjs().format('YYYY-MM-DD');
 
   const [dataTable, setDataTable] = useState<IOrderReturn[]>([]);
+  const [selectedData, setSelectedData] = useState<IOrderReturn>(
+    {} as IOrderReturn
+  );
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [isModalLoadingReturn, setIsModalLoadingReturn] = useState(false);
+  const [isModalItem, setIsModalItem] = useState(false);
+  const [openModalReturn, setOpenModalReturn] = useState(false);
+
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [openModalApprove, setOpenModalApprove] = useState(false);
+  const [openModalReject, setOpenModalReject] = useState(false);
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
   const [selectedId, setSelectedId] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
+  const [selectedItem, setSelectedItem] = useState<IOrderGoldDetail>(
+    {} as IOrderGoldDetail
+  );
+  const [goldCertDetailPrice, setGoldCertDetailPrice] = useState('');
+  const [orderGoldId, setOrderGoldId] = useState('');
+
   const [api, contextHolder] = notification.useNotification();
 
   const [params, setParams] = useState({
@@ -113,29 +142,42 @@ const DaftarReturnEmasPage = () => {
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
           {record.return_status == 'PROCESS' && (
-            <a
-              className="btn btn-primary flex flex-row items-center gap-2 w-[100px]"
-              onClick={() => {
-                setSelectedId(record.order_return_id);
-                setOpenModalApprove(true);
-              }}
-            >
-              <CheckCircle />
-              Approve
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                className="btn bg-red-500 hover:text-white text-white flex flex-row items-center gap-2 w-[100px]"
+                onClick={() => {
+                  setSelectedId(record.order_return_id);
+                  setOpenModalReject(true);
+                }}
+              >
+                <X />
+                Tolak
+              </a>
+              <a
+                className="btn btn-primary flex flex-row items-center gap-2 w-[100px]"
+                onClick={() => {
+                  setSelectedId(record.order_return_id);
+                  setOpenModalApprove(true);
+                }}
+              >
+                <CheckCircle />
+                Approve
+              </a>
+            </div>
           )}
-          {record.return_status == 'APPROVED' && (
-            <a
-              className="btn btn-success flex flex-row items-center gap-2 w-[100px]"
-              onClick={() => {
-                setSelectedId(record.order_return_id);
-                setOpenModalUpdate(true);
-              }}
-            >
-              <Save02 />
-              Update
-            </a>
-          )}
+          {record.return_status == 'APPROVED' &&
+            record.gold_transfer_number == null && (
+              <a
+                className="btn btn-success flex flex-row items-center gap-2 w-[100px]"
+                onClick={() => {
+                  setSelectedData(record);
+                  setOpenModalUpdate(true);
+                }}
+              >
+                <Save02 />
+                Update
+              </a>
+            )}
         </div>
       ),
     },
@@ -160,16 +202,35 @@ const DaftarReturnEmasPage = () => {
   };
 
   const updateTransfer = async () => {
+    setOpenModalUpdate(false);
+    setIsModalLoadingReturn(true);
+    const respUser = await axiosInstance.get(
+      `/users/admin/${selectedData.order_user_id}`
+    );
+
+    const user: IPenggunaAplikasi = respUser.data.user;
+    const payload = {
+      phone_number: user.phone_number,
+      transfer_member_gold_weight: selectedData.gold_cert_weight,
+      transfer_ref_number: `RETURN_${selectedData.order_number}`,
+      transfer_member_notes: `RETURN_${selectedData.order_number}`,
+      transfer_member_service_option: '',
+    };
+    const resp = await axiosInstance.post(
+      `gold-transaction/gold-transfer/create`,
+      payload
+    );
+    const { data } = resp;
     const body = {
-      gold_transfer: '',
+      gold_transfer: data.gold_transfer_id,
       return_type: 'BY_GOLD',
     };
     await axiosInstance.put(
-      `orders/fix/order/return/${selectedId}/update-transfer/`,
+      `orders/fix/order/return/${selectedData.order_return_id}/update-transfer/`,
       body
     );
     fetchData();
-    setOpenModalUpdate(false);
+    setIsModalLoadingReturn(false);
     api.info({
       message: 'Data Return',
       description: 'Data Return Telah Berhasil Diupdate',
@@ -289,6 +350,28 @@ const DaftarReturnEmasPage = () => {
     }
   };
 
+  const selectItem = async (item: IOrderGoldItem) => {
+    const respDetail = await axiosInstance.get(
+      `/reports/gold-sales-order/${item.order_gold_id}/detail`
+    );
+    const { data } = respDetail;
+    const details: IOrderGoldDetail[] = data.order_gold_details;
+    const obj: IOrderGoldDetail | undefined = details.find(
+      (x) => (x.order_gold_detail_id = item.order_gold_detail_id)
+    );
+    if (obj) {
+      setSelectedItem(obj);
+      setGoldCertDetailPrice(obj.delivery_details.gold_cert_detail_price);
+    }
+
+    setOrderNumber(item.order_number);
+
+    setOrderGoldId(item.order_gold_id);
+
+    setIsModalItem(false);
+    setOpenModalReturn(true);
+  };
+
   return (
     <>
       {contextHolder}
@@ -313,10 +396,13 @@ const DaftarReturnEmasPage = () => {
             <FileDownload02 />
             Export Excel
           </button>
-          {/* <button className="btn btn-outline-primary">
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => setIsModalItem(true)}
+          >
             <Plus />
             Tambah Return
-          </button> */}
+          </button>
         </div>
       </div>
 
@@ -349,12 +435,41 @@ const DaftarReturnEmasPage = () => {
         content="Approve Data Ini?"
         onConfirm={approveData}
       />
+      <ModalReject
+        isModalOpen={openModalReject}
+        setIsModalOpen={setOpenModalReject}
+        selectedId={selectedId}
+        setRefresData={() => fetchData()}
+      />
       <ModalUpdate
         isModalOpen={openModalUpdate}
         setIsModalOpen={setOpenModalUpdate}
         content="Update Transfer Data Ini?"
         onConfirm={updateTransfer}
       />
+      <ModalLoading
+        isModalOpen={isModalLoadingReturn}
+        textInfo="Harap tunggu, data sedang diproses"
+      />
+      <ModalOrderItem
+        isModalOpen={isModalItem}
+        setIsModalOpen={setIsModalItem}
+        onConfirm={(item) => {
+          selectItem(item);
+          // setOpenModalReturn(true);
+        }}
+      />
+      {openModalReturn && (
+        <ModalReturn
+          isModalOpen={openModalReturn}
+          setIsModalOpen={setOpenModalReturn}
+          orderGoldId={orderGoldId}
+          goldCertDetailPrice={goldCertDetailPrice}
+          orderNumber={orderNumber}
+          item={selectedItem}
+          setRefresData={() => fetchData()}
+        />
+      )}
     </>
   );
 };
