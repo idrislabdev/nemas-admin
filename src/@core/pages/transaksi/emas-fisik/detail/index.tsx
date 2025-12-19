@@ -439,15 +439,17 @@ const ComEmasFisikDetailPage = (props: {
         setIsModalOpen={setOpenModalDO}
         orderId={paramsId}
       />
-      <ModalReturn
-        isModalOpen={openModalReturn}
-        setIsModalOpen={setOpenModalReturn}
-        orderGoldId={paramsId}
-        goldCertDetailPrice={goldCertDetailPrice}
-        orderNumber={data.order_number}
-        item={selectedItem}
-        setRefresData={() => router.replace('/transaksi/return')}
-      />
+      {openModalReturn && (
+        <ModalReturn
+          isModalOpen={openModalReturn}
+          setIsModalOpen={setOpenModalReturn}
+          orderGoldId={paramsId}
+          goldCertDetailPrice={goldCertDetailPrice}
+          orderNumber={data.order_number}
+          item={selectedItem}
+          setRefresData={() => router.replace('/transaksi/return')}
+        />
+      )}
     </div>
   );
 };
