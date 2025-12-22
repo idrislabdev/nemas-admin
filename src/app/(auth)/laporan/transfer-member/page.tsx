@@ -1,5 +1,6 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
+import LaporanTransferMemberTablePage from '@/@core/pages/laporan/transfer-member';
 import { Printer } from '@untitled-ui/icons-react';
 
 export default function LaporanTransferMemberPage() {
@@ -36,8 +37,8 @@ export default function LaporanTransferMemberPage() {
         </div>
         <div className="main-body">
           <hr />
-          <div className="flex flex-col gap-[10px] justify-center items-center h-full">
-            On Progress
+          <div className="flex flex-col gap-[10px]">
+            <LaporanTransferMemberTablePage />
           </div>
         </div>
       </div>
