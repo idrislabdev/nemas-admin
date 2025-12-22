@@ -356,6 +356,7 @@ const TransferMemberSummaryTable = () => {
         <div className="flex gap-2">
           <RangePicker
             size="small"
+            className="w-[300px] h-[40px]"
             value={rangeValue}
             onChange={onRangeChange}
           />
