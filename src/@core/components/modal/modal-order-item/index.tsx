@@ -26,7 +26,7 @@ const ModalOrderItem = (props: {
     format: 'json',
     offset: 0,
     limit: 10,
-    order_gold_number: '',
+    search: '',
     is_returned: false,
     is_delivered: true,
   });
@@ -39,7 +39,7 @@ const ModalOrderItem = (props: {
     setParams((prev) => ({
       ...prev,
       offset: 0,
-      order_gold_number: value,
+      search: value,
     }));
   };
 
@@ -57,9 +57,12 @@ const ModalOrderItem = (props: {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const resp = await axiosInstance.get(`orders/fix/order/item`, {
-        params,
-      });
+      const resp = await axiosInstance.get(
+        `orders/fix/order/return/order_item/`,
+        {
+          params,
+        }
+      );
 
       setDataTable(resp.data.results || []);
       setTotal(resp.data.count || 0);
@@ -73,7 +76,7 @@ const ModalOrderItem = (props: {
       setParams((prev) => ({
         ...prev,
         offset: 0,
-        order_gold_number: '',
+        search: '',
       }));
     }
   }, [isModalOpen]);
@@ -115,6 +118,7 @@ const ModalOrderItem = (props: {
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">Order Number</th>
+                <th className="p-2 text-left">Kode Sertifikat</th>
                 <th className="p-2 text-left">Type</th>
                 <th className="p-2 text-left">Brand</th>
                 <th className="p-2 text-right">Berat</th>
@@ -139,10 +143,16 @@ const ModalOrderItem = (props: {
               ) : (
                 dataTable.map((item) => (
                   <tr
-                    key={item.order_gold_detail_id}
+                    key={
+                      item.order_gold_detail_id +
+                      item.delivery_transaction_detail.gold_cert_code
+                    }
                     className="border-t hover:bg-gray-50"
                   >
                     <td className="p-2">{item.order_number}</td>
+                    <td className="p-2">
+                      {item.delivery_transaction_detail.gold_cert_code}
+                    </td>
                     <td className="p-2">{item.gold_type}</td>
                     <td className="p-2">{item.gold_brand}</td>
                     <td className="p-2 text-right">
