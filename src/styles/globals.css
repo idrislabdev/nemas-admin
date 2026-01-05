@@ -35,21 +35,44 @@ body {
 }
 
 @media print {
-  body * {
-    visibility: hidden !important;
-  }
-  .ant-modal,
-  .ant-modal * {
-    visibility: visible !important;
+  @page {
+    size: A4;
+    margin: 20mm;
   }
 
-  .ant-modal {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* SEMBUNYIKAN SEMUA */
+  body > * {
+    display: none !important;
+  }
+
+  /* TAMPILKAN MODAL SAJA */
+  .ant-modal,
+  .ant-modal-root,
+  .ant-modal-wrap {
+    display: block !important;
     position: static !important;
     transform: none !important;
-    overflow: visible !important;
   }
 
   .ant-modal-content {
     box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* FORCE BACKGROUND PRINT */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* OPTIONAL: PRINT BACKGROUND SECTION */
+  .print-bg {
+    background-color: #e5e7eb !important;
   }
 }

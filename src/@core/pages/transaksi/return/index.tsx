@@ -31,6 +31,8 @@ import ModalOrderItem from '@/@core/components/modal/modal-order-item';
 import ModalReturn from '@/@core/components/modal/modal-return';
 import ModalApprove from '@/@core/pages/transaksi/components/modal-approve';
 import ModalReject from '@/@core/pages/transaksi/components/modal-reject';
+import { PrinterFilled } from '@ant-design/icons';
+import ModalReturnPrint from '@/@core/pages/transaksi/return/modal-return';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
@@ -56,6 +58,7 @@ const DaftarReturnEmasPage = () => {
   const [openModalApprove, setOpenModalApprove] = useState(false);
   const [openModalReject, setOpenModalReject] = useState(false);
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
+  const [openModalPrint, setOpenModalPrint] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
   const [selectedItem, setSelectedItem] = useState<IOrderGoldDetail>(
@@ -176,6 +179,20 @@ const DaftarReturnEmasPage = () => {
               >
                 <Save02 />
                 Update
+              </a>
+            )}
+
+          {record.return_status == 'APPROVED' &&
+            record.gold_transfer_number != null && (
+              <a
+                className="btn btn-outline-primary flex flex-row items-center gap-2 w-[120px]"
+                onClick={() => {
+                  setSelectedData(record);
+                  setOpenModalPrint(true);
+                }}
+              >
+                <PrinterFilled />
+                Print Out
               </a>
             )}
         </div>
@@ -468,6 +485,13 @@ const DaftarReturnEmasPage = () => {
           orderNumber={orderNumber}
           item={selectedItem}
           setRefresData={() => fetchData()}
+        />
+      )}
+      {openModalPrint && (
+        <ModalReturnPrint
+          setIsModalOpen={setOpenModalPrint}
+          isModalOpen={openModalPrint}
+          returnId={selectedData.order_return_id}
         />
       )}
     </>

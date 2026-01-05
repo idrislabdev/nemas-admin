@@ -950,3 +950,38 @@ export interface IOrderReturn {
   update_user: string;
   update_time: string;
 }
+
+export interface IReturnGold {
+  order_return_id: string;
+  return_number: string;
+  order_number: string;
+
+  order_user_id: string;
+  order_user_name: string;
+  order_user_phone_number: string;
+
+  return_reason: string;
+  return_notes: string;
+  return_type: 'BY_GOLD' | 'BY_MONEY';
+  return_status: string;
+  return_date: string;
+
+  gold_cert_code: string;
+  gold_cert_weight: number;
+
+  gold_transfer_number: string;
+  gold_transfer_weight: number;
+  gold_transfer_amount: number;
+
+  return_image_1?: string;
+  return_image_2?: string;
+  return_image_3?: string;
+
+  create_user: string;
+  create_time: string;
+
+  return_approved_by?: string;
+  return_approved_date?: string;
+  return_rejected_by?: string;
+  return_rejected_date?: string;
+}
