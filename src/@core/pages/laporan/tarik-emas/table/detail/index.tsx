@@ -15,27 +15,55 @@ import 'moment/locale/id';
 moment.locale('id');
 const { RangePicker } = DatePicker;
 
-export interface ITransferMemberSummary {
-  user_from_id: string;
-  role_name: string;
-  member_number: string;
+/* ================= INTERFACE ================= */
+export interface IGoldRedeemReport {
+  order_timestamp: string;
+  order_number: string;
   name: string;
-  email: string;
-  phone_number: string;
-  transfer_weight: number;
-  transfer_weight_received: number;
-  admin_weight: number;
-  transfer_amount: number;
-  transfer_amount_received: number;
+  gold_type: string;
+  gold_brand: string;
+  cert_code: string;
+  weight: number;
+  gold_price: number;
+  cert_price: number;
+  order_price: number;
+  order_payment_method_name: string;
+  order_payment_va_bank: string;
+  order_payment_number: string;
+  order_gold_payment_status: string;
+  tracking_number: string;
+  delivery_pickup_date: string;
+  tracking_courier_name: string;
+  delivery_status: string;
 }
 
-const TransferMemberSummaryTable = () => {
-  const url = `/reports/transfer-member/summary`;
+/* ================= EXPORT TYPES ================= */
+type ExportRow = {
+  'Tanggal Order': string;
+  'No Order': string;
+  Nama: string;
+  'Jenis Emas': string;
+  Brand: string;
+  'Kode Sertifikat': string;
+  'Berat (gr)': number;
+  'Harga Emas (Rp)': number;
+  'Harga Sertifikat (Rp)': number;
+  'Total Order (Rp)': number;
+  'Metode Pembayaran': string;
+  'No Pembayaran': string;
+  'Status Pembayaran': string;
+  Kurir: string;
+  'No Resi': string;
+  'Status Pengiriman': string;
+};
+
+const TarikEmasListTable = () => {
+  const url = '/reports/gold-redeem/list';
 
   const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
   const today = dayjs().format('YYYY-MM-DD');
 
-  const [dataTable, setDataTable] = useState<ITransferMemberSummary[]>([]);
+  const [dataTable, setDataTable] = useState<IGoldRedeemReport[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
@@ -45,7 +73,7 @@ const TransferMemberSummaryTable = () => {
     limit: 10,
     start_date: startOfMonth,
     end_date: today,
-    order_by: 'transfer_amount',
+    order_by: 'order_price',
     order_direction: 'DESC',
     search: '',
   });
@@ -135,50 +163,57 @@ const TransferMemberSummaryTable = () => {
         params: { ...params, offset: 0, limit: 1000 },
       });
 
-      const rows = resp.data.results as ITransferMemberSummary[];
-      if (!rows || rows.length === 0) return;
+      const rows = resp.data.results as IGoldRedeemReport[];
+      if (!rows.length) return;
 
       /* ================= MAP DATA ================= */
-      const dataToExport = rows.map((r) => ({
-        Nama: r.name || '-',
-        Role: r.role_name || '-',
-        'Nomor Member': r.member_number || '-',
-        Email: r.email || '-',
-        'No HP': r.phone_number || '-',
-        'Berat Transfer (gr)': Number(r.transfer_weight || 0),
-        'Berat Diterima (gr)': Number(r.transfer_weight_received || 0),
-        'Admin Weight (gr)': Number(r.admin_weight || 0),
-        'Nominal Transfer (Rp)': Number(r.transfer_amount || 0),
-        'Nominal Diterima (Rp)': Number(r.transfer_amount_received || 0),
+      const dataToExport: ExportRow[] = rows.map((r) => ({
+        'Tanggal Order': moment(r.order_timestamp).format('DD MMMM YYYY HH:mm'),
+        'No Order': r.order_number,
+        Nama: r.name,
+        'Jenis Emas': r.gold_type,
+        Brand: r.gold_brand,
+        'Kode Sertifikat': r.cert_code,
+        'Berat (gr)': r.weight ?? 0,
+        'Harga Emas (Rp)': r.gold_price ?? 0,
+        'Harga Sertifikat (Rp)': r.cert_price ?? 0,
+        'Total Order (Rp)': r.order_price ?? 0,
+        'Metode Pembayaran': r.order_payment_method_name,
+        'No Pembayaran': r.order_payment_number,
+        'Status Pembayaran': r.order_gold_payment_status,
+        Kurir: r.tracking_courier_name,
+        'No Resi': r.tracking_number,
+        'Status Pengiriman': r.delivery_status,
       }));
 
+      /* ================= EXCEL ================= */
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Summary Transfer Member');
+      const worksheet = workbook.addWorksheet('Laporan Tarik Emas Detail');
 
-      /* ================= TITLE ================= */
-      worksheet.mergeCells('A1:J1');
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN SUMMARY TRANSFER MEMBER';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left', vertical: 'middle' };
+      worksheet.mergeCells('A1:P1');
+      worksheet.getCell('A1').value = 'LAPORAN TARIK EMAS DETAIL';
+      worksheet.getCell('A1').font = {
+        bold: true,
+        size: 14,
+      };
 
-      /* ================= PERIODE ================= */
-      worksheet.mergeCells('A2:J2');
-      const period = worksheet.getCell('A2');
-      period.value = `Periode: ${dayjs(params.start_date).format(
+      worksheet.mergeCells('A2:P2');
+      worksheet.getCell('A2').value = `Periode: ${dayjs(
+        params.start_date
+      ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
         'DD MMMM YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
-      period.alignment = { horizontal: 'left' };
+      )}`;
 
       worksheet.addRow([]);
 
       /* ================= HEADER ================= */
-      const headerKeys = Object.keys(dataToExport[0]);
+      const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+
       const headerRow = worksheet.addRow(headerKeys);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.alignment = { horizontal: 'center' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -192,19 +227,21 @@ const TransferMemberSummaryTable = () => {
         };
       });
 
-      /* ================= ROWS ================= */
+      /* ================= DATA ROW ================= */
       dataToExport.forEach((row) => {
-        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+        const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
 
-        newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
+        newRow.eachCell((cell, col) => {
+          const header = headerKeys[col - 1] as string;
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
           cell.alignment = {
-            vertical: 'middle',
             horizontal: isNumeric ? 'right' : 'left',
           };
+
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          }
 
           cell.border = {
             top: { style: 'thin' },
@@ -212,55 +249,53 @@ const TransferMemberSummaryTable = () => {
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
-          }
         });
       });
 
-      /* ================= SUMMARY / TOTAL ================= */
-      const totalFields: (keyof (typeof dataToExport)[number])[] = [
-        'Berat Transfer (gr)',
-        'Berat Diterima (gr)',
-        'Admin Weight (gr)',
-        'Nominal Transfer (Rp)',
-        'Nominal Diterima (Rp)',
+      /* ================= TOTAL ================= */
+      type NumericExportKey =
+        | 'Berat (gr)'
+        | 'Harga Emas (Rp)'
+        | 'Harga Sertifikat (Rp)'
+        | 'Total Order (Rp)';
+
+      const totalFields: NumericExportKey[] = [
+        'Berat (gr)',
+        'Harga Emas (Rp)',
+        'Harga Sertifikat (Rp)',
+        'Total Order (Rp)',
       ];
 
-      const totals: Record<string, number> = {};
+      const totals: Record<NumericExportKey, number> = {
+        'Berat (gr)': 0,
+        'Harga Emas (Rp)': 0,
+        'Harga Sertifikat (Rp)': 0,
+        'Total Order (Rp)': 0,
+      };
+
       totalFields.forEach((field) => {
         totals[field] = dataToExport.reduce(
-          (sum, row) => sum + Number(row[field] || 0),
+          (sum, row) => sum + Number(row[field]),
           0
         );
       });
 
-      const totalRowValues = headerKeys.map((key) => {
-        if (key === 'Nama') return 'TOTAL';
-        if (totalFields.includes(key as any)) {
-          return new Intl.NumberFormat('id-ID').format(totals[key]);
-        }
-        return '';
-      });
+      const totalRow = worksheet.addRow(
+        headerKeys.map((key) => {
+          if (key === 'Tanggal Order') return 'TOTAL';
 
-      const totalRow = worksheet.addRow(totalRowValues);
+          if (totalFields.includes(key as NumericExportKey)) {
+            return new Intl.NumberFormat('id-ID').format(
+              totals[key as NumericExportKey]
+            );
+          }
 
-      totalRow.eachCell((cell, colNumber) => {
-        const header = headerKeys[colNumber - 1];
-        const isNumeric = totalFields.includes(header as any);
+          return '';
+        })
+      );
 
+      totalRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'right' : 'left',
-        };
-        cell.border = {
-          top: { style: 'medium' },
-          left: { style: 'thin' },
-          bottom: { style: 'medium' },
-          right: { style: 'thin' },
-        };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -268,84 +303,67 @@ const TransferMemberSummaryTable = () => {
         };
       });
 
-      /* ================= AUTO WIDTH ================= */
+      /* ================= COLUMN WIDTH ================= */
       worksheet.columns.forEach((col) => {
-        let maxLength = 0;
+        let max = 0;
         col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+          max = Math.max(max, cell.value?.toString().length || 0);
         });
-        col.width = Math.min(maxLength + 2, 40);
+        col.width = Math.min(max + 2, 40);
       });
 
       /* ================= SAVE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
       saveAs(
         new Blob([buffer]),
-        `laporan_summary_transfer_member_${dayjs().format(
-          'YYYYMMDD_HHmmss'
-        )}.xlsx`
+        `laporan_tarik_emas_detail_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
-      console.error('Export failed:', err);
+      console.error(err);
     } finally {
       setIsModalLoading(false);
     }
   };
 
   /* ================= COLUMNS ================= */
-  const columns: ColumnsType<ITransferMemberSummary> = useMemo(
+  const columns: ColumnsType<IGoldRedeemReport> = useMemo(
     () => [
-      { title: 'Nama', dataIndex: 'name', key: 'name', sorter: true },
       {
-        title: 'Role',
-        dataIndex: 'role_name',
-        key: 'role_name',
-        sorter: true,
+        title: 'Tanggal Order',
+        dataIndex: 'order_timestamp',
+        render: (v) => moment(v).format('DD MMM YYYY HH:mm'),
+        width: 200,
+      },
+      { title: 'No Order', dataIndex: 'order_number' },
+      { title: 'Nama', dataIndex: 'name' },
+      { title: 'Jenis Emas', dataIndex: 'gold_type' },
+      { title: 'Brand', dataIndex: 'gold_brand' },
+      { title: 'Kode Sertifikat', dataIndex: 'cert_code' },
+      {
+        title: 'Berat (gr)',
+        dataIndex: 'weight',
+        render: formatDecimal,
       },
       {
-        title: 'Nomor Member',
-        dataIndex: 'member_number',
-        key: 'member_number',
-        sorter: true,
-      },
-      { title: 'Email', dataIndex: 'email', key: 'email' },
-      { title: 'No HP', dataIndex: 'phone_number', key: 'phone_number' },
-      {
-        title: 'Berat Transfer (gr)',
-        dataIndex: 'transfer_weight',
-        key: 'transfer_weight',
-        sorter: true,
-        render: (v) => formatDecimal(v),
-      },
-      {
-        title: 'Berat Diterima (gr)',
-        dataIndex: 'transfer_weight_received',
-        key: 'transfer_weight_received',
-        sorter: true,
-        render: (v) => formatDecimal(v),
-      },
-      {
-        title: 'Admin Weight (gr)',
-        dataIndex: 'admin_weight',
-        key: 'admin_weight',
-        sorter: true,
-        render: (v) => formatDecimal(v),
-      },
-      {
-        title: 'Nominal Transfer',
-        dataIndex: 'transfer_amount',
-        key: 'transfer_amount',
-        sorter: true,
+        title: 'Harga Emas',
+        dataIndex: 'gold_price',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
       {
-        title: 'Nominal Diterima',
-        dataIndex: 'transfer_amount_received',
-        key: 'transfer_amount_received',
-        sorter: true,
+        title: 'Harga Sertifikat',
+        dataIndex: 'cert_price',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
+      {
+        title: 'Total Order',
+        dataIndex: 'order_price',
+        render: (v) => `Rp${formatDecimal(v)}`,
+      },
+      { title: 'Metode Bayar', dataIndex: 'order_payment_method_name' },
+      { title: 'Status Pembayaran', dataIndex: 'order_gold_payment_status' },
+      { title: 'Kurir', dataIndex: 'tracking_courier_name' },
+      { title: 'No Resi', dataIndex: 'tracking_number' },
+      { title: 'Status Pengiriman', dataIndex: 'delivery_status' },
     ],
     []
   );
@@ -379,7 +397,7 @@ const TransferMemberSummaryTable = () => {
             dataSource={dataTable}
             pagination={false}
             onChange={handleTableChange}
-            rowKey="user_from_id"
+            rowKey="order_number"
             size="small"
           />
 
@@ -401,4 +419,4 @@ const TransferMemberSummaryTable = () => {
   );
 };
 
-export default TransferMemberSummaryTable;
+export default TarikEmasListTable;

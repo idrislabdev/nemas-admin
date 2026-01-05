@@ -1,8 +1,9 @@
 import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
+import LaporanTarikEmasTablePage from '@/@core/pages/laporan/tarik-emas';
 import { Printer } from '@untitled-ui/icons-react';
 
-export default function LaporanTarikEmasPage() {
+export default function LaporanTransferMemberPage() {
   return (
     <div className="main-container">
       <div className="container-header">
@@ -36,8 +37,8 @@ export default function LaporanTarikEmasPage() {
         </div>
         <div className="main-body">
           <hr />
-          <div className="flex flex-col gap-[10px] justify-center items-center h-full">
-            On Progress
+          <div className="flex flex-col gap-[10px]">
+            <LaporanTarikEmasTablePage />
           </div>
         </div>
       </div>
