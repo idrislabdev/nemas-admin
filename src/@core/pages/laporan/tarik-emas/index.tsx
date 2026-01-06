@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { CoinsStacked01, Wallet05 } from '@untitled-ui/icons-react';
 import TarikEmasListTable from '@/@core/pages/laporan/tarik-emas/table/detail';
+import TarikEmasSummaryTable from '@/@core/pages/laporan/tarik-emas/table/summary';
 
 const LaporanTarikEmasTablePage = () => {
   const [tabActive, setTabActive] = useState('ringkasan');
@@ -50,8 +51,7 @@ const LaporanTarikEmasTablePage = () => {
         </div>
       </div>
       {tabActive === 'detail' && <TarikEmasListTable />}
-      {tabActive === 'ringkasan' && <div></div>}
-      {/* {tabActive === 'ringkasan' && <TransferMemberSummaryTable />} */}
+      {tabActive === 'ringkasan' && <TarikEmasSummaryTable />}
     </div>
   );
 };
