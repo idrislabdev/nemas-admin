@@ -23,9 +23,7 @@ const DataPenggunaPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    name__icontains: '',
-    email__icontains: '',
-    username__icontains: '',
+    search: '',
     role__name__icontains: 'User',
   });
   // const [api, contextHolder] = notification.useNotification();
@@ -89,9 +87,7 @@ const DataPenggunaPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      name__icontains: value,
-      username__icontains: value,
-      email__icontains: value,
+      search: value,
     });
   };
 
@@ -100,7 +96,7 @@ const DataPenggunaPageTable = () => {
     const param = {
       format: 'json',
       offset: 0,
-      limit: 50,
+      limit: 1000,
       search: '',
     };
     const resp = await axiosInstance.get(url, { params: param });

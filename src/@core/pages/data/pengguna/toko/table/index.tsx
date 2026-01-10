@@ -33,9 +33,7 @@ const DataPenggunaTokoPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    name__icontains: '',
-    email__icontains: '',
-    username__icontains: '',
+    search: '',
     role__name__icontains: 'Toko',
     is_active: '', // ← FILTER STATUS
     is_verified: '', // ← FILTER STATUS verifikasi
@@ -140,9 +138,7 @@ const DataPenggunaTokoPageTable = () => {
     setParams({
       ...params,
       offset: 0,
-      name__icontains: value,
-      username__icontains: value,
-      email__icontains: value,
+      search: value,
     });
   };
 
