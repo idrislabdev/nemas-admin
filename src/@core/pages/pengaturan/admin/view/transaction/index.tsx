@@ -128,7 +128,9 @@ const ProfileTransaction = (props: { id: string }) => {
             onChange={handleChange}
             options={options}
             optionRender={(option) => <Space>{option.data.label}</Space>}
-            className="w-fit select-base"
+            className={`select-base ${
+              checkeds.length == 0 ? 'w-[180px]' : 'w-fit'
+            }`}
           />
         </div>
         <button
