@@ -131,7 +131,7 @@ const ProfileTransaction = (props: { id: string }) => {
         'No. Referensi': item.ref_number,
         Email: item.email,
         'Nominal Transaksi': 'Rp' + formatterNumber(parseInt(item.price)),
-        'Berat Emas': item.weight + ' Gram',
+        'Berat Emas': item.weight !== null ? item.weight + ' Gram' : '',
         Pengirim: item.user_from,
         Penerima: item.user_to,
         'Berat Emas (Diterima)': item.transfered_weight,
@@ -282,7 +282,7 @@ const ProfileTransaction = (props: { id: string }) => {
                 <td>{item.ref_number}</td>
                 <td>{item.email}</td>
                 <td>Rp{formatterNumber(parseInt(item.price))}</td>
-                <td>{item.weight + ' Gram'}</td>
+                <td>{item.weight !== null ? item.weight + ' Gram' : ''}</td>
                 <td>{item.user_from}</td>
                 <td>{item.user_to}</td>
                 <td>{item.transfered_weight}</td>
