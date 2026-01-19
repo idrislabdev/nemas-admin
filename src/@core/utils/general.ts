@@ -38,6 +38,10 @@ export const statusTransaksiLangMap: Record<string, string> = {
   gold_transfer_send: 'Transfer Emas',
   gold_transfer_receive: 'Terima Emas',
   disburst: 'Tarik Saldo',
+  topup: 'Topup',
+  loan_pay: 'Bayar Gadai',
+  loan: 'Gadai',
+  deposito: 'Deposito',
 };
 
 const provinceMap: Record<string, string> = {
