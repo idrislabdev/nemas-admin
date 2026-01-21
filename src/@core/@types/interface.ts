@@ -380,6 +380,20 @@ export interface IPenggunaAplikasi {
   upd_time?: string;
 }
 
+export interface ISellerProps {
+  nib: string;
+  npwp: string;
+  kartu_keluarga: string;
+  siup: string;
+  nama_toko: string;
+  alamat_toko: string;
+  no_telp_toko: string;
+  file_toko: string;
+  file_contact_person: string;
+  file_nib: string;
+  file_npwp: string;
+}
+
 export interface IHistoryTransaction {
   email: string;
   user_id: string;

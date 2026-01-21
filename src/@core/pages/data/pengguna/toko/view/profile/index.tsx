@@ -14,6 +14,7 @@ import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import ModalstatusVerify from '@/@core/components/modal/modal-status-verifikasi';
+import ModalDataToko from '@/@core/pages/data/pengguna/toko/view/profile/modal-data-toko';
 
 const ModalAddress = dynamic(
   () => import('@/@core/components/modal/modal-address'),
@@ -28,6 +29,7 @@ const PengggunaProfile = (props: {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalBankOpen, setIsModalBankOpen] = useState(false);
   const [isModalStatusOpen, setIsModalStatusOpen] = useState(false);
+  const [isModalDataTokoOpen, setIsModalDataTokoOpen] = useState(false);
   const [isModalStatusOpenVerify, setIsModalStatusOpenVerify] = useState(false);
   const [userAddress, setUserAddress] = useState<IUserAddress>(
     {} as IUserAddress
@@ -48,6 +50,10 @@ const PengggunaProfile = (props: {
       bank_account_number: detail.props.bank_account_number,
     });
     setIsModalBankOpen(true);
+  };
+
+  const showModalDataToko = () => {
+    setIsModalDataTokoOpen(true);
   };
 
   const onChangeKTP = () => {
@@ -199,10 +205,18 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
-              <div className="flex items-center border-b border-r rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
+              <div className="flex justify-between items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
                 <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
                   Data Toko
                 </h5>
+                <a
+                  className="cursor-pointer"
+                  onClick={() => showModalDataToko()}
+                >
+                  <span className="my-icon icon-sm">
+                    <Edit05 />
+                  </span>
+                </a>
               </div>
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
@@ -720,6 +734,13 @@ const PengggunaProfile = (props: {
         setUserBank={setUserBank}
         userId={detail.id}
         setRefresData={setRefresData}
+      />
+      <ModalDataToko
+        isModalOpen={isModalDataTokoOpen}
+        setIsModalOpen={setIsModalDataTokoOpen}
+        userData={detail}
+        userId={detail.id}
+        setRefreshData={setRefresData}
       />
       <Modalstatus
         isModalOpen={isModalStatusOpen}
