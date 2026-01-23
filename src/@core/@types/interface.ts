@@ -462,6 +462,8 @@ export interface IOpenStreetAddress {
   neighbourhood: string;
   village: string;
   city_district: string;
+  municipality: string;
+  suburb: string;
   city: string;
   state: string;
   'ISO3166-2-lvl4': string;

@@ -11,10 +11,7 @@ import React, {
 } from 'react';
 import { MapContainer, Marker, TileLayer, Popup, useMap } from 'react-leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import {
-  IOpenStreetAddress,
-  IUserAddress,
-} from '@/@core/@types/interface';
+import { IOpenStreetAddress, IUserAddress } from '@/@core/@types/interface';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
@@ -38,12 +35,19 @@ const MyInnerMap: React.FC<{ open: boolean }> = ({ open }) => {
 const ModalAddress = (props: {
   isModalOpen: boolean;
   setIsModalOpen: Dispatch<SetStateAction<boolean>>;
-  userAddress: IUserAddress,
-  setUserAddress: Dispatch<SetStateAction<IUserAddress>>,
-  userId:string,
-  setRefresData:Dispatch<SetStateAction<boolean>> 
+  userAddress: IUserAddress;
+  setUserAddress: Dispatch<SetStateAction<IUserAddress>>;
+  userId: string;
+  setRefresData: Dispatch<SetStateAction<boolean>>;
 }) => {
-  const { isModalOpen, setIsModalOpen, userAddress, setUserAddress, userId, setRefresData } = props;
+  const {
+    isModalOpen,
+    setIsModalOpen,
+    userAddress,
+    setUserAddress,
+    userId,
+    setRefresData,
+  } = props;
   const center = {
     lat: userAddress.latitude ?? -7.250445,
     lng: userAddress.longtitude ?? 112.768845,
@@ -97,7 +101,7 @@ const ModalAddress = (props: {
   const setLocation = async () => {
     const body = userAddress;
     await axiosInstance.put(`users/admin/${userId}/address`, body);
-    setRefresData(true)
+    setRefresData(true);
     setIsModalOpen(false);
   };
 
@@ -109,8 +113,10 @@ const ModalAddress = (props: {
     const objAddress: IOpenStreetAddress = data.address;
     const temp: IUserAddress = {
       city: objAddress.city,
-      district: objAddress.city_district,
-      subdistrict: objAddress.village,
+      district: objAddress.city_district
+        ? objAddress.city_district
+        : objAddress.municipality,
+      subdistrict: objAddress.village ? objAddress.village : objAddress.suburb,
       postal_code: objAddress.postcode,
       address: data.display_name ?? '-',
       is_default: true,
@@ -118,7 +124,7 @@ const ModalAddress = (props: {
       longtitude: data.lon ?? center.lng,
       province: translateProvince(objAddress.state),
     };
-    setUserAddress(temp)
+    setUserAddress(temp);
   };
 
   return (
@@ -179,7 +185,7 @@ const ModalAddress = (props: {
               onChange={(e) =>
                 setUserAddress({
                   ...userAddress,
-                  province: e.target.value
+                  province: e.target.value,
                 })
               }
               className="rounded-[4px]"
@@ -193,7 +199,7 @@ const ModalAddress = (props: {
               onChange={(e) =>
                 setUserAddress({
                   ...userAddress,
-                  city: e.target.value
+                  city: e.target.value,
                 })
               }
               className="rounded-[4px]"
@@ -207,7 +213,7 @@ const ModalAddress = (props: {
               onChange={(e) =>
                 setUserAddress({
                   ...userAddress,
-                  district: e.target.value
+                  district: e.target.value,
                 })
               }
               className="rounded-[4px]"
@@ -221,7 +227,7 @@ const ModalAddress = (props: {
               onChange={(e) =>
                 setUserAddress({
                   ...userAddress,
-                  subdistrict: e.target.value
+                  subdistrict: e.target.value,
                 })
               }
               className="rounded-[4px]"
@@ -235,7 +241,7 @@ const ModalAddress = (props: {
               onChange={(e) =>
                 setUserAddress({
                   ...userAddress,
-                  address: e.target.value
+                  address: e.target.value,
                 })
               }
               className="rounded-[4px]"
