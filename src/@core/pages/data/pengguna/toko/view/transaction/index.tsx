@@ -102,7 +102,7 @@ const ProfileTransaction = (props: { id: string }) => {
 
   // --- EXPORT DATA MENGGUNAKAN EXCELJS ---
   const exportData = async () => {
-    let filterString = '';
+    let filterString = '&order_by=transaction_date&order_direction=ASC';
 
     const allValues = options.map((o) => o.value);
     const isAllChecked =
