@@ -76,7 +76,7 @@ const ProfileTransaction = (props: { id: string }) => {
     let all: any[] = [];
     const limit = 200;
 
-    const url = `/reports/gold-transactions/?user_id=${id}${filterString}`;
+    const url = `/reports/gold-transactions/?user_id=${id}${filterString}&order_by=transaction_date&order_direction=ASC`;
 
     const first = await axiosInstance.get(url, {
       params: { fetch: limit, offset: 0 },
@@ -110,12 +110,14 @@ const ProfileTransaction = (props: { id: string }) => {
       allValues.every((v) => checkeds.includes(v));
 
     if (isAllChecked) {
-      filterString = '&export_all=true';
+      filterString += '&export_all=true';
     } else {
       checkeds.forEach((item) => {
         filterString += `&transaction_type=${item}`;
       });
     }
+
+    console.log(filterString);
 
     // ambil semua data
     const rows = await fetchAllData(filterString);
