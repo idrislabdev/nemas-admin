@@ -61,7 +61,7 @@ const ProfileTransaction = (props: { id: string }) => {
     }
 
     const resp = await axiosInstance.get(
-      `/reports/gold-transactions/?user_id=${id}&fetch=${params.limit}&offset=${params.offset}${filterString}`
+      `/reports/gold-transactions/?user_id=${id}&fetch=${params.limit}&offset=${params.offset}${filterString}&order_by=transaction_date&order_direction=ASC`
     );
     setTotal(resp.data.count);
     setHistories(resp.data.results);
