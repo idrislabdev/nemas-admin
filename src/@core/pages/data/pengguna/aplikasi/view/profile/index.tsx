@@ -1,9 +1,41 @@
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
-import { formatDecimal, formatterNumber } from '@/@core/utils/general';
-import React from 'react';
+import axiosInstance from '@/@core/utils/axios';
+import { formatterNumber } from '@/@core/utils/general';
+import React, { useCallback, useEffect, useState } from 'react';
 
 const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
   const { detail } = props;
+  const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const fetchGoldPrice = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get('/core/gold/price/active');
+      setGoldPriceBase(resp.data.gold_price_base || 0);
+    } catch (error) {
+      console.error('Failed fetch gold price', error);
+    }
+  }, []);
+
+  const formatGramWithValue = (weight: number) => {
+    const value = weight * goldPriceBase;
+
+    return `${weight.toLocaleString('id-ID', {
+      maximumFractionDigits: 4,
+    })} gr (${formatCurrency(value)})`;
+  };
+
+  useEffect(() => {
+    fetchGoldPrice();
+  }, [fetchGoldPrice]);
+
   return (
     <div className="flex flex-col">
       <div className="flex">
@@ -107,8 +139,8 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
               <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                 <span>:</span>
                 {detail.props && detail.props.gold_stock.weight
-                  ? `${formatDecimal(detail.props.gold_stock.weight)} gr`
-                  : '0 gr'}
+                  ? `${formatGramWithValue(detail.props.gold_stock.weight)}`
+                  : '-'}
               </p>
             </div>
             <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -118,8 +150,8 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
               <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                 <span>:</span>
                 {detail.props && detail.props.invest_gold_wgt
-                  ? `${formatDecimal(detail.props.invest_gold_wgt)} gr`
-                  : '0 gr'}
+                  ? `${formatGramWithValue(detail.props.invest_gold_wgt)}`
+                  : '-'}
               </p>
             </div>
             <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -129,8 +161,8 @@ const PengggunaProfile = (props: { detail: IPenggunaAplikasi }) => {
               <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                 <span>:</span>
                 {detail.props && detail.props.loan_wgt
-                  ? `${formatDecimal(detail.props.loan_wgt)} gr`
-                  : '0 gr'}
+                  ? `${formatGramWithValue(detail.props.loan_wgt)}`
+                  : '-'}
               </p>
             </div>
           </div>

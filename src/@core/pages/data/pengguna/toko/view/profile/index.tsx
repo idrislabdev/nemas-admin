@@ -5,10 +5,17 @@ import {
   IUserAddress,
   IUserBank,
 } from '@/@core/@types/interface';
-import { formatDecimal, formatterNumber } from '@/@core/utils/general';
+import { formatterNumber } from '@/@core/utils/general';
 import { ArrowSquareUpRight, Edit05, Upload01 } from '@untitled-ui/icons-react';
 import dynamic from 'next/dynamic';
-import React, { Dispatch, SetStateAction, useRef, useState } from 'react';
+import React, {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import ModalBank from './modal-bank';
 import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
@@ -37,6 +44,8 @@ const PengggunaProfile = (props: {
   const [userBank, setUserBank] = useState<IUserBank>({} as IUserBank);
   const inputFile = useRef<HTMLInputElement>(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
+
   const showModalAddress = () => {
     setUserAddress(detail.address ? detail.address : ({} as IUserAddress));
     setIsModalOpen(true);
@@ -87,6 +96,35 @@ const PengggunaProfile = (props: {
         });
     }
   };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const fetchGoldPrice = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get('/core/gold/price/active');
+      setGoldPriceBase(resp.data.gold_price_base || 0);
+    } catch (error) {
+      console.error('Failed fetch gold price', error);
+    }
+  }, []);
+
+  const formatGramWithValue = (weight: number) => {
+    const value = weight * goldPriceBase;
+
+    return `${weight.toLocaleString('id-ID', {
+      maximumFractionDigits: 4,
+    })} gr (${formatCurrency(value)})`;
+  };
+
+  useEffect(() => {
+    fetchGoldPrice();
+  }, [fetchGoldPrice]);
 
   return (
     <>
@@ -370,8 +408,8 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.gold_stock.weight
-                    ? `${formatDecimal(detail.props.gold_stock.weight)} gr`
-                    : '0 gr'}
+                    ? `${formatGramWithValue(detail.props.gold_stock.weight)}`
+                    : '0'}
                 </p>
               </div>
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -381,8 +419,8 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.invest_gold_wgt
-                    ? `${formatDecimal(detail.props.invest_gold_wgt)} gr`
-                    : '0 gr'}
+                    ? `${formatGramWithValue(detail.props.invest_gold_wgt)}`
+                    : '-'}
                 </p>
               </div>
               <div className="flex items-center border-r border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
@@ -392,8 +430,8 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.loan_wgt
-                    ? `${formatDecimal(detail.props.loan_wgt)} gr`
-                    : '0 gr'}
+                    ? `${formatGramWithValue(detail.props.loan_wgt)}`
+                    : '-'}
                 </p>
               </div>
               <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
