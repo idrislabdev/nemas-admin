@@ -469,7 +469,7 @@ const GadaiEmasTablePage = () => {
           {/* FILTER DATE RANGE */}
           <RangePicker
             size="small"
-            className="w-[300px] h-[40px]"
+            className="w-[320px] h-[40px]"
             onChange={onRangeChange}
             value={
               params.start_date && params.end_date

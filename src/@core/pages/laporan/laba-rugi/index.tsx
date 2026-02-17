@@ -229,7 +229,7 @@ const LaporanLabaRugi = () => {
       <div className="flex items-center justify-between gap-3">
         <RangePicker
           size="small"
-          className="w-[300px] h-[40px]"
+          className="w-[320px] h-[40px]"
           onChange={onRangeChange}
           defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
         />

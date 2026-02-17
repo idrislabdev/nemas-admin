@@ -396,7 +396,7 @@ const DaftarReturnEmasPage = () => {
         <div className="flex gap-2">
           <RangePicker
             size="small"
-            className="w-[300px]"
+            className="w-[320px] h-[40px]"
             defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
             onChange={onRangeChange}
           />
