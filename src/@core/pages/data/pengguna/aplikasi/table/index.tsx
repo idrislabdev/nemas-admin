@@ -9,16 +9,22 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
 import axiosInstance from '@/@core/utils/axios';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import dayjs from 'dayjs';
+
 import Link from 'next/link';
+
 moment.locale('id');
 
 const DataPenggunaPageTable = () => {
   const url = `/users/admin`;
+
   const [dataTable, setDataTable] = useState<Array<IPenggunaAplikasi>>([]);
   const [total, setTotal] = useState(0);
-  // const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -26,33 +32,113 @@ const DataPenggunaPageTable = () => {
     search: '',
     role__name__icontains: 'User',
   });
-  // const [api, contextHolder] = notification.useNotification();
+
+  // ================= FETCH GOLD PRICE =================
+  const fetchGoldPrice = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get('/core/gold/price/active');
+      setGoldPriceBase(resp.data.gold_price_base || 0);
+    } catch (error) {
+      console.error('Failed fetch gold price', error);
+    }
+  }, []);
+
+  // ================= FETCH USERS =================
+  const fetchData = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [params, url]);
+
+  useEffect(() => {
+    fetchGoldPrice();
+  }, [fetchGoldPrice]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ================= FORMATTERS =================
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatGramWithValue = (weight: number) => {
+    const value = weight * goldPriceBase;
+
+    return `${weight.toLocaleString('id-ID', {
+      maximumFractionDigits: 4,
+    })} gr (${formatCurrency(value)})`;
+  };
+
+  // ================= TABLE COLUMNS =================
   const columns: ColumnsType<IPenggunaAplikasi> = [
     {
       title: 'No',
       width: 70,
-      dataIndex: 'customer_service_id',
-      key: 'customer_service_id',
       fixed: 'left',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     { title: 'Nama', dataIndex: 'name', key: 'name', width: 150 },
     { title: 'Username', dataIndex: 'user_name', key: 'username', width: 150 },
-    { title: 'Email', dataIndex: 'email', key: 'email', width: 150 },
+    { title: 'Email', dataIndex: 'email', key: 'email', width: 200 },
     {
       title: 'Alamat',
-      dataIndex: 'alamat',
       key: 'alamat',
-      width: 150,
+      width: 200,
       render: (_, record) =>
-        (record.address != null && record.address.address) ?? '-',
+        record.address?.address ? record.address.address : '-',
     },
     {
       title: 'Phone Number',
       dataIndex: 'phone_number',
       key: 'phone_number',
       width: 150,
+    },
+    {
+      title: 'Saldo Wallet',
+      key: 'wallet_balance',
+      width: 180,
+      render: (_, record) => {
+        const wallet = record.props?.wallet?.balance || 0;
+        return formatCurrency(wallet);
+      },
+    },
+    {
+      title: 'Saldo Tabungan',
+      key: 'gold_stock_value',
+      width: 220,
+      render: (_, record) => {
+        const weight = record.props?.gold_stock?.weight || 0;
+        return formatGramWithValue(weight);
+      },
+    },
+    {
+      title: 'Saldo Deposito',
+      key: 'invest_gold_wgt',
+      width: 220,
+      render: (_, record) => {
+        const weight = record.props?.invest_gold_wgt || 0;
+        return formatGramWithValue(weight);
+      },
+    },
+    {
+      title: 'Emas Digadaikan',
+      key: 'loan_gold_value',
+      width: 220,
+      render: (_, record) => {
+        const loanWeight = record.props?.loan_wgt || 0;
+        return formatGramWithValue(loanWeight);
+      },
     },
     {
       title: '',
@@ -72,16 +158,12 @@ const DataPenggunaPageTable = () => {
     },
   ];
 
-  const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
-  }, [params, url]);
-
-  const onChangePage = async (val: number) => {
+  // ================= PAGINATION =================
+  const onChangePage = (val: number) => {
     setParams({ ...params, offset: (val - 1) * params.limit });
   };
 
+  // ================= SEARCH =================
   const handleFilter = (value: string) => {
     setParams({
       ...params,
@@ -91,68 +173,174 @@ const DataPenggunaPageTable = () => {
     });
   };
 
-  const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 1000,
-      search: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IPenggunaAplikasi, index: number) => ({
-      No: index + 1,
-      Nama: item.name,
-      Username: item.user_name,
-      Email: item.email,
-      'Phone Number': item.phone_number,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = rows.reduce(
-      (w: number, r: IPenggunaAplikasi) =>
-        Math.max(w, r.name ? r.name.length : 10),
-      10
-    );
-    const colC = rows.reduce(
-      (w: number, r: IPenggunaAplikasi) =>
-        Math.max(w, r.user_name ? r.user_name.length : 10),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IPenggunaAplikasi) =>
-        Math.max(w, r.email ? r.email.length : 10),
-      10
-    );
-    const colE = rows.reduce(
-      (w: number, r: IPenggunaAplikasi) =>
-        Math.max(w, r.phone_number ? r.phone_number.length : 10),
-      10
-    );
+  // ================= FETCH ALL DATA =================
+  const fetchAllData = async () => {
+    let rows: IPenggunaAplikasi[] = [];
+    const limit = 100;
 
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: colE },
-      { wch: 20 },
-    ];
+    const first = await axiosInstance.get(url, {
+      params: { ...params, limit, offset: 0 },
+    });
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'user');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_user.xlsx`);
-    setIsModalLoading(false);
+    rows = rows.concat(first.data.results);
+    const totalPages = Math.ceil(first.data.count / limit);
+
+    for (let i = 1; i < totalPages; i++) {
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, limit, offset: i * limit },
+      });
+      rows = rows.concat(resp.data.results);
+    }
+
+    return rows;
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  // ================= EXPORT EXCEL =================
+  const exportData = async () => {
+    try {
+      setIsModalLoading(true);
+
+      // ===== GET GOLD PRICE =====
+      const goldResp = await axiosInstance.get('/core/gold/price/active');
+      const activeGoldPrice = goldResp.data.gold_price_base || 0;
+
+      // ===== FETCH ALL DATA =====
+      const rows = await fetchAllData();
+
+      if (!rows.length) return;
+
+      // ===== FORMATTER =====
+      const formatCurrency = (value: number) =>
+        new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0,
+        }).format(value);
+
+      const formatGramWithValue = (weight: number) => {
+        const value = weight * activeGoldPrice;
+
+        return `${weight.toLocaleString('id-ID', {
+          maximumFractionDigits: 4,
+        })} gr (${formatCurrency(value)})`;
+      };
+
+      // ===== MAPPING DATA =====
+      const data = rows.map((r, index) => {
+        const wallet = r.props?.wallet?.balance || 0;
+        const goldWeight = r.props?.gold_stock?.weight || 0;
+        const loanWeight = r.props?.loan_wgt || 0;
+        const investGoldWeight = r.props?.invest_gold_wgt || 0;
+
+        return {
+          No: index + 1,
+          Nama: r.name || '',
+          Username: r.user_name || '',
+          Email: r.email || '',
+          Alamat: r.address?.address || '',
+          'Phone Number': r.phone_number || '',
+          'Saldo Wallet (Rp)': wallet,
+          'Saldo Tabungan': formatGramWithValue(goldWeight),
+          'Saldo Deposito': formatGramWithValue(investGoldWeight),
+          'Emas Digadaikan': formatGramWithValue(loanWeight),
+        };
+      });
+
+      // ===== CREATE WORKBOOK =====
+      const workbook = new ExcelJS.Workbook();
+      const ws = workbook.addWorksheet('Data Pengguna Aplikasi');
+
+      // ===== BORDER HELPER =====
+      const applyBorder = (
+        cell: ExcelJS.Cell,
+        type: 'thin' | 'medium' = 'thin'
+      ) => {
+        cell.border = {
+          top: { style: type },
+          left: { style: type },
+          bottom: { style: type },
+          right: { style: type },
+        };
+      };
+
+      // ===== TITLE =====
+      ws.mergeCells('A1:J1');
+      ws.getCell('A1').value = 'LAPORAN DATA PENGGUNA APLIKASI';
+      ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getCell('A1').alignment = { horizontal: 'center' };
+
+      ws.addRow([]);
+
+      // ===== HEADER =====
+      const headers = Object.keys(data[0]);
+      const headerRow = ws.addRow(headers);
+
+      headers.forEach((_, index) => {
+        const cell = headerRow.getCell(index + 1);
+
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEFEFEF' },
+        };
+
+        applyBorder(cell, 'medium');
+      });
+
+      // ===== DATA ROWS =====
+      data.forEach((row) => {
+        const r = ws.addRow(headers.map((h) => row[h as keyof typeof row]));
+
+        headers.forEach((header, colIndex) => {
+          const cell = r.getCell(colIndex + 1);
+
+          const isCurrency = header.includes('(Rp)');
+
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: isCurrency ? 'right' : 'left',
+          };
+
+          applyBorder(cell);
+        });
+      });
+
+      // ===== FREEZE HEADER =====
+      ws.views = [{ state: 'frozen', ySplit: 3 }];
+
+      // ===== AUTO WIDTH (TERMASUK CELL KOSONG) =====
+      ws.columns.forEach((column) => {
+        if (!column) return;
+
+        let maxLength = 10;
+
+        column.eachCell?.({ includeEmpty: true }, (cell) => {
+          const value = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, value.length);
+        });
+
+        column.width = Math.min(maxLength + 2, 50);
+      });
+
+      // ===== EXPORT FILE =====
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      saveAs(
+        new Blob([buffer]),
+        `data_pengguna_aplikasi_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  };
+
   return (
     <>
-      {/* {contextHolder} */}
       <div className="flex items-center justify-between">
         <div className="group-input prepend-append">
           <span className="append">
@@ -168,6 +356,7 @@ const DataPenggunaPageTable = () => {
             )}
           />
         </div>
+
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
             <FileDownload02 />
@@ -175,6 +364,7 @@ const DataPenggunaPageTable = () => {
           </button>
         </div>
       </div>
+
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
@@ -185,6 +375,7 @@ const DataPenggunaPageTable = () => {
           className="table-basic"
           rowKey="id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -194,6 +385,7 @@ const DataPenggunaPageTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
