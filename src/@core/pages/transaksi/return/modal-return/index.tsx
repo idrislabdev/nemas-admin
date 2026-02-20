@@ -179,16 +179,27 @@ const ModalReturnPrint = (props: {
             <tr>
               <td>Tgl Transfer</td>
               <td>
-                : {moment(data.return_approved_date).format('DD MMMM YYYY')}
+                :{' '}
+                {data.return_approved_date
+                  ? moment(data.return_approved_date).format('DD MMMM YYYY')
+                  : '-'}
               </td>
             </tr>
             <tr>
               <td>Berat Transfer</td>
-              <td>: {data.gold_transfer_weight} gr</td>
+              <td>
+                : {data.gold_transfer_weight ? data.gold_transfer_weight : '-'}{' '}
+                gr
+              </td>
             </tr>
             <tr>
               <td>Nilai Uang</td>
-              <td>: Rp {data.gold_transfer_amount.toLocaleString('id-ID')}</td>
+              <td>
+                : Rp{' '}
+                {data.gold_transfer_amount
+                  ? data.gold_transfer_amount.toLocaleString('id-ID')
+                  : '-'}
+              </td>
             </tr>
           </tbody>
         </table>

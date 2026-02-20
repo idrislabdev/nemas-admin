@@ -182,19 +182,16 @@ const DaftarReturnEmasPage = () => {
               </a>
             )}
 
-          {record.return_status == 'APPROVED' &&
-            record.gold_transfer_number != null && (
-              <a
-                className="btn btn-outline-primary flex flex-row items-center gap-2 w-[120px]"
-                onClick={() => {
-                  setSelectedData(record);
-                  setOpenModalPrint(true);
-                }}
-              >
-                <PrinterFilled />
-                Print Out
-              </a>
-            )}
+          <a
+            className="btn btn-outline-primary flex flex-row items-center gap-2 w-[120px]"
+            onClick={() => {
+              setSelectedData(record);
+              setOpenModalPrint(true);
+            }}
+          >
+            <PrinterFilled />
+            Print Out
+          </a>
         </div>
       ),
     },
