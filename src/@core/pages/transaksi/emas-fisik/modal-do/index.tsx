@@ -310,14 +310,14 @@ const ModalDO = (props: {
                 </div>
                 <div>
                   <div>PIC Kurir</div>
-                  <div className="border-t border-black mt-[80px] pt-1">
-                    {data.tracking_courier_name ?? '-'}
+                  <div className="border-t border-black mt-[80px] pt-1 text-left">
+                    {data.tracking_courier_name ?? '-'} :
                   </div>
                 </div>
                 <div>
                   <div>Diterima Oleh</div>
                   <div className="border-t border-black mt-[80px] pt-1">
-                    {moment().format('DD MMM YYYY, HH:mm')}
+                    {/* {moment().format('DD MMM YYYY, HH:mm')} */}
                   </div>
                 </div>
               </div>
