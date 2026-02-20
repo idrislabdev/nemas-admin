@@ -53,7 +53,8 @@ const GoldTransactionBar = () => {
       const data = resp.data;
 
       const categories = [
-        'Emas Digital',
+        'Jual Emas',
+        'Beli Emas',
         'Emas Produk',
         'Tarik Emas',
         'Deposito',
@@ -62,7 +63,8 @@ const GoldTransactionBar = () => {
       ];
 
       const values = [
-        data.emas_digital,
+        data.jual_emas,
+        data.beli_emas,
         data.emas_produk,
         data.tarik_emas,
         data.deposito,

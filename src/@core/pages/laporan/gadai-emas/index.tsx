@@ -497,9 +497,9 @@ const GadaiEmasTablePage = () => {
             onChange={handleStatusChange}
             options={[
               { value: '', label: 'Semua Status' },
-              { value: 'paid', label: 'Paid' },
-              { value: 'approved', label: 'Approved' },
-              { value: 'pending', label: 'Pending' },
+              { value: 'Paid', label: 'Paid' },
+              { value: 'Approved', label: 'Approved' },
+              { value: 'Pending', label: 'Pending' },
             ]}
           />
         </div>

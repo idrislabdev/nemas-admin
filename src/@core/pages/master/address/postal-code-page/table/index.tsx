@@ -149,7 +149,7 @@ const AddressPostalCodePageTable = () => {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="city_id"
+          rowKey="subdistrict_id"
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
