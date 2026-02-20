@@ -36,17 +36,17 @@ const HistoryUserDetailTable = (props: { id: string }) => {
 
   const [checkeds, setCheckeds] = useState<string[]>(['order_buy']);
   const options = [
+    { label: 'Topup', value: 'topup' },
+    { label: 'Beli Emas', value: 'gold_buy' },
+    { label: 'Jual Emas', value: 'gold_sell' },
+    { label: 'Tarik Saldo', value: 'disburst' },
+    { label: 'Terima Emas', value: 'gold_transfer_receive' },
     { label: 'Produk Emas Fisik', value: 'order_buy' },
     { label: 'Tarik Emas', value: 'order_redeem' },
-    { label: 'Beli Emas', value: 'gold_buy' },
-    { label: 'Jual', value: 'gold_sell' },
     { label: 'Transfer Emas', value: 'gold_transfer_send' },
-    { label: 'Terima Emas', value: 'gold_transfer_receive' },
-    { label: 'Tarik Saldo', value: 'disburst' },
     { label: 'Deposito', value: 'deposito' },
     { label: 'Gadai', value: 'loan' },
     { label: 'Bayar Gadai', value: 'loan_pay' },
-    { label: 'Topup', value: 'topup' },
   ];
 
   const fetchData = useCallback(async () => {
