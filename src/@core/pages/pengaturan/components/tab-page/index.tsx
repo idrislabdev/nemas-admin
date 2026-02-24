@@ -18,6 +18,9 @@ const PengaturanTabpage = (props: { activeTab: string }) => {
         <li className={`${activeTab === 'price_config' ? 'active' : ''}`}>
           <Link href={`/pengaturan/price-config`}>Pengaturan Harga</Link>
         </li>
+        <li className={`${activeTab === 'company_config' ? 'active' : ''}`}>
+          <Link href={`/pengaturan/company`}>Perusahaan</Link>
+        </li>
       </ul>
     </div>
   );

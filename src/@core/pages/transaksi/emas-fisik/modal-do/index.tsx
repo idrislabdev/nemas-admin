@@ -16,6 +16,14 @@ import 'moment/locale/id';
 
 moment.locale('id');
 
+interface ICompanyConfig {
+  company_name: string;
+  company_address: string;
+  company_phone: string;
+  company_email: string;
+  company_operational_head: string;
+}
+
 const ModalDO = (props: {
   isModalOpen: boolean;
   setIsModalOpen: Dispatch<SetStateAction<boolean>>;
@@ -26,7 +34,7 @@ const ModalDO = (props: {
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalQty, setTotalQty] = useState(0);
   const [printCount, setPrintCount] = useState(0);
-
+  const [company, setCompany] = useState<ICompanyConfig>({} as ICompanyConfig);
   const fetchData = useCallback(async () => {
     const resp = await axiosInstance.get(
       `/reports/gold-sales-order/${orderId}`
@@ -66,13 +74,27 @@ const ModalDO = (props: {
       });
   };
 
-  useEffect(() => {
-    if (isModalOpen) fetchData();
-  }, [fetchData, isModalOpen]);
+  const fetchCompanyConfig = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get(
+        '/core/admin/company/?limit=10&offset=0'
+      );
+      setCompany(resp.data.results[0]);
+    } catch (error) {
+      console.error('Error fetch company config:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    console.log(data);
-  }, [data]);
+    if (isModalOpen) {
+      fetchData();
+      fetchCompanyConfig();
+    }
+  }, [fetchData, fetchCompanyConfig, isModalOpen]);
+
+  // useEffect(() => {
+  //   console.log(data);
+  // }, [data]);
 
   return (
     <>
@@ -125,9 +147,24 @@ const ModalDO = (props: {
                 className="w-[72px] h-[72px] object-cover"
               />
               <div className="flex flex-col">
-                <p className="text-xl font-medium">PT. NEMAS</p>
-                <span>Jl. Margomulyo Industri Blok A-12, Surabaya 60183</span>
-                <span>Telp. (031) 765 8890 | Email: cs@NEMAS.co.id</span>
+                <p className="text-xl font-medium">
+                  {company.company_name ? company.company_name : 'PT. NEMAS'}
+                </p>
+                <span>
+                  {company.company_address
+                    ? company.company_address
+                    : 'Jl. Margomulyo Industri Blok A-12, Surabaya 60183'}
+                </span>
+                <span>
+                  Telp.{' '}
+                  {company.company_phone
+                    ? company.company_phone
+                    : '(031) 765 8890'}{' '}
+                  | Email:{' '}
+                  {company.company_email
+                    ? company.company_email
+                    : 'cs@NEMAS.co.id'}
+                </span>
               </div>
             </div>
             <div className="flex flex-col gap-[20px]">
@@ -305,7 +342,7 @@ const ModalDO = (props: {
                 <div>
                   <div>Mengetahui</div>
                   <div className="border-t border-black mt-[80px] pt-1">
-                    Kepala Operasional
+                    {company.company_operational_head}
                   </div>
                 </div>
                 <div>

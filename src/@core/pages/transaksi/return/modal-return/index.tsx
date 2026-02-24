@@ -19,6 +19,18 @@ import { IReturnGold } from '@/@core/@types/interface';
 moment.locale('id');
 
 /* =========================
+   INTERFACE COMPANY CONFIG
+========================= */
+interface ICompanyConfig {
+  company_id: number;
+  company_name: string;
+  company_address: string;
+  company_phone_number: string;
+  company_email: string;
+  company_operational_head: string;
+}
+
+/* =========================
    PRINT SAFE SECTION HEADER
 ========================= */
 const PrintSection = ({ title }: { title: string }) => (
@@ -32,13 +44,8 @@ const PrintSection = ({ title }: { title: string }) => (
       marginTop: '22px',
     }}
   >
-    {/* Background */}
     <rect x="0" y="0" width="1000" height="34" fill="#e5e7eb" />
-
-    {/* Left accent */}
     <rect x="0" y="0" width="6" height="34" fill="#4b5563" />
-
-    {/* Text */}
     <text
       x="16"
       y="22"
@@ -58,22 +65,50 @@ const ModalReturnPrint = (props: {
   returnId: string;
 }) => {
   const { isModalOpen, setIsModalOpen, returnId } = props;
-  const [data, setData] = useState<IReturnGold | null>(null);
 
+  const [data, setData] = useState<IReturnGold | null>(null);
+  const [company, setCompany] = useState<ICompanyConfig | null>(null);
+
+  /* =========================
+     FETCH RETURN DATA
+  ========================= */
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(
-      `/orders/fix/order/return/${returnId}`
-    );
-    setData(resp.data);
+    try {
+      const resp = await axiosInstance.get(
+        `/orders/fix/order/return/${returnId}`
+      );
+      setData(resp.data);
+    } catch (error) {
+      console.error('Gagal mengambil data retur', error);
+    }
   }, [returnId]);
+
+  /* =========================
+     FETCH COMPANY CONFIG
+  ========================= */
+  const fetchCompany = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get(
+        '/core/admin/company/?limit=10&offset=0'
+      );
+      if (resp.data.results && resp.data.results.length > 0) {
+        setCompany(resp.data.results[0]);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil config perusahaan', error);
+    }
+  }, []);
 
   const handlePrint = () => {
     setTimeout(() => window.print(), 50);
   };
 
   useEffect(() => {
-    if (isModalOpen) fetchData();
-  }, [fetchData, isModalOpen]);
+    if (isModalOpen) {
+      fetchData();
+      fetchCompany();
+    }
+  }, [fetchData, fetchCompany, isModalOpen]);
 
   if (!data) return null;
 
@@ -113,11 +148,17 @@ const ModalReturnPrint = (props: {
       <div className="text-[13px] font-[Arial]">
         {/* HEADER */}
         <div className="text-center mb-4">
-          <div className="text-xl font-bold">PT NEMAS</div>
+          <div className="text-xl font-bold">
+            {company?.company_name || '-'}
+          </div>
+
           <div className="text-sm font-semibold">BUKTI RETUR EMAS</div>
+
           <div className="text-xs">
-            Jl. .................................................... Telp:
-            ..........................................
+            {company?.company_address || '-'}
+            {company?.company_phone_number && (
+              <> Telp: {company.company_phone_number}</>
+            )}
           </div>
         </div>
 
@@ -154,7 +195,7 @@ const ModalReturnPrint = (props: {
         </table>
 
         {/* DETAIL EMAS */}
-        <PrintSection title="DETAIL EMAS" />
+        <PrintSection title="Detail Emas" />
         <table className="w-full">
           <tbody>
             <tr>
@@ -169,7 +210,7 @@ const ModalReturnPrint = (props: {
         </table>
 
         {/* PENGEMBALIAN */}
-        <PrintSection title="PENGEMBALIAN" />
+        <PrintSection title="Pengembalian" />
         <table className="w-full">
           <tbody>
             <tr>
@@ -187,10 +228,7 @@ const ModalReturnPrint = (props: {
             </tr>
             <tr>
               <td>Berat Transfer</td>
-              <td>
-                : {data.gold_transfer_weight ? data.gold_transfer_weight : '-'}{' '}
-                gr
-              </td>
+              <td>: {data.gold_transfer_weight || '-'} gr</td>
             </tr>
             <tr>
               <td>Nilai Uang</td>
@@ -205,7 +243,7 @@ const ModalReturnPrint = (props: {
         </table>
 
         {/* ALASAN & CATATAN */}
-        <PrintSection title="ALASAN & CATATAN" />
+        <PrintSection title="Alasan & Catatan" />
         <table className="w-full">
           <tbody>
             <tr>
@@ -220,7 +258,7 @@ const ModalReturnPrint = (props: {
         </table>
 
         {/* PERSETUJUAN */}
-        <PrintSection title="PERSETUJUAN" />
+        <PrintSection title="Persetujuan" />
         <div className="grid grid-cols-3 gap-6 mt-4 text-center text-sm">
           {['Customer', 'Petugas', 'Supervisor'].map((label) => (
             <div key={label}>
@@ -236,11 +274,12 @@ const ModalReturnPrint = (props: {
           <br />
           Dokumen ini sah tanpa tanda tangan basah.
           <br />
-          Terima kasih telah menggunakan layanan NEMAS.
+          Terima kasih telah menggunakan layanan{' '}
+          {company?.company_name || 'Perusahaan'}.
         </div>
 
         {/* FOTO */}
-        <PrintSection title="LAMPIRAN FOTO BARANG RETUR" />
+        <PrintSection title="Lampiran Foto Barang Retur" />
         <div className="grid grid-cols-3 gap-4 mt-3">
           {[data.return_image_1, data.return_image_2, data.return_image_3].map(
             (img, i) => (
