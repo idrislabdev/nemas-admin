@@ -2,7 +2,7 @@
 
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import { Segmented } from 'antd';
+import { notification, Segmented } from 'antd';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import PengggunaProfile from './profile';
@@ -13,10 +13,12 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const url = `/users/admin/${paramsId}`;
 
+  const [refreshData, setRefresData] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<IPenggunaAplikasi>(
     {} as IPenggunaAplikasi
   );
+  const [api, contextHolder] = notification.useNotification();
 
   const [tab, setTab] = useState('profile');
 
@@ -35,11 +37,24 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   }, [url]);
 
   useEffect(() => {
+    if (refreshData) {
+      fetchData();
+      setRefresData(false);
+      api.info({
+        message: 'Data Profil',
+        description: 'Data Profile Telah Diupdate',
+        placement: 'bottomRight',
+      });
+    }
+  }, [refreshData]);
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   return (
     <>
+      {contextHolder}
       <hr />
       <div className="flex gap-[4px] items-center justify-end">
         <Link
@@ -57,7 +72,9 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
       />
       {!loading && (
         <>
-          {tab == 'profile' && <PengggunaProfile detail={detail} />}
+          {tab == 'profile' && (
+            <PengggunaProfile detail={detail} setRefresData={setRefresData} />
+          )}
           {tab == 'transaction' && <ProfileTransaction id={detail.id} />}
         </>
       )}

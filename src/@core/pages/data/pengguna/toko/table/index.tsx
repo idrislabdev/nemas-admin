@@ -149,7 +149,7 @@ const DataPenggunaTokoPageTable = () => {
         <div className="flex items-center gap-[5px] justify-center">
           <Link
             className="btn-action"
-            href={`/data/pengguna/aplikasi/${record.id}`}
+            href={`/data/pengguna/toko/${record.id}`}
           >
             <Eye />
           </Link>
