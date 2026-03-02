@@ -24,7 +24,6 @@ const StatusDeliveryInvoice = () => {
   });
 
   const today = dayjs().format('YYYY-MM-DD');
-
   const fetchStatus = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(
@@ -93,12 +92,17 @@ const StatusDeliveryInvoice = () => {
           </div>
         </div>
 
-        <p>Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi</p>
+        <Link
+          href={`/laporan/gadai-emas?loan_status_name=Approved&due_end_date=${today}`}
+          className="text-blue-500 underline"
+        >
+          Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi
+        </Link>
         <p>
           Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
         </p>
         <Link
-          href={`/laporan/gadai-emas?loan_status_name=approved&start_date=${today}&end_date=${today}`}
+          href={`/laporan/gadai-emas?loan_status_name=Approved&start_date=${today}&end_date=${today}`}
           className="text-blue-500 underline"
         >
           Gadai Wajib Bayar Hari Ini: {status.pending_loan_payment_today}{' '}

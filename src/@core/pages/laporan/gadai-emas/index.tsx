@@ -32,13 +32,16 @@ const GadaiEmasTablePage = () => {
   // -------------------------------------------------------------------
   const queryStart = searchParams.get('start_date');
   const queryEnd = searchParams.get('end_date');
+  const queryDueStart = searchParams.get('due_start_date');
+  const queryDueEnd = searchParams.get('due_end_date');
   const queryStatus = searchParams.get('loan_status_name') || '';
   const queryPage = Number(searchParams.get('page') || 1);
 
-  const defaultStart = queryStart
-    ? dayjs(queryStart)
-    : dayjs().startOf('month');
-  const defaultEnd = queryEnd ? dayjs(queryEnd) : dayjs();
+  const defaultStart = queryStart ? dayjs(queryStart) : '';
+  const defaultEnd = queryEnd ? dayjs(queryEnd) : '';
+
+  const defaultDueStart = queryDueStart ? dayjs(queryDueStart) : '';
+  const defaultDueEnd = queryDueEnd ? dayjs(queryDueEnd) : '';
 
   const [filterStatus, setFilterStatus] = useState(queryStatus);
 
@@ -46,9 +49,13 @@ const GadaiEmasTablePage = () => {
     format: 'json',
     offset: (queryPage - 1) * 10,
     limit: 10,
-    start_date: defaultStart.format('YYYY-MM-DD'),
-    end_date: defaultEnd.format('YYYY-MM-DD'),
-    loan_status_name: queryStatus,
+    start_date: defaultStart ? defaultStart.format('YYYY-MM-DD') : null,
+    end_date: defaultEnd ? defaultEnd.format('YYYY-MM-DD') : null,
+    due_start_date: defaultDueStart
+      ? defaultDueStart.format('YYYY-MM-DD')
+      : null,
+    due_end_date: defaultDueEnd ? defaultDueEnd.format('YYYY-MM-DD') : null,
+    loan_status_name: queryStatus || null,
     search: '',
   });
 
@@ -332,6 +339,26 @@ const GadaiEmasTablePage = () => {
     });
   };
 
+  const onRangeChangeDue = (
+    dates: null | (Dayjs | null)[],
+    dateStrings: string[]
+  ) => {
+    const [start, end] = dateStrings;
+
+    setParams((prev) => ({
+      ...prev,
+      due_start_date: start,
+      due_end_date: end,
+      offset: 0,
+    }));
+
+    updateQueryString({
+      due_start_date: start,
+      due_end_date: end,
+      page: 1,
+    });
+  };
+
   // -------------------------------------------------------------------
   // Handle Status Filter
   // -------------------------------------------------------------------
@@ -464,19 +491,36 @@ const GadaiEmasTablePage = () => {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-end justify-between mb-4 gap-2">
+        <div className="flex items-end gap-2">
           {/* FILTER DATE RANGE */}
-          <RangePicker
-            size="small"
-            className="w-[320px] h-[40px]"
-            onChange={onRangeChange}
-            value={
-              params.start_date && params.end_date
-                ? [dayjs(params.start_date), dayjs(params.end_date)]
-                : null
-            }
-          />
+          <div className="flex flex-col gap-2">
+            <label>Tanggal Gadai</label>
+            <RangePicker
+              size="small"
+              className="w-[320px] h-[40px]"
+              onChange={onRangeChange}
+              value={
+                params.start_date && params.end_date
+                  ? [dayjs(params.start_date), dayjs(params.end_date)]
+                  : null
+              }
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label>Tanggal Jatuh Tempo</label>
+            <RangePicker
+              size="small"
+              className="w-[320px] h-[40px]"
+              onChange={onRangeChangeDue}
+              value={
+                params.due_start_date && params.due_end_date
+                  ? [dayjs(params.due_start_date), dayjs(params.due_end_date)]
+                  : null
+              }
+            />
+          </div>
 
           {/* SEARCH */}
           <input
