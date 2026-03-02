@@ -17,6 +17,7 @@ const levelOptions: Record<number, string> = {
   3: 'Fortune Rider',
   2: 'Coin Digger',
   1: 'Novice Saver',
+  0: 'All',
 };
 
 const InformationPromoPageForm = (props: { paramsId: string }) => {
@@ -24,7 +25,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
   const url = `/core/information/promo`;
 
   const [promoCode, setPromoCode] = useState('');
-  const [levelingUser, setLevelingUser] = useState('');
+  const [levelingUser, setLevelingUser] = useState('0');
   const [promoName, setPromoName] = useState('');
   const [promoUrl, setPromoUrl] = useState('');
   const [promoStartDate, setPromoStartDate] = useState('');
@@ -126,6 +127,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
     setPromoDiskon(data.promo_diskon?.toString() || '');
     setPromoCashback(data.promo_cashback?.toString() || '');
     setMerchantCasbhack(data.merchant_cashback?.toString() || '');
+    setPromoCashbackTipeUser(data.merchant_cashback?.toString() || '');
     setPromoUrlBackground(data.promo_url_background);
     setIsModalLoading(false);
   };
@@ -181,7 +183,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   isOptional={true}
                   initFile={fileData}
                   initUrl={promoUrlBackground}
-                  height={170}
+                  height={102}
                   onChange={(val) => changeFile(val)}
                 />
               </div>
@@ -214,7 +216,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   onChange={(e) => setLevelingUser(e.target.value)}
                   className="base"
                 >
-                  <option value="">-- Pilih Level User --</option>
+                  {/* <option value="">-- Pilih Level User --</option> */}
                   {Object.entries(levelOptions).map(([key, label]) => (
                     <option key={key} value={key}>
                       {label}
@@ -237,6 +239,9 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   className="base"
                 />
               </div>
+            </div>
+
+            <div className="form-area w-1/2">
               <div className="input-area">
                 <label>
                   Promo URL{' '}
@@ -252,9 +257,6 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   className="base"
                 />
               </div>
-            </div>
-
-            <div className="form-area w-1/2">
               <div className="input-area">
                 <label>
                   Tanggal Mulai Promo{' '}
@@ -322,7 +324,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   placeholder="0"
                 />
               </div>
-              <div className="input-area">
+              {/* <div className="input-area">
                 <label>
                   Promo Cashback{' '}
                   {required.promo_cashback && (
@@ -372,7 +374,7 @@ const InformationPromoPageForm = (props: { paramsId: string }) => {
                   className="base"
                   placeholder="0"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
