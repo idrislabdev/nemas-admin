@@ -177,6 +177,10 @@ const ComEmasFisikDeliveryPage = (props: {
     fetchData();
   }, [fetchData]);
 
+  const selectedCertIds = payloads
+    .map((item) => item.gold_cert_detail_price)
+    .filter((val): val is string => val !== null);
+
   return (
     <div className="flex flex-col gap-[10px]">
       {contextHolder}
@@ -507,6 +511,7 @@ const ComEmasFisikDeliveryPage = (props: {
             isModalOpen={isModalSertifikat}
             setIsModalOpen={setIsModalSertifikat}
             goldId={selectGoldId.toString()}
+            selectedCertIds={selectedCertIds}
             onSelect={(id: string, value: string) => {
               onChangeDetail('gold_cert_detail_price', selectedIndex, id);
               onChangeDetail('gold_cert_detail', selectedIndex, value);

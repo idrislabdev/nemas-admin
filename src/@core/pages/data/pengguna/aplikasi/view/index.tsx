@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PengggunaProfile from './profile';
 import ProfileTransaction from './transaction';
 import { UndoOutlineIcon } from '@/@core/my-icons';
+import ProfileTransactionFailed from '@/@core/pages/data/pengguna/aplikasi/view/transaction-failed';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
@@ -25,6 +26,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   const tabs = [
     { label: 'Profil Pengguna', value: 'profile' },
     { label: 'Transaksi', value: 'transaction' },
+    { label: 'Transaksi Gagal', value: 'transaction_failed' },
   ];
 
   const fetchData = useCallback(async () => {
@@ -76,6 +78,9 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
             <PengggunaProfile detail={detail} setRefresData={setRefresData} />
           )}
           {tab == 'transaction' && <ProfileTransaction id={detail.id} />}
+          {tab == 'transaction_failed' && (
+            <ProfileTransactionFailed id={detail.id} />
+          )}
         </>
       )}
     </>
