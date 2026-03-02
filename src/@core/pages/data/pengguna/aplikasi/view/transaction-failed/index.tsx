@@ -137,12 +137,6 @@ const ProfileTransactionFailed = (props: { id: string }) => {
         Pengirim: item.user_from,
         Penerima: item.user_to,
         'Berat Emas (Diterima)': item.transfered_weight,
-        ...(isAllChecked
-          ? {
-              'Saldo Emas': item.gold_balance,
-              'Saldo Wallet': item.wallet_balance,
-            }
-          : {}),
       })
     );
 
@@ -220,14 +214,9 @@ const ProfileTransactionFailed = (props: { id: string }) => {
     fetchData();
   }, [fetchData]);
 
-  const allValues = options.map((o) => o.value);
-  const isAllChecked =
-    checkeds.length === allValues.length &&
-    allValues.every((v) => checkeds.includes(v));
-
   return (
     <div className="flex flex-col gap-[10px]">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-[8px]">
           <label className="text-base">Filter Transaksi</label>
           <span>:</span>
@@ -253,7 +242,7 @@ const ProfileTransactionFailed = (props: { id: string }) => {
           Download Transaksi
         </button>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] overflow-auto">
         <table className="table-basic">
           <thead>
             <tr>
@@ -267,12 +256,6 @@ const ProfileTransactionFailed = (props: { id: string }) => {
               <th>Pengirim</th>
               <th>Penerima</th>
               <th>Berat Emas (Diterima)</th>
-              {isAllChecked && (
-                <>
-                  <th>Saldo Emas</th>
-                  <th>Saldo Wallet</th>
-                </>
-              )}
             </tr>
           </thead>
           <tbody>
@@ -288,12 +271,6 @@ const ProfileTransactionFailed = (props: { id: string }) => {
                 <td>{item.user_from}</td>
                 <td>{item.user_to}</td>
                 <td>{item.transfered_weight}</td>
-                {isAllChecked && (
-                  <>
-                    <td>{item.gold_balance}</td>
-                    <td>{item.wallet_balance}</td>
-                  </>
-                )}
               </tr>
             ))}
           </tbody>

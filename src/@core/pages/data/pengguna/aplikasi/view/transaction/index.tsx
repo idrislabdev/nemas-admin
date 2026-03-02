@@ -227,7 +227,7 @@ const ProfileTransaction = (props: { id: string }) => {
 
   return (
     <div className="flex flex-col gap-[10px]">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-[8px]">
           <label className="text-base">Filter Transaksi</label>
           <span>:</span>
@@ -253,7 +253,7 @@ const ProfileTransaction = (props: { id: string }) => {
           Download Transaksi
         </button>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] overflow-auto">
         <table className="table-basic">
           <thead>
             <tr>
