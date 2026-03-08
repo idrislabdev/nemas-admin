@@ -91,23 +91,27 @@ const StatusDeliveryInvoice = () => {
             )
           </div>
         </div>
-
-        <Link
-          href={`/laporan/gadai-emas?loan_status_name=Approved&due_end_date=${today}`}
-          className="text-blue-500 underline"
-        >
-          Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi
-        </Link>
-        <p>
-          Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
-        </p>
-        <Link
-          href={`/laporan/gadai-emas?loan_status_name=Approved&start_date=${today}&end_date=${today}`}
-          className="text-blue-500 underline"
-        >
-          Gadai Wajib Bayar Hari Ini: {status.pending_loan_payment_today}{' '}
-          transaksi
-        </Link>
+        <div className="flex flex-col">
+          <Link
+            href={`/laporan/gadai-emas?loan_status_name=Approved&due_end_date=${today}`}
+            className="text-blue-500 underline"
+          >
+            Gadai Belum Dibayar H-3: {status.pending_loan_payment} transaksi
+          </Link>
+          <Link
+            href={`/laporan/tagihan-bulanan?is_paid=false`}
+            className="text-blue-500 underline"
+          >
+            Biaya Bulanan Belum Dibayar: {status.pending_monthly_cost} transaksi
+          </Link>
+          <Link
+            href={`/laporan/gadai-emas?loan_status_name=Approved&start_date=${today}&end_date=${today}`}
+            className="text-blue-500 underline"
+          >
+            Gadai Wajib Bayar Hari Ini: {status.pending_loan_payment_today}{' '}
+            transaksi
+          </Link>
+        </div>
       </div>
     </div>
   );

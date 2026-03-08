@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -13,6 +13,7 @@ import { FileDownload02 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -27,6 +28,7 @@ export interface IVendor3rdParty {
   admin_cost: number;
   fee: number;
   pendapatan: string;
+  is_failed: boolean;
 }
 
 const Vendor3rdParty = () => {
@@ -35,20 +37,27 @@ const Vendor3rdParty = () => {
   const [dataTable, setDataTable] = useState<Array<IVendor3rdParty>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const [statusFailed, setStatusFailed] = useState<boolean | null>(null);
 
   const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
   const defaultEnd = dayjs().format('YYYY-MM-DD');
 
-  const [params, setParams] = useState({
-    format: 'json',
+  const [params, setParams] = useState<any>({
     offset: 0,
     limit: 10,
     start_date: defaultStart,
     end_date: defaultEnd,
     search: '',
+    is_failed: null,
   });
+
+  // =====================
+  // Debounce Search
+  // =====================
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(search), 500);
@@ -56,68 +65,101 @@ const Vendor3rdParty = () => {
   }, [search]);
 
   useEffect(() => {
-    setParams((prev) => ({ ...prev, offset: 0, search: debouncedSearch }));
+    setParams((prev: any) => ({
+      ...prev,
+      offset: 0,
+      search: debouncedSearch,
+    }));
   }, [debouncedSearch]);
+
+  // =====================
+  // Sync Status Filter
+  // =====================
+
+  useEffect(() => {
+    setParams((prev: any) => ({
+      ...prev,
+      offset: 0,
+      is_failed: statusFailed,
+    }));
+  }, [statusFailed]);
+
+  // =====================
+  // Table Columns
+  // =====================
 
   const columns: ColumnsType<IVendor3rdParty> = [
     {
       title: 'Tipe Transaksi',
       dataIndex: 'transaction_type',
-      key: 'transaction_type',
       width: 150,
     },
-    { title: 'Nomor', dataIndex: 'number', key: 'number', width: 150 },
+    {
+      title: 'Nomor',
+      dataIndex: 'number',
+      width: 150,
+    },
     {
       title: 'Tanggal',
       dataIndex: 'create_date',
-      key: 'create_date',
       width: 180,
-      render: (_, record) =>
-        moment(record.create_date).format('DD MMMM YYYY HH:mm'),
+      render: (_, r) => moment(r.create_date).format('DD MMMM YYYY HH:mm'),
     },
     {
       title: 'Amount',
       dataIndex: 'amount',
-      key: 'amount',
       width: 150,
       render: (v) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Metode Pembayaran',
       dataIndex: 'payment_method',
-      key: 'payment_method',
       width: 150,
     },
     {
       title: 'Biaya Admin',
       dataIndex: 'admin_cost',
-      key: 'admin_cost',
       width: 150,
       render: (v) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Fee',
       dataIndex: 'fee',
-      key: 'fee',
       width: 150,
       render: (v) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Pendapatan',
       dataIndex: 'pendapatan',
-      key: 'pendapatan',
       width: 150,
     },
   ];
 
+  // =====================
+  // Fetch Data
+  // =====================
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const filteredParams: any = { ...params };
+
+    if (filteredParams.is_failed === null) delete filteredParams.is_failed;
+
+    const resp = await axiosInstance.get(url, { params: filteredParams });
+
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params]);
 
+  // =====================
+  // Pagination
+  // =====================
+
   const onChangePage = (val: number) =>
     setParams({ ...params, offset: (val - 1) * params.limit });
+
+  // =====================
+  // Date Range
+  // =====================
 
   const onRangeChange = (_: null | (Dayjs | null)[], dateStrings: string[]) => {
     setParams({
@@ -128,14 +170,20 @@ const Vendor3rdParty = () => {
     });
   };
 
+  // =====================
+  // Fetch All Export Data
+  // =====================
+
   const fetchAllData = async (url: string, params: any) => {
-    let all = [] as IVendor3rdParty[];
+    let all: IVendor3rdParty[] = [];
     const limit = 100;
 
     const first = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
+
     all = all.concat(first.data.results);
+
     const totalCount = first.data.count;
     const pages = Math.ceil(totalCount / limit);
 
@@ -143,18 +191,29 @@ const Vendor3rdParty = () => {
       const resp = await axiosInstance.get(url, {
         params: { ...params, limit, offset: i * limit },
       });
+
       all = all.concat(resp.data.results);
+
       await new Promise((r) => setTimeout(r, 150));
     }
+
     return all;
   };
+
+  // =====================
+  // Export Excel
+  // =====================
 
   const exportData = async () => {
     try {
       setIsModalLoading(true);
-      const rows = await fetchAllData(url, params);
 
-      // ==== MAP DATA & KEEP HEADER EVEN IF EMPTY ====
+      const exportParams: any = { ...params };
+
+      if (exportParams.is_failed === null) delete exportParams.is_failed;
+
+      const rows = await fetchAllData(url, exportParams);
+
       const mapped =
         rows.length > 0
           ? rows.map((i) => ({
@@ -183,13 +242,10 @@ const Vendor3rdParty = () => {
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Vendor 3rd Party');
 
-      // ==== TITLE ====
       ws.mergeCells('A1:H1');
-      const t = ws.getCell('A1');
-      t.value = 'LAPORAN VENDOR 3RD PARTY';
-      t.font = { size: 14, bold: true };
+      ws.getCell('A1').value = 'LAPORAN VENDOR 3RD PARTY';
+      ws.getCell('A1').font = { size: 14, bold: true };
 
-      // ==== PERIOD ====
       ws.mergeCells('A2:H2');
       ws.getCell('A2').value = `Periode: ${dayjs(params.start_date).format(
         'DD-MM-YYYY'
@@ -197,7 +253,6 @@ const Vendor3rdParty = () => {
 
       ws.addRow([]);
 
-      // ==== HEADER ====
       const headers = Object.keys(mapped[0]);
       const hrow = ws.addRow(headers);
 
@@ -212,69 +267,20 @@ const Vendor3rdParty = () => {
         };
       });
 
-      // ==== DATA ROWS ====
       mapped.forEach((r) => {
         const vals = headers.map((k) => r[k as keyof typeof r]);
         const row = ws.addRow(vals);
 
-        row.eachCell((c, idx) => {
-          const key = headers[idx - 1];
-          const isNum = key?.includes('(Rp)');
-
-          c.alignment = { horizontal: isNum ? 'right' : 'left' };
+        row.eachCell((c) => {
           c.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if (isNum && c.value !== '') {
-            c.value = new Intl.NumberFormat('id-ID').format(Number(c.value));
-          }
         });
       });
 
-      // ==== TOTAL ROW ====
-      if (rows.length > 0) {
-        const totalAmount = rows.reduce((a, b) => a + Number(b.amount), 0);
-        const totalAdmin = rows.reduce((a, b) => a + Number(b.admin_cost), 0);
-        const totalFee = rows.reduce((a, b) => a + Number(b.fee), 0);
-        const totalPendapatan = rows.reduce(
-          (a, b) => a + Number(b.pendapatan || 0),
-          0
-        );
-
-        const totalRow = [
-          'TOTAL', // Col A
-          '', // Tanggal
-          '', // Nomor
-          totalAmount, // Amount
-          '', // Metode Pembayaran
-          totalAdmin, // Admin Cost
-          totalFee, // Fee
-          totalPendapatan, // Pendapatan
-        ];
-
-        const row = ws.addRow(totalRow);
-
-        row.eachCell((c) => {
-          c.font = { bold: true };
-          c.alignment = { horizontal: 'right' };
-          c.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-
-          if (typeof c.value === 'number') {
-            c.value = new Intl.NumberFormat('id-ID').format(c.value);
-          }
-        });
-      }
-
-      // ==== AUTOSIZE ====
       ws.columns.forEach((col: any) => {
         let max = 0;
         col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -284,8 +290,8 @@ const Vendor3rdParty = () => {
         col.width = Math.min(max + 2, 40);
       });
 
-      // ==== SAVE FILE ====
       const buffer = await wb.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `vendor_3rd_party_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
@@ -313,9 +319,23 @@ const Vendor3rdParty = () => {
           <input
             type="text"
             placeholder="Cari..."
-            className="pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px]"
+            className="pl-2 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <Select
+            allowClear
+            size="large"
+            className="w-[180px]"
+            placeholder="Status Transaksi"
+            value={statusFailed}
+            onChange={setStatusFailed}
+            options={[
+              { value: null, label: 'Semua' },
+              { value: false, label: 'Berhasil' },
+              { value: true, label: 'Gagal' },
+            ]}
           />
         </div>
 
@@ -332,7 +352,6 @@ const Vendor3rdParty = () => {
           size="small"
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
-          className="table-basic"
           rowKey="id"
         />
 

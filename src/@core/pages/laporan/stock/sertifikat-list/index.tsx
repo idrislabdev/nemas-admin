@@ -6,7 +6,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -44,10 +44,12 @@ const SertifikatListPage = () => {
   const [dataTable, setDataTable] = useState<Array<ICertificate>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Default tanggal: 1 awal bulan - hari ini
+  const [includeStock, setIncludeStock] = useState<boolean | null>(null);
+
   const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
   const defaultEnd = dayjs().format('YYYY-MM-DD');
 
@@ -58,9 +60,9 @@ const SertifikatListPage = () => {
     start_date: defaultStart,
     end_date: defaultEnd,
     search: '',
+    include_stock: null,
   });
 
-  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -75,6 +77,14 @@ const SertifikatListPage = () => {
       search: debouncedSearch,
     }));
   }, [debouncedSearch]);
+
+  useEffect(() => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      include_stock: includeStock,
+    }));
+  }, [includeStock]);
 
   const columns: ColumnsType<ICertificate> = [
     {
@@ -163,9 +173,15 @@ const SertifikatListPage = () => {
     },
   ];
 
-  // Fetch table data
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const filteredParams: any = { ...params };
+
+    if (filteredParams.include_stock === null) {
+      delete filteredParams.include_stock;
+    }
+
+    const resp = await axiosInstance.get(url, { params: filteredParams });
+
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params, url]);
@@ -186,7 +202,6 @@ const SertifikatListPage = () => {
     });
   };
 
-  // Fetch all data for export
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
@@ -195,108 +210,123 @@ const SertifikatListPage = () => {
       params: { ...params, limit, offset: 0 },
     });
 
-    allRows = [...firstResp.data.results];
+    allRows = allRows.concat(firstResp.data.results);
 
     const totalCount = firstResp.data.count;
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+
       const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset: i * limit },
+        params: { ...params, limit, offset },
       });
+
       allRows = allRows.concat(resp.data.results);
-      await new Promise((r) => setTimeout(r, 200)); // anti ban
+
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     return allRows;
   };
 
-  // EXPORT EXCEL
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const rows = await fetchAllData(url, params);
+      const exportParams = {
+        ...params,
+        offset: 0,
+        limit: 50,
+      };
 
-      if (!rows || rows.length === 0) return;
+      const rows = await fetchAllData(url, exportParams);
 
-      const dataToExport = rows.map((item: ICertificate) => ({
+      const dataToExport = rows.map((item: ICertificate, index: number) => ({
+        No: index + 1,
         'Kode Sertifikat': item.gold_cert_code || '-',
         'Brand Emas': item.gold_brand || '-',
         'Jenis Emas': item.gold_type || '-',
-        'Berat (Gram)': Number(item.gold_weight || 0),
+        'Berat (Gram)': item.gold_weight || 0,
         'Brand Sertifikat': item.cert_brand || '-',
         'Kode Sertifikat Barang': item.cert_code || '-',
-        'Harga Sertifikat (Rp)': Number(item.cert_price || 0),
+        'Harga Sertifikat': item.cert_price || 0,
         'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
         Terpakai: item.is_redeemed ? 'Sudah' : 'Belum',
         'Dibuat Oleh': item.create_user_name || '-',
-        'Waktu Dibuat': moment(item.create_time).format('DD MMMM YYYY HH:mm'),
+        'Waktu Dibuat': item.create_time
+          ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+          : '-',
         'Diupdate Oleh': item.upd_user_name || '-',
-        'Waktu Update': moment(item.upd_time).format('DD MMMM YYYY HH:mm'),
+        'Waktu Update': item.upd_time
+          ? moment(item.upd_time).format('DD MMM YYYY, HH:mm')
+          : '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Sertifikat Emas');
 
-      // Header title
-      worksheet.mergeCells('A1:L1');
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN SERTIFIKAT EMAS';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left' };
+      // ======================
+      // Title
+      // ======================
+      worksheet.mergeCells('A1:N1');
 
-      // Periode
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:L2');
-        const period = worksheet.getCell('A2');
-        period.value = `Periode: ${dayjs(params.start_date).format(
-          'DD-MM-YYYY'
-        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
-      }
+      worksheet.getCell('A1').value = 'LAPORAN SERTIFIKAT EMAS';
+
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      worksheet.getCell('A1').font = {
+        size: 14,
+        bold: true,
+      };
 
       worksheet.addRow([]);
 
-      // Table header
-      const headerKeys = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(headerKeys);
+      // ======================
+      // Header
+      // ======================
+      const header = Object.keys(dataToExport[0]);
+
+      const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+
+        cell.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
+          fgColor: { argb: 'FFE5E5E5' },
         };
       });
 
-      // Table rows
-      dataToExport.forEach((row) => {
-        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
+      // ======================
+      // Rows
+      // ======================
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
+
         const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
-          const isNumeric =
-            header.includes('(Rp)') || header.includes('(Gram)');
-
+        newRow.eachCell((cell) => {
           cell.alignment = {
             vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
           };
 
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
-          }
-
-          // Tambahkan border untuk setiap cell data
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -306,24 +336,31 @@ const SertifikatListPage = () => {
         });
       });
 
-      // Auto column width
-      worksheet.columns.forEach((col) => {
-        let maxLength = 0;
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const v = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, v.length);
-        });
-        col.width = Math.min(maxLength + 2, 40);
+      // ======================
+      // Auto Column Width
+      // ======================
+      worksheet.columns.forEach((col: any) => {
+        if (col != undefined) {
+          let maxLength = 0;
+
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+
+            if (val.length > maxLength) maxLength = val.length;
+          });
+
+          col.width = maxLength + 2;
+        }
       });
 
-      // Save file
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
-        `laporan_sertifikat_emas_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+        `laporan_sertifikat_emas_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
-      console.error(err);
+      console.error('Export failed:', err);
     } finally {
       setIsModalLoading(false);
     }
@@ -347,9 +384,23 @@ const SertifikatListPage = () => {
           <input
             type="text"
             placeholder="Cari..."
-            className="pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px] focus:outline-none focus:ring-1 focus:ring-primary"
+            className="pl-2 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px]"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <Select
+            allowClear
+            size="large"
+            className="w-[180px] select-sm"
+            placeholder="Include 'Stock"
+            value={includeStock}
+            onChange={setIncludeStock}
+            options={[
+              { value: undefined, label: 'All' },
+              { value: true, label: 'Ya' },
+              { value: false, label: 'Tidak' },
+            ]}
           />
         </div>
 

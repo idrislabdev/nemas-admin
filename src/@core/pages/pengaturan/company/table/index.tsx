@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { notification, Spin, Input } from 'antd';
+import { notification, Spin, Input, InputNumber } from 'antd';
 import axiosInstance from '@/@core/utils/axios';
 import { Pencil01, Save01, X } from '@untitled-ui/icons-react';
 
@@ -13,6 +13,9 @@ interface ICompanyConfig {
   company_phone_number: string;
   company_email: string;
   company_operational_head: string;
+  admin_phone_number: string;
+  admin_email: string;
+  minimum_stock: string;
 }
 
 const CompanyConfigEditable = () => {
@@ -64,7 +67,7 @@ const CompanyConfigEditable = () => {
   };
 
   // ========================
-  // Handle Save (PATCH)
+  // Handle Save
   // ========================
   const handleSave = async () => {
     if (!data?.company_id) return;
@@ -78,6 +81,9 @@ const CompanyConfigEditable = () => {
         company_phone_number: form.company_phone_number,
         company_email: form.company_email,
         company_operational_head: form.company_operational_head,
+        admin_phone_number: form.admin_phone_number,
+        admin_email: form.admin_email,
+        minimum_stock: form.minimum_stock,
       });
 
       api.success({
@@ -104,13 +110,25 @@ const CompanyConfigEditable = () => {
     setEditing(false);
   };
 
+  // ========================
+  // Formatter angka Indonesia
+  // ========================
+  const formatNumber = (value: string | number) => {
+    if (!value) return '-';
+    return new Intl.NumberFormat('id-ID').format(Number(value));
+  };
+
+  // ========================
+  // Render Item
+  // ========================
   const renderItem = (
     label: string,
     field: string,
-    type: 'text' | 'textarea' = 'text'
+    type: 'text' | 'textarea' | 'number' | 'stock' = 'text'
   ) => (
     <div className="grid grid-cols-3 border-b border-gray-200">
       <div className="p-3 font-medium bg-gray-50 text-sm">{label}</div>
+
       <div className="p-3 col-span-2 text-sm">
         {editing ? (
           type === 'textarea' ? (
@@ -120,6 +138,33 @@ const CompanyConfigEditable = () => {
               onChange={(e) => handleChange(field, e.target.value)}
               className="text-sm!"
             />
+          ) : type === 'number' ? (
+            <InputNumber
+              value={form[field]}
+              onChange={(value) => handleChange(field, value?.toString() || '')}
+              min={0}
+              style={{ width: '100%' }}
+              formatter={(value) =>
+                value
+                  ? new Intl.NumberFormat('id-ID').format(Number(value))
+                  : ''
+              }
+              parser={(value) => value!.replace(/\./g, '')}
+            />
+          ) : type === 'stock' ? (
+            <InputNumber
+              value={form[field]}
+              onChange={(value) => handleChange(field, value?.toString() || '')}
+              min={0}
+              style={{ width: '100%' }}
+              addonAfter="gr"
+              formatter={(value) =>
+                value
+                  ? new Intl.NumberFormat('id-ID').format(Number(value))
+                  : ''
+              }
+              parser={(value) => value!.replace(/\./g, '')}
+            />
           ) : (
             <Input
               value={form[field]}
@@ -127,6 +172,8 @@ const CompanyConfigEditable = () => {
               className="text-sm!"
             />
           )
+        ) : type === 'stock' ? (
+          `${formatNumber(form[field])} gr`
         ) : (
           form[field] || '-'
         )}
@@ -137,6 +184,7 @@ const CompanyConfigEditable = () => {
   return (
     <>
       {contextHolder}
+
       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
         <Spin spinning={loading}>
           <div className="flex justify-between items-center p-4 border-b">
@@ -144,23 +192,27 @@ const CompanyConfigEditable = () => {
 
             {!editing ? (
               <button
-                className="btn btn-primary"
+                className="btn btn-primary flex items-center gap-2"
                 onClick={() => setEditing(true)}
               >
-                <Pencil01 />
+                <Pencil01 size={18} />
                 Edit Data
               </button>
             ) : (
               <div className="flex gap-2">
                 <button
-                  className="btn btn-outline-secondary"
+                  className="btn btn-outline-secondary flex items-center gap-2"
                   onClick={handleCancel}
                 >
-                  <X />
+                  <X size={18} />
                   Batal
                 </button>
-                <button className="btn btn-primary" onClick={handleSave}>
-                  <Save01 />
+
+                <button
+                  className="btn btn-primary flex items-center gap-2"
+                  onClick={handleSave}
+                >
+                  <Save01 size={18} />
                   Simpan
                 </button>
               </div>
@@ -172,6 +224,9 @@ const CompanyConfigEditable = () => {
           {renderItem('No. Telepon', 'company_phone_number')}
           {renderItem('Email', 'company_email')}
           {renderItem('Operational Head', 'company_operational_head')}
+          {renderItem('Email Admin', 'admin_email')}
+          {renderItem('No. Hp Admin', 'admin_phone_number')}
+          {renderItem('Stock Minimum', 'minimum_stock', 'stock')}
         </Spin>
       </div>
     </>
