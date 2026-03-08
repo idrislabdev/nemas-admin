@@ -5,7 +5,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -27,6 +27,7 @@ const GoldInvestmentTable = () => {
   const [dataTable, setDataTable] = useState<Array<IGoldInvestmentReport>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const [params, setParams] = useState({
     format: 'json',
@@ -35,6 +36,7 @@ const GoldInvestmentTable = () => {
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
     search: '', // 🔹 Tambahkan parameter pencarian
+    status: '',
   });
 
   const [searchText, setSearchText] = useState(''); // 🔹 State input pencarian
@@ -168,6 +170,14 @@ const GoldInvestmentTable = () => {
     return () => clearTimeout(handler);
   }, [searchText]);
 
+  useEffect(() => {
+    setParams((prev: any) => ({
+      ...prev,
+      offset: 0,
+      status: filterStatus === 'all' ? '' : filterStatus,
+    }));
+  }, [filterStatus]);
+
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
     const limit = 100;
@@ -198,26 +208,54 @@ const GoldInvestmentTable = () => {
 
       const rows = await fetchAllData(url, params);
 
-      const dataToExport = rows.map((item: IGoldInvestmentReport) => ({
-        'Nomor Transaksi': item.transaction_number,
-        'Tanggal Transaksi': moment(item.date_invested).format('DD MMMM YYYY'),
-        'Tanggal Return': moment(item.date_returned).format('DD MMMM YYYY'),
-        'Return Investasi': item.investment_return?.name || '-',
-        'Nama Investor': item.investor_name,
-        'Nominal Investasi': parseFloat(
-          item.amount_invested?.toString() || '0'
-        ),
-        'Berat Investasi': parseFloat(item.weight_invested?.toString() || '0'),
-        'Nominal Return': parseFloat(item.return_amount?.toString() || '0'),
-        'Berat Return': parseFloat(item.return_weight?.toString() || '0'),
-        'Status Return': item.is_returned ? 'Sudah' : 'Belum',
-        'Status Transaksi': item.status,
-      }));
+      const dataToExport =
+        rows.length > 0
+          ? rows.map((item: IGoldInvestmentReport) => ({
+              'Nomor Transaksi': item.transaction_number,
+              'Tanggal Transaksi': moment(item.date_invested).format(
+                'DD MMMM YYYY'
+              ),
+              'Tanggal Return': moment(item.date_returned).format(
+                'DD MMMM YYYY'
+              ),
+              'Return Investasi': item.investment_return?.name || '-',
+              'Nama Investor': item.investor_name,
+              'Nominal Investasi': parseFloat(
+                item.amount_invested?.toString() || '0'
+              ),
+              'Berat Investasi': parseFloat(
+                item.weight_invested?.toString() || '0'
+              ),
+              'Nominal Return': parseFloat(
+                item.return_amount?.toString() || '0'
+              ),
+              'Berat Return': parseFloat(item.return_weight?.toString() || '0'),
+              'Status Return': item.is_returned ? 'Sudah' : 'Belum',
+              'Status Transaksi': item.status,
+            }))
+          : [
+              {
+                'Nomor Transaksi': '',
+                'Tanggal Transaksi': '',
+                'Tanggal Return': '',
+                'Return Investasi': '',
+                'Nama Investor': '',
+                'Nominal Investasi': '',
+                'Berat Investasi': '',
+                'Nominal Return': '',
+                'Berat Return': '',
+                'Status Return': '',
+                'Status Transaksi': '',
+              },
+            ];
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
 
-      // Judul laporan
+      // ======================
+      // JUDUL
+      // ======================
+
       worksheet.mergeCells('A1:K1');
       worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS';
       worksheet.getCell('A1').alignment = {
@@ -226,7 +264,10 @@ const GoldInvestmentTable = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // Periode
+      // ======================
+      // PERIODE
+      // ======================
+
       if (params.start_date && params.end_date) {
         worksheet.mergeCells('A2:K2');
         worksheet.getCell('A2').value = `Periode: ${dayjs(
@@ -237,20 +278,40 @@ const GoldInvestmentTable = () => {
         worksheet.getCell('A2').alignment = { horizontal: 'left' };
       }
 
+      // ======================
+      // STATUS FILTER
+      // ======================
+
+      worksheet.mergeCells('A3:K3');
+      worksheet.getCell('A3').value = `Status: ${
+        params.status ? params.status : 'Semua'
+      }`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
       worksheet.addRow([]);
 
-      // Header
+      // ======================
+      // HEADER TABLE
+      // ======================
+
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -258,23 +319,30 @@ const GoldInvestmentTable = () => {
         };
       });
 
-      // Data rows
+      // ======================
+      // DATA ROWS
+      // ======================
+
       dataToExport.forEach((row) => {
         const rowValues = header.map((key) => {
           const val = row[key as keyof typeof row];
-          // Format nominal dan berat dengan Rp/Gram di tampilan Excel
+
           if (typeof val === 'number') {
             if (key.toLowerCase().includes('nominal'))
               return `Rp${formatDecimal(val)}`;
+
             if (key.toLowerCase().includes('berat'))
               return `${formatDecimal(val)} Gram`;
           }
+
           return val ?? '-';
         });
+
         const newRow = worksheet.addRow(rowValues);
+
         newRow.eachCell((cell, colNumber) => {
           const headerName = header[colNumber - 1];
-          // Nominal rata kanan
+
           if (
             headerName.toLowerCase().includes('nominal') ||
             headerName.toLowerCase().includes('berat')
@@ -283,6 +351,7 @@ const GoldInvestmentTable = () => {
           } else {
             cell.alignment = { vertical: 'middle' };
           }
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -292,19 +361,25 @@ const GoldInvestmentTable = () => {
         });
       });
 
-      // === 🔹 Hitung total untuk kolom nominal ===
+      // ======================
+      // TOTAL
+      // ======================
+
       const totalNominalInvestasi = rows.reduce(
         (acc, cur) => acc + parseFloat(cur.amount_invested?.toString() || '0'),
         0
       );
+
       const totalBeratInvestasi = rows.reduce(
         (acc, cur) => acc + parseFloat(cur.weight_invested?.toString() || '0'),
         0
       );
+
       const totalNominalReturn = rows.reduce(
         (acc, cur) => acc + parseFloat(cur.return_amount?.toString() || '0'),
         0
       );
+
       const totalBeratReturn = rows.reduce(
         (acc, cur) => acc + parseFloat(cur.return_weight?.toString() || '0'),
         0
@@ -326,7 +401,9 @@ const GoldInvestmentTable = () => {
 
       totalRow.eachCell((cell, colNumber) => {
         const headerName = header[colNumber - 1];
+
         cell.font = { bold: true };
+
         if (
           headerName?.toLowerCase().includes('nominal') ||
           headerName?.toLowerCase().includes('berat')
@@ -335,6 +412,7 @@ const GoldInvestmentTable = () => {
         } else {
           cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -343,9 +421,13 @@ const GoldInvestmentTable = () => {
         };
       });
 
-      // Auto width
+      // ======================
+      // AUTO WIDTH
+      // ======================
+
       worksheet.columns.forEach((col) => {
-        if (!col) return; // pastikan col tidak undefined
+        if (!col) return;
+
         let maxLength = 0;
 
         col.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -357,9 +439,11 @@ const GoldInvestmentTable = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_investasi_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
@@ -391,6 +475,22 @@ const GoldInvestmentTable = () => {
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm font-normal text-neutral-700 w-[220px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+
+          <Select
+            allowClear
+            size="large"
+            className="w-[180px]"
+            placeholder="Status"
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { value: null, label: 'SEMUA' },
+              { value: 'CANCELLED', label: 'CANCELLED' },
+              { value: 'COMPLETE', label: 'COMPLETE' },
+              { value: 'DONE', label: 'DONE' },
+              { value: 'PENDING', label: 'PENDING' },
+            ]}
           />
         </div>
 
