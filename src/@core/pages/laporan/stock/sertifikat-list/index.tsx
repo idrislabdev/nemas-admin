@@ -60,7 +60,7 @@ const SertifikatListPage = () => {
     start_date: defaultStart,
     end_date: defaultEnd,
     search: '',
-    include_stock: null,
+    include_stock: null as boolean | null,
   });
 
   useEffect(() => {
@@ -296,7 +296,7 @@ const SertifikatListPage = () => {
         cell.font = { bold: true };
 
         cell.alignment = {
-          horizontal: 'left',
+          horizontal: 'center',
           vertical: 'middle',
         };
 
@@ -397,7 +397,7 @@ const SertifikatListPage = () => {
             value={includeStock}
             onChange={setIncludeStock}
             options={[
-              { value: undefined, label: 'All' },
+              { value: null, label: 'All' },
               { value: true, label: 'Ya' },
               { value: false, label: 'Tidak' },
             ]}

@@ -31,7 +31,7 @@ const TagihanBulananTablePage = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const [statusPaid, setStatusPaid] = useState<boolean | undefined>(undefined);
+  const [statusPaid, setStatusPaid] = useState<boolean | null>(null);
 
   const [params, setParams] = useState<any>({
     offset: 0,
@@ -425,7 +425,7 @@ const TagihanBulananTablePage = () => {
             value={statusPaid}
             onChange={setStatusPaid}
             options={[
-              { value: undefined, label: 'Semua' },
+              { value: null, label: 'Semua' },
               { value: true, label: 'Lunas' },
               { value: false, label: 'Belum Lunas' },
             ]}

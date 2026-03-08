@@ -195,7 +195,7 @@ const CompanyConfigEditable = () => {
                 className="btn btn-primary flex items-center gap-2"
                 onClick={() => setEditing(true)}
               >
-                <Pencil01 size={18} />
+                <Pencil01 />
                 Edit Data
               </button>
             ) : (
@@ -204,7 +204,7 @@ const CompanyConfigEditable = () => {
                   className="btn btn-outline-secondary flex items-center gap-2"
                   onClick={handleCancel}
                 >
-                  <X size={18} />
+                  <X />
                   Batal
                 </button>
 
@@ -212,7 +212,7 @@ const CompanyConfigEditable = () => {
                   className="btn btn-primary flex items-center gap-2"
                   onClick={handleSave}
                 >
-                  <Save01 size={18} />
+                  <Save01 />
                   Simpan
                 </button>
               </div>
