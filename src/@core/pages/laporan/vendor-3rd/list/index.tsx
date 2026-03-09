@@ -4,7 +4,7 @@
 
 import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/@core/utils/axios';
@@ -12,6 +12,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useRouter, useSearchParams } from 'next/navigation';
 import 'moment/locale/id';
 
 moment.locale('id');
@@ -34,47 +35,64 @@ export interface IVendor3rdParty {
 const Vendor3rdParty = () => {
   const url = `/reports/transaction-cost/list`;
 
-  const [dataTable, setDataTable] = useState<Array<IVendor3rdParty>>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [dataTable, setDataTable] = useState<IVendor3rdParty[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
 
-  const [statusFailed, setStatusFailed] = useState<boolean | null>(null);
+  const [statusFailed, setStatusFailed] = useState<boolean | null>(
+    searchParams.get('is_failed')
+      ? searchParams.get('is_failed') === 'true'
+      : null
+  );
 
-  const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
-  const defaultEnd = dayjs().format('YYYY-MM-DD');
+  const [transactionType, setTransactionType] = useState<string | null>(
+    searchParams.get('transaction_type')
+  );
 
   const [params, setParams] = useState<any>({
-    offset: 0,
+    offset: Number(searchParams.get('offset')) || 0,
     limit: 10,
-    start_date: defaultStart,
-    end_date: defaultEnd,
-    search: '',
-    is_failed: null,
+    start_date: searchParams.get('start_date'),
+    end_date: searchParams.get('end_date'),
+    search: searchParams.get('search') || '',
+    is_failed: searchParams.get('is_failed')
+      ? searchParams.get('is_failed') === 'true'
+      : null,
+    transaction_type: searchParams.get('transaction_type'),
   });
 
-  // =====================
-  // Debounce Search
-  // =====================
+  // ======================
+  // Update URL Query
+  // ======================
+
+  const updateQuery = (newParams: any) => {
+    const query = new URLSearchParams();
+
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value !== null && value !== '' && value !== undefined) {
+        query.set(key, String(value));
+      }
+    });
+
+    router.replace(`?${query.toString()}`);
+  };
 
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(search), 500);
+    const handler = setTimeout(() => {
+      setParams((prev: any) => ({
+        ...prev,
+        offset: 0,
+        search,
+      }));
+    }, 500);
+
     return () => clearTimeout(handler);
   }, [search]);
-
-  useEffect(() => {
-    setParams((prev: any) => ({
-      ...prev,
-      offset: 0,
-      search: debouncedSearch,
-    }));
-  }, [debouncedSearch]);
-
-  // =====================
-  // Sync Status Filter
-  // =====================
 
   useEffect(() => {
     setParams((prev: any) => ({
@@ -84,15 +102,27 @@ const Vendor3rdParty = () => {
     }));
   }, [statusFailed]);
 
-  // =====================
+  useEffect(() => {
+    setParams((prev: any) => ({
+      ...prev,
+      offset: 0,
+      transaction_type: transactionType,
+    }));
+  }, [transactionType]);
+
+  useEffect(() => {
+    updateQuery(params);
+  }, [params]);
+
+  // ======================
   // Table Columns
-  // =====================
+  // ======================
 
   const columns: ColumnsType<IVendor3rdParty> = [
     {
       title: 'Tipe Transaksi',
       dataIndex: 'transaction_type',
-      width: 150,
+      width: 180,
     },
     {
       title: 'Nomor',
@@ -114,7 +144,7 @@ const Vendor3rdParty = () => {
     {
       title: 'Metode Pembayaran',
       dataIndex: 'payment_method',
-      width: 150,
+      width: 180,
     },
     {
       title: 'Biaya Admin',
@@ -135,14 +165,19 @@ const Vendor3rdParty = () => {
     },
   ];
 
-  // =====================
+  // ======================
   // Fetch Data
-  // =====================
+  // ======================
 
   const fetchData = useCallback(async () => {
     const filteredParams: any = { ...params };
 
     if (filteredParams.is_failed === null) delete filteredParams.is_failed;
+    if (!filteredParams.transaction_type)
+      delete filteredParams.transaction_type;
+    if (!filteredParams.start_date) delete filteredParams.start_date;
+    if (!filteredParams.end_date) delete filteredParams.end_date;
+    if (!filteredParams.search) delete filteredParams.search;
 
     const resp = await axiosInstance.get(url, { params: filteredParams });
 
@@ -150,129 +185,168 @@ const Vendor3rdParty = () => {
     setTotal(resp.data.count);
   }, [params]);
 
-  // =====================
-  // Pagination
-  // =====================
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  const onChangePage = (val: number) =>
-    setParams({ ...params, offset: (val - 1) * params.limit });
-
-  // =====================
-  // Date Range
-  // =====================
+  const onChangePage = (page: number) => {
+    setParams({
+      ...params,
+      offset: (page - 1) * params.limit,
+    });
+  };
 
   const onRangeChange = (_: null | (Dayjs | null)[], dateStrings: string[]) => {
     setParams({
       ...params,
       offset: 0,
-      start_date: dateStrings[0],
-      end_date: dateStrings[1],
+      start_date: dateStrings[0] || null,
+      end_date: dateStrings[1] || null,
     });
   };
 
-  // =====================
-  // Fetch All Export Data
-  // =====================
+  // ======================
+  // FETCH ALL DATA (EXPORT)
+  // ======================
 
   const fetchAllData = async (url: string, params: any) => {
-    let all: IVendor3rdParty[] = [];
+    let allRows: any[] = [];
     const limit = 100;
 
-    const first = await axiosInstance.get(url, {
+    const firstResp = await axiosInstance.get(url, {
       params: { ...params, limit, offset: 0 },
     });
 
-    all = all.concat(first.data.results);
+    allRows = allRows.concat(firstResp.data.results);
 
-    const totalCount = first.data.count;
-    const pages = Math.ceil(totalCount / limit);
+    const totalCount = firstResp.data.count;
+    const totalPages = Math.ceil(totalCount / limit);
 
-    for (let i = 1; i < pages; i++) {
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+
       const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset: i * limit },
+        params: { ...params, limit, offset },
       });
 
-      all = all.concat(resp.data.results);
+      allRows = allRows.concat(resp.data.results);
 
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 200));
     }
 
-    return all;
+    return allRows;
   };
 
-  // =====================
-  // Export Excel
-  // =====================
+  // ======================
+  // EXPORT EXCEL
+  // ======================
 
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const exportParams: any = { ...params };
+      const exportParams: any = { ...params, offset: 0, limit: 50 };
 
       if (exportParams.is_failed === null) delete exportParams.is_failed;
+      if (!exportParams.start_date) delete exportParams.start_date;
+      if (!exportParams.end_date) delete exportParams.end_date;
+      if (!exportParams.transaction_type) delete exportParams.transaction_type;
 
       const rows = await fetchAllData(url, exportParams);
 
-      const mapped =
-        rows.length > 0
-          ? rows.map((i) => ({
-              'Tipe Transaksi': i.transaction_type,
-              Tanggal: moment(i.create_date).format('DD MMMM YYYY HH:mm'),
-              Nomor: i.number,
-              'Amount (Rp)': i.amount,
-              'Metode Pembayaran': i.payment_method,
-              'Biaya Admin (Rp)': i.admin_cost,
-              'Fee (Rp)': i.fee,
-              Pendapatan: i.pendapatan,
-            }))
-          : [
-              {
-                'Tipe Transaksi': '',
-                Tanggal: '',
-                Nomor: '',
-                'Amount (Rp)': '',
-                'Metode Pembayaran': '',
-                'Biaya Admin (Rp)': '',
-                'Fee (Rp)': '',
-                Pendapatan: '',
-              },
-            ];
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk di export');
+        return;
+      }
 
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet('Vendor 3rd Party');
+      const dataToExport = rows.map((item: IVendor3rdParty, index: number) => ({
+        No: index + 1,
+        'Tipe Transaksi': item.transaction_type || '-',
+        Nomor: item.number || '-',
+        Tanggal: moment(item.create_date).format('DD MMM YYYY HH:mm'),
+        Amount: item.amount || 0,
+        'Metode Pembayaran': item.payment_method || '-',
+        'Biaya Admin': item.admin_cost || 0,
+        Fee: item.fee || 0,
+        Pendapatan: item.pendapatan || '-',
+        Status: item.is_failed ? 'Gagal' : 'Berhasil',
+      }));
 
-      ws.mergeCells('A1:H1');
-      ws.getCell('A1').value = 'LAPORAN VENDOR 3RD PARTY';
-      ws.getCell('A1').font = { size: 14, bold: true };
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Vendor 3rd Party');
 
-      ws.mergeCells('A2:H2');
-      ws.getCell('A2').value = `Periode: ${dayjs(params.start_date).format(
-        'DD-MM-YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      // TITLE
 
-      ws.addRow([]);
+      worksheet.mergeCells('A1:J1');
+      worksheet.getCell('A1').value = 'LAPORAN VENDOR 3RD PARTY';
+      worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      const headers = Object.keys(mapped[0]);
-      const hrow = ws.addRow(headers);
+      // PERIODE
 
-      hrow.eachCell((c) => {
-        c.font = { bold: true };
-        c.alignment = { horizontal: 'center' };
-        c.border = {
+      let periodeText = 'Semua Periode';
+
+      if (params.start_date && params.end_date) {
+        periodeText = `${moment(params.start_date).format(
+          'DD MMMM YYYY'
+        )} - ${moment(params.end_date).format('DD MMMM YYYY')}`;
+      }
+
+      worksheet.mergeCells('A2:J2');
+      worksheet.getCell('A2').value = `Periode : ${periodeText}`;
+
+      // STATUS
+
+      let statusText = 'Semua';
+
+      if (params.is_failed === false) statusText = 'Berhasil';
+      if (params.is_failed === true) statusText = 'Gagal';
+
+      worksheet.mergeCells('A3:J3');
+      worksheet.getCell('A3').value = `Status : ${statusText}`;
+
+      // TRANSACTION TYPE
+
+      const transactionTypeText = params.transaction_type
+        ? params.transaction_type
+        : 'Semua';
+
+      worksheet.mergeCells('A4:J4');
+      worksheet.getCell('A4').value = `Tipe Transaksi : ${transactionTypeText}`;
+
+      worksheet.addRow([]);
+
+      const header = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
+        cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
       });
 
-      mapped.forEach((r) => {
-        const vals = headers.map((k) => r[k as keyof typeof r]);
-        const row = ws.addRow(vals);
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key]);
 
-        row.eachCell((c) => {
-          c.border = {
+        const newRow = worksheet.addRow(rowValues);
+
+        newRow.eachCell((cell) => {
+          cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
@@ -281,29 +355,32 @@ const Vendor3rdParty = () => {
         });
       });
 
-      ws.columns.forEach((col: any) => {
-        let max = 0;
+      worksheet.columns.forEach((col: any) => {
+        let maxLength = 0;
+
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
-          max = Math.max(max, val.length);
+
+          if (val.length > maxLength) {
+            maxLength = val.length;
+          }
         });
-        col.width = Math.min(max + 2, 40);
+
+        col.width = maxLength + 2;
       });
 
-      const buffer = await wb.xlsx.writeBuffer();
+      const buffer = await workbook.xlsx.writeBuffer();
 
       saveAs(
         new Blob([buffer]),
-        `vendor_3rd_party_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+        `laporan_vendor_3rd_party_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
       );
+    } catch (err) {
+      console.error('Export failed:', err);
     } finally {
       setIsModalLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   return (
     <>
@@ -313,7 +390,6 @@ const Vendor3rdParty = () => {
             size="small"
             className="w-[320px] h-[40px]"
             onChange={onRangeChange}
-            defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
           />
 
           <input
@@ -326,7 +402,6 @@ const Vendor3rdParty = () => {
 
           <Select
             allowClear
-            size="large"
             className="w-[180px]"
             placeholder="Status Transaksi"
             value={statusFailed}
@@ -337,6 +412,22 @@ const Vendor3rdParty = () => {
               { value: true, label: 'Gagal' },
             ]}
           />
+
+          <Select
+            allowClear
+            className="w-[220px]"
+            placeholder="Tipe Transaksi"
+            value={transactionType}
+            onChange={setTransactionType}
+            options={[
+              { value: 'Bayar Biaya Bulanan', label: 'Bayar Biaya Bulanan' },
+              { value: 'Bayar Gadai Emas', label: 'Bayar Gadai Emas' },
+              { value: 'Beli Produk Emas', label: 'Beli Produk Emas' },
+              { value: 'Tarik Emas', label: 'Tarik Emas' },
+              { value: 'Tarik Saldo', label: 'Tarik Saldo' },
+              { value: 'Topup Saldo', label: 'Topup Saldo' },
+            ]}
+          />
         </div>
 
         <button className="btn !h-[40px] btn-primary" onClick={exportData}>
@@ -345,7 +436,7 @@ const Vendor3rdParty = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] mt-3">
+      <div className="flex flex-col border border-gray-200 rounded-t-[8px] mt-3">
         <Table
           columns={columns}
           dataSource={dataTable}

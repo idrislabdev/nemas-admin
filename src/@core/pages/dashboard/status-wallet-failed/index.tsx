@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axiosInstance from '@/@core/utils/axios';
 import { AlertTriangle } from '@untitled-ui/icons-react';
+import Link from 'next/link';
 
 interface WalletFailedStatus {
   failed_topup: number;
@@ -42,17 +43,52 @@ const StatusWalletFailed = () => {
         <AlertTriangle className="w-6 h-6 mr-2" />
       </div>
 
-      <h5 className="text-red-700 font-semibold text-lg mb-2 text-center">
+      <h5 className="text-red-700 font-semibold text-lg mb-3 text-center">
         Info transaksi 3rd Party Gagal
       </h5>
 
-      <div className="text-sm text-gray-700 text-center leading-relaxed">
-        <p>Topup Saldo: {status.failed_topup} transaksi</p>
-        <p>Tarik Saldo: {status.failed_disburst} transaksi</p>
-        <p>Pay Tarik Emas: {status.failed_redeem} transaksi</p>
-        <p>Pay Beli Produk Emas: {status.failed_buy} transaksi</p>
-        <p>Transfer Gadai: {status.failed_loan} transaksi</p>
-        <p>Pay Cost Bulanan: {status.failed_monthly_cost} transaksi</p>
+      <div className="text-sm text-gray-700 text-center leading-relaxed space-y-1">
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Topup%20Saldo&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Topup Saldo: {status.failed_topup} transaksi
+        </Link>
+
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Tarik%20Saldo&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Tarik Saldo: {status.failed_disburst} transaksi
+        </Link>
+
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Tarik%20Emas&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Pay Tarik Emas: {status.failed_redeem} transaksi
+        </Link>
+
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Beli%20Produk%20Emas&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Pay Beli Produk Emas: {status.failed_buy} transaksi
+        </Link>
+
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Transfer%20Gadai&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Transfer Gadai: {status.failed_loan} transaksi
+        </Link>
+
+        <Link
+          href="/laporan/vendor-3rd?transaction_type=Bayar%20Biaya%20Bulanan&is_failed=true"
+          className="block underline text-blue-500 "
+        >
+          Pay Cost Bulanan: {status.failed_monthly_cost} transaksi
+        </Link>
       </div>
     </div>
   );
