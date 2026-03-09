@@ -11,7 +11,7 @@ import React, {
 } from 'react';
 import { MapContainer, Marker, TileLayer, Popup, useMap } from 'react-leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import { IOpenStreetAddress, IUserAddress } from '@/@core/@types/interface';
+import { IUserAddress } from '@/@core/@types/interface';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
@@ -105,25 +105,54 @@ const ModalAddress = (props: {
     setIsModalOpen(false);
   };
 
+  const getComponent = (components: any[], type: string) => {
+    const comp = components.find((c) => c.types.includes(type));
+    return comp ? comp.long_name : '';
+  };
+
+  const findPostalResult = (results: any[]) => {
+    return (
+      results.find((r) =>
+        r.address_components.some((c: any) => c.types.includes('postal_code'))
+      ) || results[0]
+    );
+  };
+
   const getAddress = async (lat: number, lng: number) => {
     const resp = await axios.get(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      'https://maps.googleapis.com/maps/api/geocode/json',
+      {
+        params: {
+          latlng: `${lat},${lng}`,
+          key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY,
+        },
+      }
     );
-    const { data } = resp;
-    const objAddress: IOpenStreetAddress = data.address;
+
+    const results = resp.data.results;
+
+    if (!results?.length) return;
+
+    const bestResult = findPostalResult(results);
+
+    const components = bestResult.address_components;
+
     const temp: IUserAddress = {
-      city: objAddress.city,
-      district: objAddress.city_district
-        ? objAddress.city_district
-        : objAddress.municipality,
-      subdistrict: objAddress.village ? objAddress.village : objAddress.suburb,
-      postal_code: objAddress.postcode,
-      address: data.display_name ?? '-',
+      city: getComponent(components, 'administrative_area_level_2'),
+      district: getComponent(components, 'administrative_area_level_3'),
+      subdistrict:
+        getComponent(components, 'administrative_area_level_4') ||
+        getComponent(components, 'administrative_area_level_5'),
+      postal_code: getComponent(components, 'postal_code'),
+      address: bestResult.formatted_address ?? '-',
       is_default: true,
-      latitude: data.lat ?? center.lat,
-      longtitude: data.lon ?? center.lng,
-      province: translateProvince(objAddress.state),
+      latitude: lat,
+      longtitude: lng,
+      province: translateProvince(
+        getComponent(components, 'administrative_area_level_1')
+      ),
     };
+
     setUserAddress(temp);
   };
 
