@@ -12,16 +12,21 @@ import { notification } from 'antd';
 const GoldCertDetailPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const url = `/core/gold/cert_price_detail`;
+
   const [required, setRequired] = useState<IGoldCertPriceDetail>(
     {} as IGoldCertPriceDetail
   );
-  const [golds, setGolds] = useState<IGold[]>([] as IGold[]);
-  const [certs, setCerts] = useState<IGoldCert[]>([] as IGoldCert[]);
-  const [gold, setGold] = useState(0);
-  const [goldCert, setGoldCert] = useState(0);
+
+  const [golds, setGolds] = useState<IGold[]>([]);
+  const [certs, setCerts] = useState<IGoldCert[]>([]);
+
+  const [gold, setGold] = useState<number>(0);
+  const [goldCert, setGoldCert] = useState<number>(0);
+
   const [goldCertCode, setGoldCertCode] = useState('');
   const [includeStock, setIncludeStock] = useState(true);
   const [goldWeight, setGoldWeight] = useState('');
+
   const [api, contextHolder] = notification.useNotification();
 
   const onCancel = () => {
@@ -33,7 +38,6 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    // const user = JSON.parse(localStorage.getItem("user") || "{}")
     const body = {
       gold: gold,
       gold_cert: goldCert,
@@ -42,11 +46,13 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
         goldWeight.toString().replace('.', '').replace(',', '.')
       ),
       include_stock: includeStock,
-      // "create_user": user.id
     };
+
     setRequired({});
+
     try {
       let desc = '';
+
       if (paramsId == 'form') {
         await axiosInstance.post(`${url}/create`, body);
         desc = 'Data Gold Cert Price Telah Disimpan';
@@ -55,7 +61,9 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
         await axiosInstance.patch(`${url}/${paramsId}/`, body);
         desc = 'Data Gold Cert Price Telah Diupdate';
       }
+
       clearForm();
+
       api.info({
         message: 'Data Gold Cert Price',
         description: desc,
@@ -63,6 +71,7 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
       });
     } catch (error) {
       const err = error as AxiosError;
+
       if (err.response && err.response.data) {
         const data: IGoldCertPriceDetail = err.response.data;
         setRequired(data);
@@ -73,20 +82,35 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
   const fetchDataGolds = useCallback(async () => {
     const resp = await axiosInstance.get(`/core/gold/?offset=0&limit=100`);
     const { results } = resp.data;
-    setGolds(results);
-    setGold(results[0].gold_id);
-  }, [setGolds]);
 
-  const fetchDataCerts = useCallback(async () => {
-    const resp = await axiosInstance.get(`/core/gold/cert/?offset=0&limit=100`);
+    setGolds(results);
+
+    if (results.length > 0) {
+      setGold(results[0].gold_id ?? 0);
+    }
+  }, []);
+
+  const fetchDataCerts = useCallback(async (brand?: string) => {
+    let query = `/core/gold/cert/?offset=0&limit=100`;
+
+    if (brand) {
+      query += `&cert_brand__icontains=${brand}`;
+    }
+
+    const resp = await axiosInstance.get(query);
     const { results } = resp.data;
+
     setCerts(results);
-    setGoldCert(results[0].cert_id);
-  }, [setCerts]);
+
+    if (results.length > 0) {
+      setGoldCert(results[0].cert_id ?? 0);
+    }
+  }, []);
 
   const fetchData = async () => {
     const resp = await axiosInstance.get(`${url}/${paramsId}/`);
     const { data } = resp;
+
     setGold(data.gold);
     setGoldCert(data.gold_cert);
     setGoldCertCode(data.gold_cert_code);
@@ -106,18 +130,43 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
     if (paramsId != 'form') fetchData();
   }, []);
 
+  /**
+   * Trigger ketika gold berubah
+   */
+  useEffect(() => {
+    if (!golds.length) return;
+
+    const selectedGold = golds.find((g) => g.gold_id === gold);
+
+    if (!selectedGold) return;
+
+    const brand = selectedGold.brand ?? '';
+
+    /**
+     * fetch cert berdasarkan brand
+     */
+    fetchDataCerts(brand);
+
+    /**
+     * auto isi satuan
+     */
+    if (selectedGold.gold_weight) {
+      setGoldWeight(selectedGold.gold_weight.toString());
+    }
+  }, [gold, golds, fetchDataCerts]);
+
   const clearForm = () => {
     setGoldCertCode('');
-    setGoldWeight('');
+    // setGoldWeight('');
     setIncludeStock(true);
-    // setCertCode("");
-    // setGoldWeight("");
-    // setCertPrice("");
   };
+
   return (
     <div className="form-input">
       {contextHolder}
+
       <div className="form-area">
+        {/* GOLD */}
         <div className="input-area">
           <label>
             Emas{' '}
@@ -127,17 +176,20 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
               </span>
             )}
           </label>
+
           <select
-            defaultValue={gold}
+            value={gold}
             onChange={(e) => setGold(parseInt(e.target.value))}
           >
-            {golds.map((item, index: number) => (
+            {golds.map((item, index) => (
               <option value={item.gold_id} key={index}>
                 {item.brand} - {item.gold_weight}Gr
               </option>
             ))}
           </select>
         </div>
+
+        {/* CERT */}
         <div className="input-area">
           <label>
             Sertifikat{' '}
@@ -147,32 +199,38 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
               </span>
             )}
           </label>
+
           <select
-            defaultValue={goldCert}
+            value={goldCert}
             onChange={(e) => setGoldCert(parseInt(e.target.value))}
           >
-            {certs.map((item, index: number) => (
+            {certs.map((item, index) => (
               <option value={item.cert_id} key={index}>
-                {item.cert_code} - {item.cert_name}
+                {item.cert_code} - {item.cert_brand}
               </option>
             ))}
           </select>
         </div>
+
+        {/* NOMOR CERT */}
         <div className="input-area">
           <label>
-            Kode Sertifikat{' '}
+            Nomor Sertifikat{' '}
             {required.gold_cert_code && (
               <span className="text-red-500 text-[10px]/[14px] italic">
                 ({required.gold_cert_code?.toString()})
               </span>
             )}
           </label>
+
           <input
             value={goldCertCode}
             onChange={(e) => setGoldCertCode(e.target.value)}
             className={`base ${required.gold_cert_code ? 'error' : ''}`}
           />
         </div>
+
+        {/* SATUAN */}
         <div className="input-area">
           <label>
             Satuan (gr){' '}
@@ -182,8 +240,10 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
               </span>
             )}
           </label>
+
           <div className="group-input prepend">
             <span className="prepend !top-[5px]">gr</span>
+
             <input
               value={goldWeight}
               onChange={(e) =>
@@ -199,6 +259,8 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
             />
           </div>
         </div>
+
+        {/* INCLUDE STOCK */}
         <div className="input-area">
           <label>
             Include Stock{' '}
@@ -208,17 +270,19 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
               </span>
             )}
           </label>
+
           <select
-            defaultValue={includeStock ? 'Ya' : 'Tidak'}
+            value={includeStock ? 'Ya' : 'Tidak'}
             onChange={(e) =>
-              setIncludeStock(e.target.value == 'Ya' ? true : false)
+              setIncludeStock(e.target.value === 'Ya' ? true : false)
             }
           >
-            <option value={`Ya`}>Ya</option>
-            <option value={`Tidak`}>Tidak</option>
+            <option value="Ya">Ya</option>
+            <option value="Tidak">Tidak</option>
           </select>
         </div>
       </div>
+
       <div className="form-button">
         <button
           className="btn btn-outline-secondary"
@@ -226,6 +290,7 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
         >
           Batal
         </button>
+
         <button className="btn btn-primary" onClick={() => onSave()}>
           Simpan
         </button>

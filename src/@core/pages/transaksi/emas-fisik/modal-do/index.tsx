@@ -324,8 +324,11 @@ const ModalDO = (props: {
                   segel keamanan NEMAS.
                   {'\n'}- Mohon pastikan segel dalam kondisi utuh saat diterima.
                   {'\n'}- Setiap kerusakan atau kehilangan wajib disertai berita
-                  acara dari pihak {data.tracking_courier_name} dalam waktu 1x24
-                  jam.
+                  acara dari pihak{' '}
+                  {data.tracking_courier_name == 'AMBIL SENDIRI'
+                    ? data.user.name
+                    : data.tracking_courier_name}{' '}
+                  dalam waktu 1x24 jam.
                   {'\n'}- Barang dikirim dalam kondisi terasuransi penuh sesuai
                   nilai invoice.
                 </div>

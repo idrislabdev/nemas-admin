@@ -63,7 +63,7 @@ const GoldCertDetailPageTable = () => {
     { title: 'Emas', dataIndex: 'gold', key: 'gold' },
     { title: 'Sertifikat', dataIndex: 'gold_cert', key: 'gold_cert' },
     {
-      title: 'Kode Sertifikat',
+      title: 'Nomor Sertifikat',
       dataIndex: 'gold_cert_code',
       key: 'gold_cert_code',
     },
