@@ -8,6 +8,7 @@ import HighchartsReact from 'highcharts-react-official';
 import axiosInstance from '@/@core/utils/axios';
 import moment from 'moment';
 import 'moment/locale/id';
+import { Select } from 'antd';
 
 moment.locale('id');
 
@@ -20,6 +21,7 @@ const PergerakanEmas = () => {
     data: [],
   });
   const [options, setOptions] = useState<any>({});
+  const [type, setType] = useState('buy');
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
   // Fetch data chart
@@ -31,16 +33,26 @@ const PergerakanEmas = () => {
       const categories: string[] = [];
       const dataVal: number[] = [];
 
-      data.forEach((item: { day: string; gold_price_buy: number }) => {
-        categories.push(moment(item.day).format('DD MMM'));
-        dataVal.push(item.gold_price_buy);
-      });
+      data.forEach(
+        (item: {
+          day: string;
+          gold_price_buy: number;
+          gold_price_sell: number;
+        }) => {
+          categories.push(moment(item.day).format('DD MMM'));
+          if (type == 'buy') {
+            dataVal.push(item.gold_price_buy);
+          } else {
+            dataVal.push(item.gold_price_sell);
+          }
+        }
+      );
 
       setDataChart({ categories, data: dataVal });
     } catch (error) {
       console.error('Failed to fetch gold chart data:', error);
     }
-  }, []);
+  }, [type]);
 
   // Setup chart options
   const updateChart = useCallback(() => {
@@ -123,9 +135,24 @@ const PergerakanEmas = () => {
 
   return (
     <div className="shadow-custom-1 bg-white rounded-md p-4 flex flex-col gap-4">
-      <h5 className="text-green-700 font-semibold mb-3">
-        Pergerakan Harga Emas (1 Bulan Terakhir)
-      </h5>
+      <div className="flex items-center justify-between">
+        <h5 className="text-green-700 font-semibold mb-3">
+          Pergerakan Harga {type == 'buy' ? 'Beli' : 'Jual'} Emas (1 Bulan
+          Terakhir)
+        </h5>
+        <Select
+          allowClear
+          size="large"
+          className="w-[180px]"
+          placeholder="Status"
+          value={type}
+          onChange={setType}
+          options={[
+            { value: 'buy', label: 'Beli' },
+            { value: 'sell', label: 'Jual' },
+          ]}
+        />
+      </div>
 
       <HighchartsReact
         highcharts={Highcharts}
