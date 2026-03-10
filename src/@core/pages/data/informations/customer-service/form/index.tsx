@@ -92,7 +92,7 @@ const InformationCustomerServicePageForm = (props: { paramsId: string }) => {
         </div>
         <div className="input-area">
           <label>
-            No. Telepon Informasi{' '}
+            Nilai{' '}
             {required.information_phone && (
               <span className="text-red-500 text-[10px]/[14px] italic">
                 ({required.information_phone?.toString()})
