@@ -62,7 +62,7 @@ const InformationCustomerServicePageTable = () => {
       key: 'information_name',
     },
     {
-      title: 'Nilai',
+      title: 'Isi Informasi',
       dataIndex: 'information_phone',
       key: 'information_phone',
     },
