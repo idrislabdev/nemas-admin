@@ -8,7 +8,7 @@ import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
