@@ -2,19 +2,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ITagihanBulanan } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import { DatePicker, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+
+import { ITagihanBulanan } from '@/@core/@types/interface';
 
 moment.locale('id');
 
@@ -35,8 +37,8 @@ const TagihanBulananTablePage = () => {
   const queryStatus = searchParams.get('is_paid');
   const queryPage = Number(searchParams.get('page') || 1);
 
-  const defaultStart = queryStart ? dayjs(queryStart) : null;
-  const defaultEnd = queryEnd ? dayjs(queryEnd) : null;
+  // const defaultStart = queryStart ? dayjs(queryStart) : null;
+  // const defaultEnd = queryEnd ? dayjs(queryEnd) : null;
 
   const [statusPaid, setStatusPaid] = useState<any>(
     queryStatus === null ? null : queryStatus === 'true'
@@ -221,6 +223,221 @@ const TagihanBulananTablePage = () => {
     },
   ];
 
+  // ======================
+  // Fetch All Data (Export)
+  // ======================
+
+  const fetchAllData = async (url: string, params: any) => {
+    let allRows: any[] = [];
+    const limit = 100;
+
+    const firstResp = await axiosInstance.get(url, {
+      params: { ...params, limit, offset: 0 },
+    });
+
+    allRows = allRows.concat(firstResp.data.results);
+
+    const totalCount = firstResp.data.count;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, limit, offset },
+      });
+
+      allRows = allRows.concat(resp.data.results);
+
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    return allRows;
+  };
+
+  // ======================
+  // Export Excel
+  // ======================
+
+  const exportData = async () => {
+    try {
+      setIsModalLoading(true);
+
+      const exportParams: any = { ...params, offset: 0, limit: 50 };
+
+      if (exportParams.is_paid === null) delete exportParams.is_paid;
+      if (!exportParams.start_date) delete exportParams.start_date;
+      if (!exportParams.end_date) delete exportParams.end_date;
+
+      const rows = await fetchAllData(url, exportParams);
+
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk di export');
+        setIsModalLoading(false);
+        return;
+      }
+
+      const dataToExport = rows.map((item: ITagihanBulanan, index: number) => ({
+        No: index + 1,
+        'Order Number': item.order_number || '-',
+        'Nama User': item.user_name || '-',
+        'Nomor HP': item.user_phone_number || '-',
+        'Tanggal Tagihan': item.monthly_cost_issue_date
+          ? moment(item.monthly_cost_issue_date).format('DD MMM YYYY')
+          : '-',
+        Level: item.level || '-',
+        'Biaya Bulanan': item.monthly_cost || 0,
+        'Berat Emas (Gram)': item.gold_weight || 0,
+        'Total Tagihan': item.total_cost || 0,
+        Diskon: item.discount || 0,
+        Status: item.is_paid ? 'Lunas' : 'Belum Lunas',
+        Periode: item.current_period || '-',
+      }));
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Laporan Tagihan Bulanan');
+
+      // ======================
+      // Title
+      // ======================
+
+      worksheet.mergeCells('A1:L1');
+
+      worksheet.getCell('A1').value = 'LAPORAN TAGIHAN BULANAN';
+
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      worksheet.getCell('A1').font = {
+        size: 14,
+        bold: true,
+      };
+
+      // ======================
+      // Periode Filter
+      // ======================
+
+      let periodeText = 'Semua Periode';
+
+      if (params.start_date && params.end_date) {
+        periodeText = `${moment(params.start_date).format(
+          'DD MMMM YYYY'
+        )} - ${moment(params.end_date).format('DD MMMM YYYY')}`;
+      }
+
+      worksheet.mergeCells('A2:L2');
+
+      worksheet.getCell('A2').value = `Periode : ${periodeText}`;
+
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+      };
+
+      // ======================
+      // Status Filter
+      // ======================
+
+      let statusText = 'Semua';
+
+      if (params.is_paid === true) statusText = 'Lunas';
+      if (params.is_paid === false) statusText = 'Belum Lunas';
+
+      worksheet.mergeCells('A3:L3');
+
+      worksheet.getCell('A3').value = `Status : ${statusText}`;
+
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+      };
+
+      worksheet.addRow([]);
+
+      // ======================
+      // Header Table
+      // ======================
+
+      const header = Object.keys(dataToExport[0]);
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      // ======================
+      // Data Rows
+      // ======================
+
+      dataToExport.forEach((row: any) => {
+        const rowValues = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(rowValues);
+
+        newRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+
+          cell.alignment = {
+            vertical: 'middle',
+          };
+        });
+      });
+
+      // ======================
+      // Auto Column Width
+      // ======================
+
+      worksheet.columns.forEach((col: any) => {
+        let maxLength = 0;
+
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+
+          if (val.length > maxLength) {
+            maxLength = val.length;
+          }
+        });
+
+        col.width = maxLength + 2;
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      saveAs(
+        new Blob([buffer]),
+        `laporan_tagihan_bulanan_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsModalLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between gap-3">
@@ -252,9 +469,8 @@ const TagihanBulananTablePage = () => {
           />
         </div>
 
-        <button className="btn !h-[40px] btn-primary">
-          <FileDownload02 />
-          Export Excel
+        <button className="btn !h-[40px] btn-primary" onClick={exportData}>
+          <FileDownload02 /> Export Excel
         </button>
       </div>
 
