@@ -14,10 +14,11 @@ import Link from 'next/link';
 
 import {
   Dotpoints01,
-  Eye,
   FileDownload02,
   Plus,
+  RefreshCcw02,
   SearchSm,
+  Trash01,
 } from '@untitled-ui/icons-react';
 
 import ExcelJS from 'exceljs';
@@ -26,6 +27,8 @@ import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
 import ModalMenu from '../modal-menu';
+import ModalConfirm from '@/@core/components/modal/modal-confirm';
+import ModalConfirm2 from '@/@core/components/modal/modal-confirm-2';
 
 moment.locale('id');
 
@@ -38,6 +41,13 @@ const AdminPageTable = () => {
   const [isModalMenu, setIsModalMenu] = useState(false);
   const [dataMenu, setDataMenu] = useState<IMenu[]>([] as IMenu[]);
   const [userId, setUserId] = useState('');
+
+  const [openModalConfirm, setOpenModalConfirm] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
+
+  const [openResetConfirm, setOpenResetConfirm] = useState(false);
+  const [resetId, setResetId] = useState('');
+  const [dataAdmin, setDataAdmin] = useState({} as IPenggunaAplikasi);
 
   const [params, setParams] = useState({
     format: 'json',
@@ -85,32 +95,99 @@ const AdminPageTable = () => {
       width: 150,
     },
     {
-      title: 'Akses Menu',
-      key: 'menu',
+      title: 'Aksi',
+      key: 'action',
+      fixed: 'right',
       align: 'center',
-      width: 100,
+      width: 240,
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
-          <a className="btn-action" onClick={() => showMenu(record.id)}>
+          <a
+            className="btn-action bg-neutral-800 p-1 !rounded"
+            onClick={() => resetPassword(record)}
+          >
+            <span className="my-icon icon-sm text-white">
+              <RefreshCcw02 />
+            </span>
+            <span className="text-white">Password</span>
+          </a>
+          <a className="btn-action " onClick={() => showMenu(record.id)}>
             <Dotpoints01 />
+          </a>
+          <a className="btn-action" onClick={() => deleteData(record.id)}>
+            <Trash01 />
           </a>
         </div>
       ),
     },
-    {
-      title: '',
-      key: 'action',
-      fixed: 'right',
-      width: 100,
-      render: (_, record) => (
-        <div className="flex items-center gap-[5px] justify-center">
-          <Link className="btn-action" href={`/data/pengguna/${record.id}`}>
-            <Eye />
-          </Link>
-        </div>
-      ),
-    },
   ];
+
+  // ========================
+  // Delete
+  // ========================
+  const deleteData = (id: number | string) => {
+    if (id) {
+      setSelectedId(String(id));
+      setOpenModalConfirm(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    await axiosInstance.delete(`${url}/${selectedId}`);
+
+    setOpenModalConfirm(false);
+
+    setParams({
+      ...params,
+      offset: 0,
+      search: '',
+    });
+
+    api.info({
+      message: 'Data Admin',
+      description: 'Data Admin Berhasil Dihapus',
+      placement: 'bottomRight',
+    });
+  };
+
+  // ========================
+  // Reset Password
+  // ========================
+  const resetPassword = (data: IPenggunaAplikasi) => {
+    console.log(data);
+    if (data) {
+      setDataAdmin(data);
+      setResetId(String(data.id));
+      setOpenResetConfirm(true);
+    }
+  };
+
+  const confirmResetPassword = async () => {
+    try {
+      await axiosInstance.patch(`${url}/${resetId}`, {
+        email: dataAdmin.email,
+        name: dataAdmin.name,
+        phone_number: dataAdmin.phone_number,
+        password: 'admin12345',
+      });
+
+      setOpenResetConfirm(false);
+
+      api.success({
+        message: 'Reset Password',
+        description: 'Password berhasil direset menjadi',
+        placement: 'bottomRight',
+      });
+    } catch (err) {
+      console.error(err);
+
+      api.error({
+        message: 'Reset Password Gagal',
+        description: 'Tidak dapat mereset password admin',
+        placement: 'bottomRight',
+      });
+    }
+  };
 
   // ========================
   // Fetch Data
@@ -177,7 +254,6 @@ const AdminPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Admin');
 
-      // Judul
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'DATA PENGGUNA ADMIN';
       worksheet.getCell('A1').alignment = {
@@ -186,9 +262,8 @@ const AdminPageTable = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      worksheet.addRow([]); // baris kosong
+      worksheet.addRow([]);
 
-      // Header
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
@@ -208,49 +283,26 @@ const AdminPageTable = () => {
         };
       });
 
-      // Data rows
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const rowValues = header.map((key) => row[key]);
         const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell, colNumber) => {
-          cell.alignment = { vertical: 'middle' };
+        newRow.eachCell((cell) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if (header[colNumber - 1] === 'Create Time') {
-            cell.numFmt = 'dd/mm/yyyy hh:mm';
-          }
         });
       });
 
-      // Auto column width
-      worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
-      });
-
-      // Save file
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `data_admin_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
-      console.error('Export failed:', err);
-      api.error({
-        message: 'Export Gagal',
-        description: 'Tidak dapat mengekspor data pengguna admin',
-        placement: 'bottomRight',
-      });
+      console.error(err);
     } finally {
       setIsModalLoading(false);
     }
@@ -275,6 +327,7 @@ const AdminPageTable = () => {
   return (
     <>
       {contextHolder}
+
       <div className="flex items-center justify-between">
         <div className="group-input prepend-append">
           <span className="append">
@@ -290,11 +343,13 @@ const AdminPageTable = () => {
             )}
           />
         </div>
+
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
             <FileDownload02 />
             Export Excel
           </button>
+
           <Link
             href={`/pengaturan/admin/form`}
             className="btn btn-outline-neutral"
@@ -304,6 +359,7 @@ const AdminPageTable = () => {
           </Link>
         </div>
       </div>
+
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
@@ -314,6 +370,7 @@ const AdminPageTable = () => {
           className="table-basic"
           rowKey="id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -323,15 +380,31 @@ const AdminPageTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
       />
+
       <ModalMenu
         isModalOpen={isModalMenu}
         setIsModalOpen={setIsModalMenu}
         dataMenu={dataMenu}
         userId={userId}
+      />
+
+      <ModalConfirm
+        isModalOpen={openModalConfirm}
+        setIsModalOpen={setOpenModalConfirm}
+        content="Hapus Data Ini?"
+        onConfirm={confirmDelete}
+      />
+
+      <ModalConfirm2
+        isModalOpen={openResetConfirm}
+        setIsModalOpen={setOpenResetConfirm}
+        content={`Reset Password ${dataAdmin.email} Ini?`}
+        onConfirm={confirmResetPassword}
       />
     </>
   );

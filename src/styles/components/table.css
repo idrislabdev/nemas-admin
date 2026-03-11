@@ -3,69 +3,69 @@
 @tailwind utilities;
 
 .table-basic {
-    .ant-spin-nested-loading {
-        .ant-spin-container {
-            .ant-table {
-                .ant-table-header {
-                    table {
-                        thead {
-                            tr {
-                                th {
-                                    @apply px-[20px];
-                                }
-                            }
-                        }
-                    }
+  .ant-spin-nested-loading {
+    .ant-spin-container {
+      .ant-table {
+        .ant-table-header {
+          table {
+            thead {
+              tr {
+                th {
+                  @apply px-[20px];
                 }
-                .ant-table-body {
-                    table {
-                        tbody {
-                            tr {
-                                @apply h-[35px];
-                                td {
-                                    @apply px-[20px];
-                                }
-                            }
-                        }
-                    }
-                }
+              }
             }
+          }
         }
+        .ant-table-body {
+          table {
+            tbody {
+              tr {
+                @apply h-[35px];
+                td {
+                  @apply px-[20px];
+                }
+              }
+            }
+          }
+        }
+      }
     }
+  }
 }
 
 table {
-    @apply table-auto w-full text-[14px]/[21px] text-neutral-600 font-semibold;
-    thead {
-        tr {
-            @apply bg-neutral-50 h-[30px] rounded-[4px] text-neutral-500;
-            th {
-                @apply px-[20px] text-left font-medium;
-                &:first-child {
-                    @apply rounded-l-[4px];
-                }
-                &:last-child {
-                    @apply rounded-r-[4px];
-                }
-            }
+  @apply table-auto w-full text-[14px]/[21px] text-neutral-600 font-semibold;
+  thead {
+    tr {
+      @apply bg-neutral-50 h-[30px] rounded-[4px] text-neutral-500;
+      th {
+        @apply px-[20px] text-left font-medium;
+        &:first-child {
+          @apply rounded-l-[4px];
         }
+        &:last-child {
+          @apply rounded-r-[4px];
+        }
+      }
     }
-    tbody {
-        tr {
-            @apply h-[40px] text-[12px]/[18px];
-            td {
-                @apply px-[20px] border-b border-b-neutral-200;
-                a {
-                    @apply flex flex-col justify-center items-center;
-                    &.btn-action {
-                        @apply cursor-pointer text-neutral-600;
-                        svg {
-                            @apply w-[20px] h-[20px];
+  }
+  tbody {
+    tr {
+      @apply h-[40px] text-[12px]/[18px];
+      td {
+        @apply px-[20px] border-b border-b-neutral-200;
+        a {
+          @apply flex flex-col justify-center items-center;
+          &.btn-action {
+            @apply cursor-pointer text-neutral-600 flex flex-row gap-1 items-center;
 
-                        }
-                    }
-                }
+            svg {
+              @apply w-[20px] h-[20px];
             }
+          }
         }
+      }
     }
+  }
 }
