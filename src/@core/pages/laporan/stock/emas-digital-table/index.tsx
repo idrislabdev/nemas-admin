@@ -85,15 +85,15 @@ const StockEmasDigitalTable = () => {
           </>
         ),
       },
-      {
-        title: 'Saldo Akhir',
-        dataIndex: 'weight',
-        key: 'weight',
-        render: (_, record) =>
-          record.weight != null
-            ? `${formatDecimal(parseFloat(record.weight))} Gram`
-            : '-',
-      },
+      // {
+      //   title: 'Saldo Akhir',
+      //   dataIndex: 'weight',
+      //   key: 'weight',
+      //   render: (_, record) =>
+      //     record.weight != null
+      //       ? `${formatDecimal(parseFloat(record.weight))} Gram`
+      //       : '-',
+      // },
     ],
     []
   );
@@ -193,7 +193,7 @@ const StockEmasDigitalTable = () => {
           item.weight_credit !== null
             ? `${formatDecimal(parseFloat(item.weight_credit))} Gram`
             : '-',
-        'Saldo Akhir': `${formatDecimal(parseFloat(item.weight))} Gram`,
+        // 'Saldo Akhir': `${formatDecimal(parseFloat(item.weight))} Gram`,
       }));
 
       const workbook = new ExcelJS.Workbook();
