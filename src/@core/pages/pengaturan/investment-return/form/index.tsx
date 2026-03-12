@@ -67,7 +67,7 @@ const InvestmentReturnPageForm = (props: { paramsId: string }) => {
   };
 
   const fetchData = async () => {
-    const resp = await axiosInstance.get(`${url}/${paramsId}`);
+    const resp = await axiosInstance.get(`${url}/get/${paramsId}/`);
     const { data } = resp;
     setRate(data.rate);
     setDurationDays(data.duration_days);
