@@ -102,6 +102,12 @@ const AdminPageTable = () => {
       width: 240,
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
+          <a className="btn-action " onClick={() => showMenu(record.id)}>
+            <Dotpoints01 />
+          </a>
+          <a className="btn-action" onClick={() => deleteData(record.id)}>
+            <Trash01 />
+          </a>
           <a
             className="btn-action bg-neutral-800 p-1 !rounded"
             onClick={() => resetPassword(record)}
@@ -110,12 +116,6 @@ const AdminPageTable = () => {
               <RefreshCcw02 />
             </span>
             <span className="text-white">Password</span>
-          </a>
-          <a className="btn-action " onClick={() => showMenu(record.id)}>
-            <Dotpoints01 />
-          </a>
-          <a className="btn-action" onClick={() => deleteData(record.id)}>
-            <Trash01 />
           </a>
         </div>
       ),

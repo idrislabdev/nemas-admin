@@ -79,6 +79,11 @@
       }
     }
   }
+  &.modal-change-password {
+    .ant-modal-content {
+      @apply p-0;
+    }
+  }
 }
 
 @media (max-width: 767px) {

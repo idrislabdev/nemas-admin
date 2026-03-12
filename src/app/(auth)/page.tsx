@@ -1,5 +1,6 @@
 'use client';
 
+import ProfileDropdown from '@/@core/components/profile-dropdown';
 import { ArrowLeftIcon, FolderIcon, FolderOpenIcon } from '@/@core/my-icons';
 import DashboardPage from '@/@core/pages/dashboard';
 import { PresentationChart01 } from '@untitled-ui/icons-react';
@@ -21,6 +22,7 @@ const Home = () => {
             </li>
           </ul>
         </div>
+        <ProfileDropdown />
       </div>
       <div className="container-body">
         <div className="title-body">
