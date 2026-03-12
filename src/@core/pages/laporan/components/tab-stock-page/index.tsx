@@ -10,7 +10,7 @@ const LaporanTabStockPage = (props: { activeTab: string }) => {
           <Link href={`/laporan/stock`}>Stock Emas</Link>
         </li>
         <li className={`${activeTab === 'stock_sertifikat' ? 'active' : ''}`}>
-          <Link href={`/laporan/stock/sertifikat`}>Stock Sertifikat</Link>
+          <Link href={`/laporan/stock/sertifikat`}>Stok Produk / Detail</Link>
         </li>
       </ul>
     </div>

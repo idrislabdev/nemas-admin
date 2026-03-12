@@ -6,9 +6,9 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination, Select, Table } from 'antd';
+import { Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import moment from 'moment';
 import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
@@ -17,7 +17,7 @@ import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 moment.locale('id');
 
-const { RangePicker } = DatePicker;
+// const { RangePicker } = DatePicker;
 
 interface ICertificate {
   id: string;
@@ -50,8 +50,10 @@ const SertifikatListPage = () => {
 
   const [includeStock, setIncludeStock] = useState<boolean | null>(null);
 
-  const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
-  const defaultEnd = dayjs().format('YYYY-MM-DD');
+  const defaultStart = null;
+  dayjs().startOf('month').format('YYYY-MM-DD');
+  const defaultEnd = null;
+  dayjs().format('YYYY-MM-DD');
 
   const [params, setParams] = useState({
     format: 'json',
@@ -138,13 +140,13 @@ const SertifikatListPage = () => {
       width: 140,
       render: (val) => (val ? 'Ya' : 'Tidak'),
     },
-    {
-      title: 'Terpakai',
-      dataIndex: 'is_redeemed',
-      key: 'is_redeemed',
-      width: 140,
-      render: (val) => (val ? 'Sudah' : 'Belum'),
-    },
+    // {
+    //   title: 'Terpakai',
+    //   dataIndex: 'is_redeemed',
+    //   key: 'is_redeemed',
+    //   width: 140,
+    //   render: (val) => (val ? 'Sudah' : 'Belum'),
+    // },
     {
       title: 'Dibuat Oleh',
       dataIndex: 'create_user_name',
@@ -190,17 +192,17 @@ const SertifikatListPage = () => {
     setParams({ ...params, offset: (val - 1) * params.limit });
   };
 
-  const onRangeChange = (
-    dates: null | (Dayjs | null)[],
-    dateStrings: string[]
-  ) => {
-    setParams({
-      ...params,
-      offset: 0,
-      start_date: dateStrings[0],
-      end_date: dateStrings[1],
-    });
-  };
+  // const onRangeChange = (
+  //   dates: null | (Dayjs | null)[],
+  //   dateStrings: string[]
+  // ) => {
+  //   setParams({
+  //     ...params,
+  //     offset: 0,
+  //     start_date: dateStrings[0],
+  //     end_date: dateStrings[1],
+  //   });
+  // };
 
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
@@ -252,7 +254,7 @@ const SertifikatListPage = () => {
         'Kode Sertifikat Barang': item.cert_code || '-',
         'Harga Sertifikat': item.cert_price || 0,
         'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
-        Terpakai: item.is_redeemed ? 'Sudah' : 'Belum',
+        // Terpakai: item.is_redeemed ? 'Sudah' : 'Belum',
         'Dibuat Oleh': item.create_user_name || '-',
         'Waktu Dibuat': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
@@ -269,7 +271,7 @@ const SertifikatListPage = () => {
       // ======================
       // Title
       // ======================
-      worksheet.mergeCells('A1:N1');
+      worksheet.mergeCells('A1:M1');
 
       worksheet.getCell('A1').value = 'LAPORAN SERTIFIKAT EMAS';
 
@@ -374,12 +376,12 @@ const SertifikatListPage = () => {
     <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <RangePicker
+          {/* <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             onChange={onRangeChange}
             defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
-          />
+          /> */}
 
           <input
             type="text"
