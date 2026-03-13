@@ -14,6 +14,7 @@ import { FileDownload02 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 
@@ -153,6 +154,8 @@ const SellerCommissionListPage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData();
       if (!rows.length) return;
 
@@ -174,7 +177,6 @@ const SellerCommissionListPage = () => {
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Seller Commission');
 
-      // ===== HELPER BORDER =====
       const applyBorder = (
         cell: ExcelJS.Cell,
         type: 'thin' | 'medium' = 'thin'
@@ -191,12 +193,36 @@ const SellerCommissionListPage = () => {
       ws.mergeCells('A1:J1');
       ws.getCell('A1').value = 'LAPORAN DETAIL FEE TOKO';
       ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getCell('A1').alignment = { horizontal: 'left', vertical: 'middle' };
+
+      // ===== DIBUAT OLEH =====
+      ws.mergeCells('A2:J2');
+      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      ws.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== TANGGAL EXPORT =====
+      ws.mergeCells('A3:J3');
+      ws.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      ws.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      ws.mergeCells('A4:J4');
+      ws.getCell('A4').value = `Total Data : ${rows.length}`;
+      ws.getCell('A4').alignment = { horizontal: 'left' };
 
       // ===== PERIODE =====
-      ws.mergeCells('A2:J2');
-      ws.getCell('A2').value = `Periode: ${dayjs(params.start_date).format(
-        'DD-MM-YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      const periode =
+        params.start_date && params.end_date
+          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD-MM-YYYY')}`
+          : '-';
+      ws.mergeCells('A5:J5');
+      ws.getCell('A5').value = `Periode: ${periode}`;
+
+      ws.getCell('A5').alignment = { horizontal: 'left' };
 
       ws.addRow([]);
 
@@ -208,6 +234,7 @@ const SellerCommissionListPage = () => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         applyBorder(cell);
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -252,10 +279,11 @@ const SellerCommissionListPage = () => {
       totalRow.eachCell((cell, col) => {
         cell.font = { bold: true };
         applyBorder(cell, 'medium');
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' }, // kuning lembut
+          fgColor: { argb: 'FFF9E79F' },
         };
 
         if (col === 10) {
@@ -266,15 +294,22 @@ const SellerCommissionListPage = () => {
       // ===== AUTO WIDTH =====
       ws.columns.forEach((c) => {
         if (!c) return;
+
         let max = 10;
+
         c.eachCell?.({ includeEmpty: true }, (cell) => {
           const len = cell.value ? cell.value.toString().length : 0;
           max = Math.max(max, len);
         });
+
         c.width = Math.min(max + 2, 40);
       });
 
+      // ===== FREEZE HEADER =====
+      ws.views = [{ state: 'frozen', ySplit: 7 }];
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_fee_toko_detail_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`

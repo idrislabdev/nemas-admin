@@ -16,7 +16,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 
-import { ITagihanBulanan } from '@/@core/@types/interface';
+import { ITagihanBulanan, IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 
@@ -263,6 +263,8 @@ const TagihanBulananTablePage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams: any = { ...params, offset: 0, limit: 50 };
 
       if (exportParams.is_paid === null) delete exportParams.is_paid;
@@ -297,23 +299,45 @@ const TagihanBulananTablePage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Tagihan Bulanan');
 
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
       // ======================
       // Title
       // ======================
 
-      worksheet.mergeCells('A1:L1');
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
 
-      worksheet.getCell('A1').value = 'LAPORAN TAGIHAN BULANAN';
+      title.value = 'LAPORAN TAGIHAN BULANAN';
+      title.alignment = { horizontal: 'left', vertical: 'middle' };
+      title.font = { size: 14, bold: true };
 
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      // ======================
+      // Dibuat Oleh
+      // ======================
 
-      worksheet.getCell('A1').font = {
-        size: 14,
-        bold: true,
-      };
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ======================
+      // Tanggal Export
+      // ======================
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ======================
+      // Total Data
+      // ======================
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
       // ======================
       // Periode Filter
@@ -327,13 +351,9 @@ const TagihanBulananTablePage = () => {
         )} - ${moment(params.end_date).format('DD MMMM YYYY')}`;
       }
 
-      worksheet.mergeCells('A2:L2');
-
-      worksheet.getCell('A2').value = `Periode : ${periodeText}`;
-
-      worksheet.getCell('A2').alignment = {
-        horizontal: 'left',
-      };
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
+      worksheet.getCell('A5').alignment = { horizontal: 'left' };
 
       // ======================
       // Status Filter
@@ -344,13 +364,9 @@ const TagihanBulananTablePage = () => {
       if (params.is_paid === true) statusText = 'Lunas';
       if (params.is_paid === false) statusText = 'Belum Lunas';
 
-      worksheet.mergeCells('A3:L3');
-
-      worksheet.getCell('A3').value = `Status : ${statusText}`;
-
-      worksheet.getCell('A3').alignment = {
-        horizontal: 'left',
-      };
+      worksheet.mergeCells(`A6:${lastColumnLetter}6`);
+      worksheet.getCell('A6').value = `Status : ${statusText}`;
+      worksheet.getCell('A6').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -359,7 +375,6 @@ const TagihanBulananTablePage = () => {
       // ======================
 
       const header = Object.keys(dataToExport[0]);
-
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
@@ -412,18 +427,23 @@ const TagihanBulananTablePage = () => {
       // ======================
 
       worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+        if (col) {
+          let maxLength = 0;
 
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
 
-          if (val.length > maxLength) {
-            maxLength = val.length;
-          }
-        });
-
-        col.width = maxLength + 2;
+          col.width = Math.min(Math.max(maxLength + 2, 10), 30);
+        }
       });
+
+      // ======================
+      // Freeze Header
+      // ======================
+
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
 
       const buffer = await workbook.xlsx.writeBuffer();
 

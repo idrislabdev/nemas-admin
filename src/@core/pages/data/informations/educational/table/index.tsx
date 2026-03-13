@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IEducational } from '@/@core/@types/interface';
+import { IEducational, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -228,6 +228,8 @@ const InformationEducationalPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -253,16 +255,35 @@ const InformationEducationalPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Educational');
 
-      worksheet.mergeCells('A1:F1');
+      // ======================
+      // JUDUL
+      // ======================
+      worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'DATA EDUCATIONAL';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // ======================
+      // HEADER INFO
+      // ======================
+      worksheet.mergeCells('A2:G2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      worksheet.mergeCells('A3:G3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
       worksheet.addRow([]);
 
+      // ======================
+      // HEADER TABLE
+      // ======================
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
@@ -282,9 +303,13 @@ const InformationEducationalPageTable = () => {
         };
       });
 
+      // ======================
+      // DATA ROW
+      // ======================
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
+
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -296,6 +321,9 @@ const InformationEducationalPageTable = () => {
         });
       });
 
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
@@ -308,9 +336,11 @@ const InformationEducationalPageTable = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `data_educational_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (error) {
       console.log(error);

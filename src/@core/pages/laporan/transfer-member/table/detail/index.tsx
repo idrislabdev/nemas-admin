@@ -12,6 +12,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
 import debounce from 'debounce';
+import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
@@ -178,6 +179,8 @@ const TransferMemberListTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, {
         params: {
           ...params,
@@ -190,6 +193,7 @@ const TransferMemberListTable = () => {
       if (!rows || rows.length === 0) return;
 
       /* ================= MAP DATA ================= */
+
       const dataToExport: ExportRow[] = rows.map((r) => ({
         Tanggal: moment(r.transfer_member_datetime).format(
           'DD MMMM YYYY HH:mm'
@@ -217,67 +221,97 @@ const TransferMemberListTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Transfer Member');
 
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
       /* ================= TITLE ================= */
-      worksheet.mergeCells('A1:N1');
-      worksheet.getCell('A1').value = 'LAPORAN TRANSFER MEMBER';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
+
+      title.value = 'LAPORAN TRANSFER MEMBER';
+      title.font = { size: 14, bold: true };
+      title.alignment = { horizontal: 'left' };
+
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
       /* ================= PERIODE ================= */
-      worksheet.mergeCells('A2:N2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
+
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode: ${dayjs(
         params.start_date
       ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
         'DD MMMM YYYY'
       )}`;
+      worksheet.getCell('A5').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
-      /* ================= FILTER HEADER ================= */
+      /* ================= FILTER ================= */
+
       const activeFilters: string[] = [];
 
-      if (params.purpose) {
-        activeFilters.push(`Tujuan: ${params.purpose}`);
-      }
-      if (params.user_from_role_name) {
+      if (params.purpose) activeFilters.push(`Tujuan: ${params.purpose}`);
+      if (params.user_from_role_name)
         activeFilters.push(`Role Pengirim: ${params.user_from_role_name}`);
-      }
-      if (params.user_from_user_name) {
+      if (params.user_from_user_name)
         activeFilters.push(`Nama Pengirim: ${params.user_from_user_name}`);
-      }
-      if (params.user_to_role_name) {
+      if (params.user_to_role_name)
         activeFilters.push(`Role Penerima: ${params.user_to_role_name}`);
-      }
-      if (params.user_to_user_name) {
+      if (params.user_to_user_name)
         activeFilters.push(`Nama Penerima: ${params.user_to_user_name}`);
-      }
 
       if (activeFilters.length > 0) {
-        worksheet.mergeCells('A4:N4');
-        worksheet.getCell('A4').value = 'Filter:';
-        worksheet.getCell('A4').font = { bold: true };
+        const filterTitleRow = worksheet.addRow(['Filter:']);
+        filterTitleRow.font = { bold: true };
+        worksheet.mergeCells(
+          `A${filterTitleRow.number}:${lastColumnLetter}${filterTitleRow.number}`
+        );
 
         activeFilters.forEach((text) => {
           const row = worksheet.addRow([`- ${text}`]);
-          worksheet.mergeCells(`A${row.number}:N${row.number}`);
+          worksheet.mergeCells(
+            `A${row.number}:${lastColumnLetter}${row.number}`
+          );
         });
 
         worksheet.addRow([]);
       }
 
-      /* ================= HEADER TABLE ================= */
-      const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+      /* ================= HEADER ================= */
 
+      const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
       const headerRow = worksheet.addRow(headerKeys);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -285,9 +319,10 @@ const TransferMemberListTable = () => {
         };
       });
 
-      /* ================= ROWS ================= */
+      /* ================= DATA ================= */
+
       dataToExport.forEach((row) => {
-        const values = headerKeys.map((key) => row[key as keyof typeof row]);
+        const values = headerKeys.map((key) => row[key]);
         const newRow = worksheet.addRow(values);
 
         newRow.eachCell((cell, colNumber) => {
@@ -313,6 +348,7 @@ const TransferMemberListTable = () => {
       });
 
       /* ================= TOTAL ================= */
+
       const totalFields: (keyof ExportRow)[] = [
         'Berat Transfer (gr)',
         'Admin Weight (gr)',
@@ -322,6 +358,7 @@ const TransferMemberListTable = () => {
       ];
 
       const totals: Record<string, number> = {};
+
       totalFields.forEach((f) => {
         totals[f] = dataToExport.reduce((sum, r) => sum + Number(r[f] || 0), 0);
       });
@@ -338,6 +375,7 @@ const TransferMemberListTable = () => {
 
       totalRow.eachCell((cell) => {
         cell.font = { bold: true };
+
         cell.border = {
           top: { style: 'medium' },
           bottom: { style: 'medium' },
@@ -345,15 +383,25 @@ const TransferMemberListTable = () => {
       });
 
       /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
         let max = 0;
+
         col.eachCell?.({ includeEmpty: true }, (cell) => {
           max = Math.max(max, String(cell.value || '').length);
         });
+
         col.width = Math.min(max + 2, 40);
       });
 
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+
+      /* ================= SAVE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_transfer_member_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`

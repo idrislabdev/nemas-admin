@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
-import { IDeliveryPartner } from '@/@core/@types/interface';
+import { IDeliveryPartner, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
@@ -16,11 +18,11 @@ import {
 } from '@untitled-ui/icons-react';
 import Link from 'next/link';
 import { notification } from 'antd';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
-// import Image from 'next/image';
+import { saveAs } from 'file-saver';
 moment.locale('id');
 
 const DeliveryPartnerPageTable = () => {
@@ -145,65 +147,123 @@ const DeliveryPartnerPageTable = () => {
   };
 
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      search: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IDeliveryPartner, index: number) => ({
-      No: index + 1,
-      Nama: item.delivery_partner_name,
-      Code: item.delivery_partner_code,
-      Deskripsi: item.delivery_partner_description,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = 10;
-    const colC = rows.reduce(
-      (w: number, r: IDeliveryPartner) =>
-        Math.max(
-          w,
-          r.delivery_partner_name ? r.delivery_partner_name.length : 10
-        ),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IDeliveryPartner) =>
-        Math.max(
-          w,
-          r.delivery_partner_code ? r.delivery_partner_code.length : 10
-        ),
-      10
-    );
-    const colE = rows.reduce(
-      (w: number, r: IDeliveryPartner) =>
-        Math.max(
-          w,
-          r.delivery_partner_description
-            ? r.delivery_partner_description.length
-            : 10
-        ),
-      10
-    );
+    try {
+      setIsModalLoading(true);
 
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: colE },
-      { wch: 20 },
-    ];
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'faq');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_delivery_partner.xlsx`);
-    setIsModalLoading(false);
+      const param = {
+        format: 'json',
+        offset: 0,
+        limit: 1000,
+        search: '',
+      };
+
+      const resp = await axiosInstance.get(url, { params: param });
+      const rows: IDeliveryPartner[] = resp.data.results || [];
+
+      if (!rows.length) return;
+
+      // ===== MAP DATA =====
+      const dataToExport = rows.map(
+        (item: IDeliveryPartner, index: number) => ({
+          No: index + 1,
+          Nama: item.delivery_partner_name || '',
+          Code: item.delivery_partner_code || '',
+          Deskripsi: item.delivery_partner_description || '',
+        })
+      );
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Delivery Partner');
+
+      const header = Object.keys(dataToExport[0]);
+      const lastColumn = String.fromCharCode(64 + header.length);
+
+      // ===== TITLE =====
+      worksheet.mergeCells(`A1:${lastColumn}1`);
+      worksheet.getCell('A1').value = 'LAPORAN DELIVERY PARTNER';
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+
+      // ===== CREATED BY =====
+      worksheet.mergeCells(`A2:${lastColumn}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      // ===== EXPORT DATE =====
+      worksheet.mergeCells(`A3:${lastColumn}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells(`A4:${lastColumn}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      worksheet.addRow([]);
+
+      // ===== HEADER =====
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEFEFEF' },
+        };
+
+        cell.border = {
+          top: { style: 'medium' },
+          left: { style: 'medium' },
+          bottom: { style: 'medium' },
+          right: { style: 'medium' },
+        };
+      });
+
+      // ===== DATA =====
+      dataToExport.forEach((row: any) => {
+        const newRow = worksheet.addRow(header.map((h: any) => row[h]));
+
+        newRow.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
+      });
+
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+
+      // ===== AUTO WIDTH =====
+      worksheet.columns.forEach((col: any) => {
+        let maxLength = 10;
+
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 40);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      saveAs(
+        new Blob([buffer]),
+        `delivery_partner_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   useEffect(() => {

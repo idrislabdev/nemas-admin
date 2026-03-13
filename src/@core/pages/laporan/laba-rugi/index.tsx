@@ -8,6 +8,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { IUser } from '@/@core/@types/interface';
 
 const { RangePicker } = DatePicker;
 
@@ -76,6 +77,8 @@ const LaporanLabaRugi = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const [revResp, costResp] = await Promise.all([
         axiosInstance.get(revenueUrl, { params }),
         axiosInstance.get(costUrl, { params }),
@@ -98,12 +101,26 @@ const LaporanLabaRugi = () => {
         });
       };
 
+      // ===== TITLE =====
       worksheet.mergeCells('A1:C1');
-      worksheet.getCell('A1').value = 'LAPORAN LABA RUGI';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const title = worksheet.getCell('A1');
+      title.value = 'LAPORAN LABA RUGI';
+      title.font = { size: 14, bold: true };
+      title.alignment = { horizontal: 'left' };
 
+      // ===== DIBUAT OLEH =====
       worksheet.mergeCells('A2:C2');
-      worksheet.getCell('A2').value =
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      // ===== TANGGAL EXPORT =====
+      worksheet.mergeCells('A3:C3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+
+      // ===== PERIODE =====
+      worksheet.mergeCells('A4:C4');
+      worksheet.getCell('A4').value =
         `Periode: ${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
           params.end_date
         ).format('DD-MM-YYYY')}`;
@@ -112,6 +129,7 @@ const LaporanLabaRugi = () => {
 
       // ===== SECTION PENDAPATAN =====
       const pendapatanTitle = worksheet.addRow(['PENDAPATAN']);
+      pendapatanTitle.font = { bold: true };
       applyBorder(pendapatanTitle);
 
       const header1 = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
@@ -154,6 +172,7 @@ const LaporanLabaRugi = () => {
 
       // ===== SECTION BIAYA =====
       const biayaTitle = worksheet.addRow(['BIAYA']);
+      biayaTitle.font = { bold: true };
       applyBorder(biayaTitle);
 
       const header2 = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
@@ -198,6 +217,7 @@ const LaporanLabaRugi = () => {
       worksheet.columns = [{ width: 10 }, { width: 35 }, { width: 25 }];
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_laba_rugi_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;

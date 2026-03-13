@@ -7,6 +7,7 @@ import {
   IOrderGoldItem,
   IOrderReturn,
   IPenggunaAplikasi,
+  IUser,
 } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -301,6 +302,8 @@ const DaftarReturnEmasPage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData();
       if (!rows.length) return;
 
@@ -320,41 +323,196 @@ const DaftarReturnEmasPage = () => {
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Laporan Retur Emas');
 
-      ws.mergeCells('A1:J1');
+      const lastColumnLetter = 'J';
+
+      /* ================= TITLE ================= */
+
+      ws.mergeCells(`A1:${lastColumnLetter}1`);
       ws.getCell('A1').value = 'LAPORAN RETUR EMAS';
       ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getCell('A1').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
-      ws.mergeCells('A2:J2');
-      ws.getCell('A2').value = `Periode: ${dayjs(params.start_date).format(
-        'DD-MM-YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      /* ================= DIBUAT OLEH ================= */
+
+      ws.mergeCells(`A2:${lastColumnLetter}2`);
+      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      ws.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      ws.mergeCells(`A3:${lastColumnLetter}3`);
+      ws.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      ws.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TOTAL DATA ================= */
+
+      ws.mergeCells(`A4:${lastColumnLetter}4`);
+      ws.getCell('A4').value = `Total Data : ${rows.length}`;
+      ws.getCell('A4').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= PERIODE ================= */
+
+      let periodeText = 'Semua Periode';
+
+      if (params.start_date && params.end_date) {
+        periodeText = `${dayjs(params.start_date).format(
+          'DD-MM-YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      }
+
+      ws.mergeCells(`A5:${lastColumnLetter}5`);
+      ws.getCell('A5').value = `Periode : ${periodeText}`;
+      ws.getCell('A5').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
       ws.addRow([]);
 
+      /* ================= HEADER ================= */
+
       const headers = Object.keys(data[0]);
-      ws.addRow(headers).eachCell((c) => {
+      const headerRow = ws.addRow(headers);
+
+      headerRow.eachCell((c) => {
         c.font = { bold: true };
+        c.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
         c.border = {
           top: { style: 'thin' },
           bottom: { style: 'thin' },
           left: { style: 'thin' },
           right: { style: 'thin' },
         };
+        c.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
       });
+
+      /* ================= DATA ================= */
 
       data.forEach((row) => {
-        ws.addRow(headers.map((h) => (row as any)[h]));
+        const values = headers.map((h) => (row as any)[h]);
+        const newRow = ws.addRow(values);
+
+        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const isNumeric = [6, 8, 9].includes(colNumber);
+
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
+          };
+
+          // Format angka
+          if (typeof cell.value === 'number') {
+            if (colNumber === 9) {
+              cell.value = `Rp${formatDecimal(cell.value)}`;
+            } else {
+              cell.value = formatDecimal(cell.value);
+            }
+          }
+
+          cell.border = {
+            top: { style: 'thin' },
+            bottom: { style: 'thin' },
+            left: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
       });
 
+      /* ================= TOTAL ================= */
+
+      const totalBeratSertifikat = rows.reduce(
+        (acc, cur) => acc + Number(cur.gold_cert_weight || 0),
+        0
+      );
+
+      const totalBeratTransfer = rows.reduce(
+        (acc, cur) => acc + Number(cur.gold_transfer_weight || 0),
+        0
+      );
+
+      const totalNominalTransfer = rows.reduce(
+        (acc, cur) => acc + Number(cur.gold_transfer_amount || 0),
+        0
+      );
+
+      const totalRow = ws.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        formatDecimal(totalBeratSertifikat),
+        '',
+        formatDecimal(totalBeratTransfer),
+        `Rp${formatDecimal(totalNominalTransfer)}`,
+        '',
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const isNumeric = [6, 8, 9].includes(colNumber);
+
+        cell.font = { bold: true };
+        cell.alignment = {
+          horizontal: isNumeric ? 'right' : 'left',
+          vertical: 'middle',
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' },
+        };
+      });
+
+      /* ================= AUTO WIDTH ================= */
+
       ws.columns.forEach((c) => {
+        if (!c) return;
+
         let max = 10;
+
         c.eachCell?.({ includeEmpty: true }, (cell) => {
           max = Math.max(max, cell.value?.toString().length || 0);
         });
-        c.width = max + 2;
+
+        c.width = Math.min(max + 2, 35);
       });
 
+      /* ================= FREEZE HEADER ================= */
+
+      // Header tabel ada di baris 7
+      ws.views = [{ state: 'frozen', ySplit: 7 }];
+
+      /* ================= EXPORT ================= */
+
       const buffer = await wb.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_retur_emas_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`

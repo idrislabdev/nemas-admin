@@ -2,10 +2,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ISalesOrder } from '@/@core/@types/interface';
+import { ISalesOrder, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import { formatDecimal, formatRupiah } from '@/@core/utils/general';
+import { formatDecimal } from '@/@core/utils/general';
 import {
   CalendarCheck01,
   ClipboardCheck,
@@ -331,6 +331,8 @@ const ComEmasFisikPage = (props: {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const param = { ...params, offset: 0, limit: 1000 };
       const rows = await fetchAllData(url, param);
 
@@ -343,17 +345,19 @@ const ComEmasFisikPage = (props: {
         'Nomor Order': item.order_number,
         'Tanggal Order': moment(item.order_timestamp).format('DD MMMM YYYY'),
         User: item.user_name,
-        'Berat Emas': parseFloat(item.order_item_weight.toString()),
-        'Nominal Pesanan': parseFloat(item.order_amount.toString()),
-        'Total Harga': parseFloat(item.order_total_price.toString()),
-        'Biaya Admin': parseFloat(item.order_admin_amount.toString()),
+        'Berat Emas': parseFloat(item.order_item_weight?.toString() || '0'),
+        'Nominal Pesanan': parseFloat(item.order_amount?.toString() || '0'),
+        'Total Harga': parseFloat(item.order_total_price?.toString() || '0'),
+        'Biaya Admin': parseFloat(item.order_admin_amount?.toString() || '0'),
         'Biaya Asuransi': parseFloat(
           item.order_tracking_insurance_total_round?.toString() || '0'
         ),
         'Biaya Pengiriman': parseFloat(
           item.order_tracking_total_amount_round?.toString() || '0'
         ),
-        'Grand Total': parseFloat(item.order_grand_total_price.toString()),
+        'Grand Total': parseFloat(
+          item.order_grand_total_price?.toString() || '0'
+        ),
         'Status Pesanan': item.order_status,
         'Status Pembayaran': item.order_gold_payment_status,
         'Status Pengiriman': item.is_picked_up ? 'Dikirim' : '-',
@@ -362,7 +366,24 @@ const ComEmasFisikPage = (props: {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet(`Laporan ${title}`);
 
-      worksheet.mergeCells('A1:L1');
+      const header = Object.keys(dataToExport[0]);
+      // const totalColumns = header.length; // 13
+      const lastColumnLetter = 'M'; // karena 13 kolom = M
+
+      const numericCurrencyColumns = [
+        'Nominal Pesanan',
+        'Total Harga',
+        'Biaya Admin',
+        'Biaya Asuransi',
+        'Biaya Pengiriman',
+        'Grand Total',
+      ];
+
+      const numericWeightColumns = ['Berat Emas'];
+
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = `LAPORAN ${title.toUpperCase()}`;
       worksheet.getCell('A1').alignment = {
         horizontal: 'left',
@@ -370,19 +391,58 @@ const ComEmasFisikPage = (props: {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= PERIODE ================= */
+
+      let periodeText = 'Semua Periode';
+
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:L2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        periodeText = `${dayjs(params.start_date).format(
           'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
       }
 
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
+      worksheet.getCell('A5').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
       worksheet.addRow([]);
-      const header = Object.keys(dataToExport[0]);
+
+      /* ================= HEADER ================= */
+
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -399,25 +459,34 @@ const ComEmasFisikPage = (props: {
         };
       });
 
-      // === ISI DATA ===
+      /* ================= DATA ================= */
+
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => {
           const value = row[key];
-          if (typeof value === 'number') return `Rp${formatDecimal(value)}`;
+
+          if (typeof value === 'number') {
+            if (numericWeightColumns.includes(key)) {
+              return `${formatDecimal(value)} Gram`;
+            }
+
+            if (numericCurrencyColumns.includes(key)) {
+              return `Rp${formatDecimal(value)}`;
+            }
+
+            return formatDecimal(value);
+          }
+
           return value;
         });
 
         const newRow = worksheet.addRow(rowValues);
+
         newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           const headerName = header[colNumber - 1];
           const isNumeric = [
-            'Berat Emas',
-            'Nominal Pesanan',
-            'Total Harga',
-            'Biaya Admin',
-            'Biaya Asuransi',
-            'Biaya Pengiriman',
-            'Grand Total',
+            ...numericWeightColumns,
+            ...numericCurrencyColumns,
           ].includes(headerName);
 
           cell.alignment = {
@@ -434,56 +503,73 @@ const ComEmasFisikPage = (props: {
         });
       });
 
-      // === TOTAL BARIS ===
+      /* ================= TOTAL BARIS ================= */
+
       const totalValues: Record<string, number> = {
         'Berat Emas': rows.reduce(
-          (sum, i) => sum + parseFloat(i.order_item_weight || 0),
+          (sum, i) => sum + Number(i.order_item_weight || 0),
           0
         ),
         'Nominal Pesanan': rows.reduce(
-          (sum, i) => sum + parseFloat(i.order_amount || 0),
+          (sum, i) => sum + Number(i.order_amount || 0),
           0
         ),
         'Total Harga': rows.reduce(
-          (sum, i) => sum + parseFloat(i.order_total_price || 0),
+          (sum, i) => sum + Number(i.order_total_price || 0),
           0
         ),
         'Biaya Admin': rows.reduce(
-          (sum, i) => sum + parseFloat(i.order_admin_amount || 0),
+          (sum, i) => sum + Number(i.order_admin_amount || 0),
           0
         ),
         'Biaya Asuransi': rows.reduce(
-          (sum, i) =>
-            sum + parseFloat(i.order_tracking_insurance_total_round || 0),
+          (sum, i) => sum + Number(i.order_tracking_insurance_total_round || 0),
           0
         ),
         'Biaya Pengiriman': rows.reduce(
-          (sum, i) =>
-            sum + parseFloat(i.order_tracking_total_amount_round || 0),
+          (sum, i) => sum + Number(i.order_tracking_total_amount_round || 0),
           0
         ),
         'Grand Total': rows.reduce(
-          (sum, i) => sum + parseFloat(i.order_grand_total_price || 0),
+          (sum, i) => sum + Number(i.order_grand_total_price || 0),
           0
         ),
       };
 
       const totalRowValues = header.map((key) => {
-        if (totalValues[key]) return `Rp${formatRupiah(totalValues[key])}`;
         if (key === 'Nomor Order') return 'TOTAL';
+
+        if (key in totalValues) {
+          const value = totalValues[key];
+
+          if (numericWeightColumns.includes(key)) {
+            return `${formatDecimal(value)} Gram`;
+          }
+
+          if (numericCurrencyColumns.includes(key)) {
+            return `Rp${formatDecimal(value)}`;
+          }
+
+          return formatDecimal(value);
+        }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         const headerName = header[colNumber - 1];
-        const isNumeric = Object.keys(totalValues).includes(headerName);
+        const isNumeric = [
+          ...numericWeightColumns,
+          ...numericCurrencyColumns,
+        ].includes(headerName);
 
         cell.font = { bold: true };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+          fgColor: { argb: 'FFFCE29F' },
         };
         cell.alignment = {
           vertical: 'middle',
@@ -497,21 +583,33 @@ const ComEmasFisikPage = (props: {
         };
       });
 
-      // === AUTO WIDTH ===
+      /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col: any) => {
+        if (!col) return;
+
         let maxLength = 0;
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
+
+        col.eachCell?.({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
+
         col.width = Math.min(maxLength + 2, 40);
       });
 
-      // === SAVE ===
+      /* ================= FREEZE HEADER ================= */
+
+      // Header tabel ada di baris 7
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      /* ================= SAVE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_${title}_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
@@ -583,8 +681,8 @@ const ComEmasFisikPage = (props: {
                       col.align === 'right'
                         ? 'text-right'
                         : col.align === 'center'
-                        ? 'text-center'
-                        : 'text-left'
+                          ? 'text-center'
+                          : 'text-left'
                     }`}
                     style={{ width: col.width }}
                   >
@@ -619,8 +717,8 @@ const ComEmasFisikPage = (props: {
                           col.align === 'right'
                             ? 'text-right'
                             : col.align === 'center'
-                            ? 'text-center'
-                            : 'text-left'
+                              ? 'text-center'
+                              : 'text-left'
                         }`}
                       >
                         {cellContent}

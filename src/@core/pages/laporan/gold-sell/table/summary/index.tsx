@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -125,15 +126,16 @@ const GoldSellSummaryUserTable = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, {
         params: { ...params, offset: 0, limit: 1000 },
       });
+
       const rows = resp.data.results as IGoldSellSummaryUser[];
 
-      if (!rows.length) {
-        setIsModalLoading(false);
-        return;
-      }
+      if (!rows || rows.length === 0) return;
 
       // === Helper format Rupiah ===
       const formatRupiah = (value: number | string): string => {
@@ -146,7 +148,7 @@ const GoldSellSummaryUserTable = () => {
         });
       };
 
-      // === Helper format desimal (gram) ===
+      // === Helper format gram ===
       const formatGram = (value: number | string): string => {
         const num = typeof value === 'string' ? parseFloat(value) : value || 0;
         return num.toLocaleString('id-ID', {
@@ -155,38 +157,44 @@ const GoldSellSummaryUserTable = () => {
         });
       };
 
-      // === Workbook ===
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Penjualan Emas');
 
-      // === Header laporan ===
+      // ===== TITLE =====
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'LAPORAN SUMMARY PENJUALAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // ===== DIBUAT OLEH =====
       worksheet.mergeCells('A2:G2');
-      const periodeText =
-        params.start_date && params.end_date
-          ? `Periode: ${dayjs(params.start_date).format(
-              'DD MMMM YYYY'
-            )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
-          : 'Periode: Semua Tanggal';
-      worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-      worksheet.getCell('A2').font = { italic: true };
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
 
+      // ===== TANGGAL EXPORT =====
       worksheet.mergeCells('A3:G3');
-      worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-      worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells('A4:G4');
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      // ===== PERIODE =====
+      worksheet.mergeCells('A5:G5');
+
+      const periode =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD-MM-YYYY')}`
+          : '-';
+
+      worksheet.getCell('A5').value = `Periode : ${periode}`;
 
       worksheet.addRow([]);
-      worksheet.addRow([]);
 
-      // === Header tabel ===
+      // ===== HEADER TABEL =====
       const header = [
         'Nama User',
         'Nomor Member',
@@ -198,15 +206,18 @@ const GoldSellSummaryUserTable = () => {
       ];
 
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -214,11 +225,12 @@ const GoldSellSummaryUserTable = () => {
         };
       });
 
-      // === Hitung total ===
+      // ===== TOTAL VARIABLE =====
       let totalTransaksi = 0;
       let totalEmas = 0;
       let totalPenjualan = 0;
 
+      // ===== DATA =====
       rows.forEach((item) => {
         totalTransaksi += Number(item.jumlah_transaksi) || 0;
         totalEmas += Number(item.total_emas_dijual) || 0;
@@ -243,6 +255,7 @@ const GoldSellSummaryUserTable = () => {
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
           if ([4, 5, 6].includes(colNumber)) {
             cell.alignment = { horizontal: 'right', vertical: 'middle' };
           } else {
@@ -251,7 +264,7 @@ const GoldSellSummaryUserTable = () => {
         });
       });
 
-      // === Baris TOTAL ===
+      // ===== TOTAL ROW =====
       const totalRow = worksheet.addRow([
         'TOTAL',
         '',
@@ -264,17 +277,20 @@ const GoldSellSummaryUserTable = () => {
 
       totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         cell.font = { bold: true };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
           fgColor: { argb: 'FFFCE29F' },
         };
+
+        cell.border = {
+          top: { style: 'medium' },
+          left: { style: 'thin' },
+          bottom: { style: 'medium' },
+          right: { style: 'thin' },
+        };
+
         if ([4, 5, 6].includes(colNumber)) {
           cell.alignment = { horizontal: 'right', vertical: 'middle' };
         } else {
@@ -282,21 +298,28 @@ const GoldSellSummaryUserTable = () => {
         }
       });
 
-      // === Auto-width kolom ===
+      // ===== AUTO WIDTH =====
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
+
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
+
         col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
-      // === Simpan file ===
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      // ===== EXPORT FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_summary_penjualan_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

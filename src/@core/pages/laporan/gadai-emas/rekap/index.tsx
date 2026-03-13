@@ -13,6 +13,7 @@ import { FileDownload02 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -160,57 +161,109 @@ const GadaiEmasRekapTablePage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData();
       if (!rows || rows.length === 0) return;
 
       const mapped = rows.map((r: IGoldLoanSummary) => ({
         'User ID': r.user_id,
-        User: r.user_name,
-        'Total Transaksi': r.loan_total,
-        'Total Gadai (Rp)': r.loan_amt_total,
-        'Total Biaya (Rp)': r.loan_fee_total,
-        'Jatuh Tempo Bulan Ini (Rp)': r.loan_due_date_this_month,
+        User: r.user_name || '-',
+        'Total Transaksi': Number(r.loan_total || 0),
+        'Total Gadai (Rp)': Number(r.loan_amt_total || 0),
+        'Total Biaya (Rp)': Number(r.loan_fee_total || 0),
+        'Jatuh Tempo Bulan Ini (Rp)': Number(r.loan_due_date_this_month || 0),
       }));
 
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Rekap Gadai Emas');
 
-      // Title
+      // ===== TITLE =====
       ws.mergeCells('A1:F1');
       const title = ws.getCell('A1');
       title.value = 'REKAP GADAI EMAS';
       title.font = { size: 14, bold: true };
       title.alignment = { horizontal: 'left' };
 
-      // Period
+      // ===== DIBUAT OLEH =====
       ws.mergeCells('A2:F2');
-      const period = ws.getCell('A2');
-      period.value = `Periode: ${dayjs(params.start_date).format(
-        'DD-MM-YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      // ===== TANGGAL EXPORT =====
+      ws.mergeCells('A3:F3');
+      ws.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+
+      // ===== TOTAL DATA =====
+      ws.mergeCells('A4:F4');
+      ws.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      // ===== PERIODE =====
+      ws.mergeCells('A5:F5');
+
+      const periode =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD-MM-YYYY')}`
+          : '-';
+
+      ws.getCell('A5').value = `Periode : ${periode}`;
 
       ws.addRow([]);
 
-      // Header
+      // ===== HEADER =====
       const headerKeys = Object.keys(mapped[0]);
       const headerRow = ws.addRow(headerKeys);
-      headerRow.font = { bold: true };
 
-      // Data rows
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEFEFEF' },
+        };
+      });
+
+      // ===== DATA =====
       mapped.forEach((row) => {
         const values = headerKeys.map((k) => row[k as keyof typeof row]);
         const newRow = ws.addRow(values);
-        newRow.eachCell((cell) => {
+
+        newRow.eachCell((cell, colNumber) => {
+          const header = headerKeys[colNumber - 1];
+          const isNumeric =
+            header.includes('(Rp)') || header.includes('Transaksi');
+
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: isNumeric ? 'right' : 'left',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          }
         });
       });
 
-      // TOTAL row
+      // ===== TOTAL =====
       const totals = {
         'Total Transaksi': mapped.reduce((s, r) => s + r['Total Transaksi'], 0),
         'Total Gadai (Rp)': mapped.reduce(
@@ -230,18 +283,34 @@ const GadaiEmasRekapTablePage = () => {
       const totalRow = ws.addRow([
         'TOTAL',
         '',
-        totals['Total Transaksi'],
-        totals['Total Gadai (Rp)'],
-        totals['Total Biaya (Rp)'],
-        totals['Jatuh Tempo Bulan Ini (Rp)'],
+        new Intl.NumberFormat('id-ID').format(totals['Total Transaksi']),
+        new Intl.NumberFormat('id-ID').format(totals['Total Gadai (Rp)']),
+        new Intl.NumberFormat('id-ID').format(totals['Total Biaya (Rp)']),
+        new Intl.NumberFormat('id-ID').format(
+          totals['Jatuh Tempo Bulan Ini (Rp)']
+        ),
       ]);
 
-      totalRow.eachCell((cell) => {
+      totalRow.eachCell((cell, colNumber) => {
+        const header = headerKeys[colNumber - 1];
+
+        const isNumeric =
+          header?.includes('(Rp)') || header?.includes('Transaksi');
+
         cell.font = { bold: true };
-        cell.border = {
-          top: { style: 'thin' },
-          bottom: { style: 'thin' },
+
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: isNumeric ? 'right' : 'left',
         };
+
+        cell.border = {
+          top: { style: 'medium' },
+          bottom: { style: 'medium' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -249,20 +318,27 @@ const GadaiEmasRekapTablePage = () => {
         };
       });
 
-      // Auto column width
+      // ===== AUTO WIDTH =====
       ws.columns.forEach((col: any) => {
-        let max = 0;
-        col.eachCell?.((cell: any) => {
+        let max = 10;
+
+        col.eachCell?.({ includeEmpty: true }, (cell: any) => {
           const v = cell.value ? cell.value.toString().length : 10;
           if (v > max) max = v;
         });
-        col.width = max + 2;
+
+        col.width = Math.min(max + 2, 40);
       });
 
+      // ===== FREEZE HEADER =====
+      ws.views = [{ state: 'frozen', ySplit: 7 }];
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       const filename = `rekap_gadai_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), filename);
     } catch (e) {
       console.error(e);

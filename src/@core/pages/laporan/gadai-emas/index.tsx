@@ -2,7 +2,7 @@
 
 'use client';
 
-import { IGoldLoan } from '@/@core/@types/interface';
+import { IGoldLoan, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -124,6 +124,8 @@ const GadaiEmasTablePage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
       if (!rows || rows.length === 0) {
         console.warn('Tidak ada data untuk diekspor.');
@@ -153,37 +155,60 @@ const GadaiEmasTablePage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Gadai Emas');
 
-      // === Judul ===
+      // ===== TITLE =====
       worksheet.mergeCells('A1:M1');
       const title = worksheet.getCell('A1');
       title.value = 'LAPORAN GADAI EMAS';
       title.font = { size: 14, bold: true };
       title.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // === Periode ===
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:M2');
-        const period = worksheet.getCell('A2');
-        period.value = `Periode: ${dayjs(params.start_date).format(
-          'DD-MM-YYYY'
-        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
-        period.alignment = { horizontal: 'left' };
-      }
+      // ===== DIBUAT OLEH =====
+      worksheet.mergeCells('A2:M2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== TANGGAL EXPORT =====
+      worksheet.mergeCells('A3:M3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells('A4:M4');
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      // ===== PERIODE =====
+      worksheet.mergeCells('A5:M5');
+
+      const periode =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD-MM-YYYY')}`
+          : '-';
+
+      worksheet.getCell('A5').value = `Periode: ${periode}`;
+      worksheet.getCell('A5').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
-      // === Header Tabel ===
+      // ===== HEADER =====
       const headerKeys = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(headerKeys);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -191,32 +216,36 @@ const GadaiEmasTablePage = () => {
         };
       });
 
-      // === Baris Data ===
+      // ===== DATA ROW =====
       dataToExport.forEach((row) => {
         const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
 
         newRow.eachCell((cell, colNumber) => {
           const header = headerKeys[colNumber - 1];
+
           const isNumeric =
             header.includes('(Rp)') || header.includes('(Gram)');
+
           cell.alignment = {
             vertical: 'middle',
             horizontal: isNumeric ? 'right' : 'left',
           };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
           if (isNumeric && typeof cell.value === 'number') {
             cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
           }
         });
       });
 
-      // === Hitung Total ===
+      // ===== HITUNG TOTAL =====
       const totalFields: (keyof (typeof dataToExport)[number])[] = [
         'Berat Emas (Gram)',
         'Harga Jual Emas (Rp)',
@@ -228,6 +257,7 @@ const GadaiEmasTablePage = () => {
       ];
 
       const totals: Record<string, number> = {};
+
       totalFields.forEach((field) => {
         totals[field] = dataToExport.reduce(
           (sum, row) => sum + ((row[field] as number) || 0),
@@ -236,28 +266,35 @@ const GadaiEmasTablePage = () => {
       });
 
       const totalRowValues = headerKeys.map((key) => {
-        if (key === 'No. Pinjaman') return 'TOTAL';
+        if (key === 'No. Gadai') return 'TOTAL';
+
         if (totalFields.includes(key as any)) {
           return new Intl.NumberFormat('id-ID').format(totals[key]);
         }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.eachCell((cell, colNumber) => {
         const header: any = headerKeys[colNumber - 1];
         const isNumeric = totalFields.includes(header);
+
         cell.font = { bold: true };
+
         cell.alignment = {
           vertical: 'middle',
           horizontal: isNumeric ? 'right' : 'left',
         };
+
         cell.border = {
           top: { style: 'medium' },
           left: { style: 'thin' },
           bottom: { style: 'medium' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -265,9 +302,10 @@ const GadaiEmasTablePage = () => {
         };
       });
 
-      // === Lebar Kolom Otomatis ===
+      // ===== AUTO WIDTH =====
       worksheet.columns.forEach((col) => {
-        if (!col) return; // pastikan col tidak undefined
+        if (!col) return;
+
         let maxLength = 0;
 
         col.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -278,11 +316,16 @@ const GadaiEmasTablePage = () => {
         col.width = Math.min(maxLength + 2, 40);
       });
 
-      // === Simpan File ===
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_gadai_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

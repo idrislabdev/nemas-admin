@@ -16,6 +16,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const GoldStockMovementPageTable = () => {
@@ -143,6 +144,33 @@ const GoldStockMovementPageTable = () => {
     return allRows;
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      // Sesuaikan key localStorage sesuai project kamu
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
@@ -152,6 +180,7 @@ const GoldStockMovementPageTable = () => {
         offset: 0,
         limit: 10,
         type__icontains: params.type__icontains,
+        search: params.search,
       };
 
       const rows = await fetchAllData(url, exportParams);
@@ -172,28 +201,58 @@ const GoldStockMovementPageTable = () => {
           'Create Time': item.date
             ? moment(item.date).format('DD MMM YYYY, HH:mm')
             : '-',
-          Catatan: item.note,
-          'Create By': item.user_name,
+          Catatan: item.note || '-',
+          'Create By': item.user_name || '-',
         })
       );
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Gold Stock Movement');
 
+      const exportedBy = getExportedBy();
+      const exportedAt = moment().format('DD MMMM YYYY, HH:mm:ss');
+
+      const totalColumns =
+        dataToExport.length > 0 ? Object.keys(dataToExport[0]).length : 8;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
       // Judul
-      worksheet.mergeCells('A1:H1');
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = 'LAPORAN PERGERAKAN STOK EMAS';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      worksheet.addRow([]);
+      // Info export
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      // Header
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+
+      // Spacer
+      worksheet.addRow([]); // row 5
+
+      // Header mulai row 6
+      const header = dataToExport.length
+        ? Object.keys(dataToExport[0])
+        : [
+            'No',
+            'Tipe',
+            'Berat Emas',
+            'Stock Sebelum',
+            'Stock Sesudah',
+            'Create Time',
+            'Catatan',
+            'Create By',
+          ];
+
+      const headerRow = worksheet.addRow(header); // row 6
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };

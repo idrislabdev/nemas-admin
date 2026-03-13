@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ICustomerService } from '@/@core/@types/interface';
+import { ICustomerService, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -199,6 +199,8 @@ const InformationCustomerServicePageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -227,18 +229,35 @@ const InformationCustomerServicePageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Customer Service');
 
-      // Judul
+      // ======================
+      // JUDUL
+      // ======================
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'DATA CUSTOMER SERVICE';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // ======================
+      // INFO HEADER
+      // ======================
+      worksheet.mergeCells('A2:G2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      worksheet.mergeCells('A3:G3');
+      worksheet.getCell('A3').value = `Tanggal : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
       worksheet.addRow([]);
 
-      // Header
+      // ======================
+      // HEADER TABLE
+      // ======================
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
@@ -258,7 +277,9 @@ const InformationCustomerServicePageTable = () => {
         };
       });
 
-      // Rows
+      // ======================
+      // ROW DATA
+      // ======================
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
@@ -274,7 +295,9 @@ const InformationCustomerServicePageTable = () => {
         });
       });
 
-      // Auto width
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
@@ -287,6 +310,7 @@ const InformationCustomerServicePageTable = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `data_customer_service_${moment().format('YYYYMMDD_HHmmss')}.xlsx`

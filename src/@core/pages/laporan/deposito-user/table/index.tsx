@@ -14,7 +14,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
-import { IGoldInvestmentSummary } from '@/@core/@types/interface';
+import { IGoldInvestmentSummary, IUser } from '@/@core/@types/interface';
 import { debounce } from 'lodash';
 
 moment.locale('id');
@@ -156,6 +156,8 @@ const GoldInvestmentUserTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IGoldInvestmentSummary) => ({
@@ -171,6 +173,10 @@ const GoldInvestmentUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
 
+      // ======================
+      // JUDUL
+      // ======================
+
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS - PER INVESTOR';
       worksheet.getCell('A1').alignment = {
@@ -179,30 +185,66 @@ const GoldInvestmentUserTable = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // ======================
+      // DIBUAT OLEH
+      // ======================
+
+      worksheet.mergeCells('A2:G2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ======================
+      // TANGGAL EXPORT
+      // ======================
+
+      worksheet.mergeCells('A3:G3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ======================
+      // TOTAL DATA
+      // ======================
+
+      worksheet.mergeCells('A4:G4');
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      // ======================
+      // PERIODE
+      // ======================
+
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:G2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
+        worksheet.mergeCells('A5:G5');
+        worksheet.getCell('A5').value = `Periode: ${dayjs(
           params.start_date
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
+        worksheet.getCell('A5').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
 
-      // Header
+      // ======================
+      // HEADER TABLE
+      // ======================
+
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -210,16 +252,21 @@ const GoldInvestmentUserTable = () => {
         };
       });
 
-      // Data rows
+      // ======================
+      // DATA ROWS
+      // ======================
+
       dataToExport.forEach((row) => {
         const rowValues = header.map((key) => {
           const val = row[key as keyof typeof row];
-          // Format tampilan angka
+
           if (typeof val === 'number') {
             if (key.toLowerCase().includes('nominal'))
               return `Rp${formatDecimal(val)}`;
+
             return formatDecimal(val);
           }
+
           return val ?? '-';
         });
 
@@ -227,7 +274,7 @@ const GoldInvestmentUserTable = () => {
 
         newRow.eachCell((cell, colNumber) => {
           const headerName = header[colNumber - 1];
-          // Rata kanan untuk angka
+
           if (
             headerName.toLowerCase().includes('nominal') ||
             headerName.toLowerCase().includes('berat') ||
@@ -237,6 +284,7 @@ const GoldInvestmentUserTable = () => {
           } else {
             cell.alignment = { vertical: 'middle' };
           }
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -246,23 +294,30 @@ const GoldInvestmentUserTable = () => {
         });
       });
 
-      // === 🔹 Hitung total di akhir ===
+      // ======================
+      // TOTAL
+      // ======================
+
       const totalJumlahTransaksi = rows.reduce(
         (sum, item) => sum + (item.jumlah_transaksi ?? 0),
         0
       );
+
       const totalBeratInvestasi = rows.reduce(
         (sum, item) => sum + (item.total_invested_weight ?? 0),
         0
       );
+
       const totalNominalInvestasi = rows.reduce(
         (sum, item) => sum + (item.total_invested_amount ?? 0),
         0
       );
+
       const totalBeratReturn = rows.reduce(
         (sum, item) => sum + (item.total_return_weight ?? 0),
         0
       );
+
       const totalBeratAktif = rows.reduce(
         (sum, item) => sum + (item.total_active_weight ?? 0),
         0
@@ -280,7 +335,9 @@ const GoldInvestmentUserTable = () => {
 
       totalRow.eachCell((cell, colNumber) => {
         const headerName = header[colNumber - 1];
+
         cell.font = { bold: true };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -298,7 +355,6 @@ const GoldInvestmentUserTable = () => {
           cell.alignment = { horizontal: 'center', vertical: 'middle' };
         }
 
-        // Tambahkan warna background abu-abu muda
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -306,9 +362,13 @@ const GoldInvestmentUserTable = () => {
         };
       });
 
-      // Auto width
+      // ======================
+      // AUTO WIDTH
+      // ======================
+
       worksheet.columns.forEach((col) => {
-        if (!col) return; // pastikan col tidak undefined
+        if (!col) return;
+
         let maxLength = 0;
 
         col.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -320,9 +380,11 @@ const GoldInvestmentUserTable = () => {
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_investasi_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

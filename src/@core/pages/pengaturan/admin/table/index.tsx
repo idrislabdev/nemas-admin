@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IMenu, IPenggunaAplikasi } from '@/@core/@types/interface';
+import { IMenu, IPenggunaAplikasi, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 
@@ -227,6 +227,8 @@ const AdminPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -235,7 +237,7 @@ const AdminPageTable = () => {
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
-      const rows = resp.data.results;
+      const rows = resp.data.results || [];
 
       const dataToExport = rows.map(
         (item: IPenggunaAplikasi, index: number) => ({
@@ -245,26 +247,54 @@ const AdminPageTable = () => {
           Email: item.email,
           'Create By': item.create_user_name,
           'Create Time': item.create_time
-            ? moment(item.create_time).format('DD/MM/YYYY HH:mm')
-            : '',
-          'Update By': item.upd_user_name,
+            ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+            : '-',
+          'Update By': item.upd_user_name || '-',
         })
       );
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Admin');
 
+      // ======================
+      // JUDUL
+      // ======================
       worksheet.mergeCells('A1:G1');
       worksheet.getCell('A1').value = 'DATA PENGGUNA ADMIN';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      // ======================
+      // HEADER INFO
+      // ======================
+      worksheet.mergeCells('A2:G2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      worksheet.mergeCells('A3:G3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
       worksheet.addRow([]);
 
-      const header = Object.keys(dataToExport[0]);
+      // ======================
+      // HEADER TABLE (MANUAL)
+      // ======================
+      const header = [
+        'No',
+        'Nama',
+        'Username',
+        'Email',
+        'Create By',
+        'Create Time',
+        'Update By',
+      ];
+
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
@@ -283,11 +313,34 @@ const AdminPageTable = () => {
         };
       });
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key]);
-        const newRow = worksheet.addRow(rowValues);
+      // ======================
+      // DATA ROW
+      // ======================
+      if (dataToExport.length > 0) {
+        dataToExport.forEach((row: any) => {
+          const rowValues = header.map(
+            (key) => row[key as keyof typeof row] ?? '-'
+          );
+          const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell) => {
+          newRow.eachCell((cell) => {
+            cell.alignment = { vertical: 'middle' };
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' },
+            };
+          });
+        });
+      } else {
+        // ======================
+        // ROW KOSONG TAPI TETAP ADA BORDER
+        // ======================
+        const emptyRow = worksheet.addRow(['', '', '', '', '', '', '']);
+
+        emptyRow.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -295,6 +348,24 @@ const AdminPageTable = () => {
             right: { style: 'thin' },
           };
         });
+      }
+
+      // ======================
+      // AUTO WIDTH
+      // ======================
+      worksheet.columns.forEach((col: any) => {
+        if (col != undefined) {
+          let maxLength = 0;
+
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) {
+              maxLength = val.length;
+            }
+          });
+
+          col.width = Math.max(maxLength + 2, 15);
+        }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

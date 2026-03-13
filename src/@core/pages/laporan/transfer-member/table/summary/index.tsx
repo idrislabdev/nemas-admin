@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
@@ -131,6 +132,8 @@ const TransferMemberSummaryTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, {
         params: { ...params, offset: 0, limit: 1000 },
       });
@@ -139,6 +142,7 @@ const TransferMemberSummaryTable = () => {
       if (!rows || rows.length === 0) return;
 
       /* ================= MAP DATA ================= */
+
       const dataToExport = rows.map((r) => ({
         Nama: r.name || '-',
         Role: r.role_name || '-',
@@ -155,36 +159,66 @@ const TransferMemberSummaryTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Summary Transfer Member');
 
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
       /* ================= TITLE ================= */
-      worksheet.mergeCells('A1:J1');
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       const title = worksheet.getCell('A1');
+
       title.value = 'LAPORAN SUMMARY TRANSFER MEMBER';
       title.font = { size: 14, bold: true };
       title.alignment = { horizontal: 'left', vertical: 'middle' };
 
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
       /* ================= PERIODE ================= */
-      worksheet.mergeCells('A2:J2');
-      const period = worksheet.getCell('A2');
-      period.value = `Periode: ${dayjs(params.start_date).format(
+
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode: ${dayjs(
+        params.start_date
+      ).format(
         'DD MMMM YYYY'
       )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
-      period.alignment = { horizontal: 'left' };
+      worksheet.getCell('A5').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
       /* ================= HEADER ================= */
+
       const headerKeys = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(headerKeys);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -193,6 +227,7 @@ const TransferMemberSummaryTable = () => {
       });
 
       /* ================= ROWS ================= */
+
       dataToExport.forEach((row) => {
         const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
@@ -219,7 +254,8 @@ const TransferMemberSummaryTable = () => {
         });
       });
 
-      /* ================= SUMMARY / TOTAL ================= */
+      /* ================= TOTAL ================= */
+
       const totalFields: (keyof (typeof dataToExport)[number])[] = [
         'Berat Transfer (gr)',
         'Berat Diterima (gr)',
@@ -229,6 +265,7 @@ const TransferMemberSummaryTable = () => {
       ];
 
       const totals: Record<string, number> = {};
+
       totalFields.forEach((field) => {
         totals[field] = dataToExport.reduce(
           (sum, row) => sum + Number(row[field] || 0),
@@ -238,9 +275,11 @@ const TransferMemberSummaryTable = () => {
 
       const totalRowValues = headerKeys.map((key) => {
         if (key === 'Nama') return 'TOTAL';
+
         if (totalFields.includes(key as any)) {
           return new Intl.NumberFormat('id-ID').format(totals[key]);
         }
+
         return '';
       });
 
@@ -251,16 +290,19 @@ const TransferMemberSummaryTable = () => {
         const isNumeric = totalFields.includes(header as any);
 
         cell.font = { bold: true };
+
         cell.alignment = {
           vertical: 'middle',
           horizontal: isNumeric ? 'right' : 'left',
         };
+
         cell.border = {
           top: { style: 'medium' },
           left: { style: 'thin' },
           bottom: { style: 'medium' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -269,17 +311,26 @@ const TransferMemberSummaryTable = () => {
       });
 
       /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
         let maxLength = 0;
+
         col.eachCell?.({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
           maxLength = Math.max(maxLength, val.length);
         });
+
         col.width = Math.min(maxLength + 2, 40);
       });
 
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
       /* ================= SAVE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_summary_transfer_member_${dayjs().format(

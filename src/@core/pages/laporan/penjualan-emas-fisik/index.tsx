@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ISalesOrder } from '@/@core/@types/interface';
+import { ISalesOrder, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -212,6 +212,8 @@ const PenjualanEmasFisikPage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
       if (!rows || rows.length === 0) {
         console.warn('Tidak ada data untuk diekspor.');
@@ -240,37 +242,61 @@ const PenjualanEmasFisikPage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
 
-      // === Header Title ===
-      worksheet.mergeCells('A1:L1');
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      // ===== TITLE =====
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       const title = worksheet.getCell('A1');
       title.value = 'LAPORAN PENJUALAN EMAS FISIK';
       title.font = { size: 14, bold: true };
       title.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // === Periode ===
+      // ===== DIBUAT OLEH =====
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== TANGGAL EXPORT =====
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      // ===== PERIODE =====
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:L2');
-        const period = worksheet.getCell('A2');
-        period.value = `Periode: ${dayjs(params.start_date).format(
+        worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+        worksheet.getCell('A5').value = `Periode: ${dayjs(
+          params.start_date
+        ).format(
           'DD-MM-YYYY'
         )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
-        period.alignment = { horizontal: 'left' };
+        worksheet.getCell('A5').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
 
-      // === Table Header ===
+      // ===== TABLE HEADER =====
       const headerKeys = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(headerKeys);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -278,7 +304,7 @@ const PenjualanEmasFisikPage = () => {
         };
       });
 
-      // === Table Rows ===
+      // ===== TABLE ROWS =====
       dataToExport.forEach((row) => {
         const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
@@ -287,25 +313,26 @@ const PenjualanEmasFisikPage = () => {
           const header = headerKeys[colNumber - 1];
           const isNumeric =
             header.includes('(Rp)') || header.includes('(Gram)');
+
           cell.alignment = {
             vertical: 'middle',
             horizontal: isNumeric ? 'right' : 'left',
           };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
           if (isNumeric && typeof cell.value === 'number') {
-            // Format number sebagai string dengan pemisah ribuan
             cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
           }
         });
       });
 
-      // === Hitung Total di akhir ===
-      // === Hitung Total di akhir ===
+      // ===== TOTAL =====
       const totalFields: (keyof (typeof dataToExport)[number])[] = [
         'Berat Emas (Gram)',
         'Nominal Pesanan (Rp)',
@@ -327,38 +354,45 @@ const PenjualanEmasFisikPage = () => {
 
       const totalRowValues = headerKeys.map((key) => {
         if (key === 'Nomor Order') return 'TOTAL';
+
         if (totalFields.includes(key as any)) {
           return new Intl.NumberFormat('id-ID').format(totals[key]);
         }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.eachCell((cell, colNumber) => {
         const header: any = headerKeys[colNumber - 1];
         const isNumeric = totalFields.includes(header);
 
         cell.font = { bold: true };
+
         cell.alignment = {
           vertical: 'middle',
           horizontal: isNumeric ? 'right' : 'left',
         };
+
         cell.border = {
           top: { style: 'medium' },
           left: { style: 'thin' },
           bottom: { style: 'medium' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' }, // Kuning lembut untuk total
+          fgColor: { argb: 'FFF9E79F' },
         };
       });
 
-      // === Auto Width Columns ===
+      // ===== AUTO WIDTH =====
       worksheet.columns.forEach((col) => {
-        if (!col) return; // pastikan col tidak undefined
+        if (!col) return;
+
         let maxLength = 0;
 
         col.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -369,11 +403,16 @@ const PenjualanEmasFisikPage = () => {
         col.width = Math.min(maxLength + 2, 40);
       });
 
-      // === Save File ===
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_penjualan_emas_fisik_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

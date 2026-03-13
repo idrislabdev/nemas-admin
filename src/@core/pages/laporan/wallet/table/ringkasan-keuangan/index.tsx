@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -87,6 +88,9 @@ const WalletFinancialSummary = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, { params });
       const rows: IWalletFinancialSummary = resp.data;
 
@@ -111,14 +115,30 @@ const WalletFinancialSummary = () => {
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // === Periode ===
+      // === Dibuat Oleh ===
       worksheet.mergeCells('A2:E2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD-MM-YYYY'
-      )}`;
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
       worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // === Tanggal Export ===
+      worksheet.mergeCells('A3:E3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // === Periode ===
+      worksheet.mergeCells('A4:E4');
+
+      let periodeText = 'Semua Periode';
+      if (params.start_date && params.end_date) {
+        periodeText = `${dayjs(params.start_date).format(
+          'DD-MM-YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      }
+
+      worksheet.getCell('A4').value = `Periode: ${periodeText}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -131,6 +151,7 @@ const WalletFinancialSummary = () => {
         'Total Nett',
       ];
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -228,7 +249,7 @@ const WalletFinancialSummary = () => {
 
       // === Auto Width ===
       worksheet.columns.forEach((col) => {
-        if (!col) return; // pastikan col tidak undefined
+        if (!col) return;
         let maxLength = 0;
 
         col.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -238,11 +259,16 @@ const WalletFinancialSummary = () => {
 
         col.width = Math.min(maxLength + 2, 40);
       });
+
+      // === Freeze Header ===
+      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+
       // === Export ===
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_ringkasan_wallet_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

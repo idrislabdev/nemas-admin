@@ -15,6 +15,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 // const { RangePicker } = DatePicker;
@@ -236,6 +237,8 @@ const SertifikatListPage = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         ...params,
         offset: 0,
@@ -243,6 +246,11 @@ const SertifikatListPage = () => {
       };
 
       const rows = await fetchAllData(url, exportParams);
+
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const dataToExport = rows.map((item: ICertificate, index: number) => ({
         No: index + 1,
@@ -254,7 +262,6 @@ const SertifikatListPage = () => {
         'Kode Sertifikat Barang': item.cert_code || '-',
         'Harga Sertifikat': item.cert_price || 0,
         'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
-        // Terpakai: item.is_redeemed ? 'Sudah' : 'Belum',
         'Dibuat Oleh': item.create_user_name || '-',
         'Waktu Dibuat': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
@@ -268,22 +275,49 @@ const SertifikatListPage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Sertifikat Emas');
 
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
       // ======================
       // Title
       // ======================
-      worksheet.mergeCells('A1:M1');
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
 
-      worksheet.getCell('A1').value = 'LAPORAN SERTIFIKAT EMAS';
+      title.value = 'LAPORAN SERTIFIKAT EMAS';
 
-      worksheet.getCell('A1').alignment = {
+      title.alignment = {
         horizontal: 'center',
         vertical: 'middle',
       };
 
-      worksheet.getCell('A1').font = {
+      title.font = {
         size: 14,
         bold: true,
       };
+
+      // ======================
+      // Dibuat Oleh
+      // ======================
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ======================
+      // Tanggal Export
+      // ======================
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ======================
+      // Total Data
+      // ======================
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -291,7 +325,6 @@ const SertifikatListPage = () => {
       // Header
       // ======================
       const header = Object.keys(dataToExport[0]);
-
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
@@ -342,7 +375,7 @@ const SertifikatListPage = () => {
       // Auto Column Width
       // ======================
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
+        if (col) {
           let maxLength = 0;
 
           col.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -354,6 +387,11 @@ const SertifikatListPage = () => {
           col.width = maxLength + 2;
         }
       });
+
+      // ======================
+      // Freeze Header
+      // ======================
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
 
       const buffer = await workbook.xlsx.writeBuffer();
 

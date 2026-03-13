@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IPaymentMethod } from '@/@core/@types/interface';
+import { IPaymentMethod, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -206,6 +206,8 @@ const PaymentMethodPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -217,14 +219,14 @@ const PaymentMethodPageTable = () => {
 
       const dataToExport = rows.map((item: IPaymentMethod, index: number) => ({
         No: index + 1,
-        Nama: item.payment_method_name,
-        Deskripsi: item.payment_method_description,
+        Nama: item.payment_method_name || '-',
+        Deskripsi: item.payment_method_description || '-',
         Status: item.is_active ? 'Aktif' : 'Tidak Aktif',
-        'Create By': item.create_user_name,
+        'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
           : '-',
-        'Update By': item.upd_user_name,
+        'Update By': item.upd_user_name || '-',
         'Update Time': item.upd_time
           ? moment(item.upd_time).format('DD MMM YYYY, HH:mm')
           : '-',
@@ -233,30 +235,68 @@ const PaymentMethodPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Payment Method');
 
-      // Judul
+      const thinBorder = {
+        top: { style: 'thin' as const },
+        left: { style: 'thin' as const },
+        bottom: { style: 'thin' as const },
+        right: { style: 'thin' as const },
+      };
+
+      // ======================
+      // JUDUL
+      // ======================
       worksheet.mergeCells('A1:H1');
       worksheet.getCell('A1').value = 'DATA MASTER PAYMENT METHOD';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A1').border = thinBorder;
+
+      // ======================
+      // HEADER INFO
+      // ======================
+      worksheet.mergeCells('A2:H2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A2').border = thinBorder;
+
+      worksheet.mergeCells('A3:H3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A3').border = thinBorder;
 
       worksheet.addRow([]);
 
-      // Header
-      const header = Object.keys(dataToExport[0]);
+      // ======================
+      // HEADER TABLE (STATIC)
+      // ======================
+      const header = [
+        'No',
+        'Nama',
+        'Deskripsi',
+        'Status',
+        'Create By',
+        'Create Time',
+        'Update By',
+        'Update Time',
+      ];
+
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
+        cell.border = thinBorder;
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -264,35 +304,57 @@ const PaymentMethodPageTable = () => {
         };
       });
 
-      // Rows
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      // ======================
+      // DATA ROW
+      // ======================
+      if (dataToExport.length > 0) {
+        dataToExport.forEach((row: any) => {
+          const rowValues = header.map(
+            (key) => row[key as keyof typeof row] ?? '-'
+          );
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
+          const newRow = worksheet.addRow(rowValues);
+
+          newRow.eachCell((cell) => {
+            cell.alignment = {
+              vertical: 'middle',
+              horizontal: 'left',
+              wrapText: true,
+            };
+            cell.border = thinBorder;
+          });
         });
-      });
+      } else {
+        // Tetap buat 1 row kosong supaya border tabel tetap muncul
+        const emptyRow = worksheet.addRow(['', '', '', '', '', '', '', '']);
 
-      // Auto width
+        emptyRow.eachCell((cell) => {
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: 'left',
+          };
+          cell.border = thinBorder;
+        });
+      }
+
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
+
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          col.width = maxLength + 2;
+
+          col.width = Math.max(maxLength + 2, 15);
         }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `data_payment_method_${moment().format('YYYYMMDD_HHmmss')}.xlsx`

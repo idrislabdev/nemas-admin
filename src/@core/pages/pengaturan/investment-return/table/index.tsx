@@ -1,5 +1,7 @@
 'use client';
-import { IInvesmentReturn } from '@/@core/@types/interface';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { IInvesmentReturn, IUser } from '@/@core/@types/interface';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { notification, Pagination, Table } from 'antd';
@@ -15,7 +17,8 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import moment from 'moment';
 import 'moment/locale/id';
 import axiosInstance from '@/@core/utils/axios';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import Link from 'next/link';
 import { formatterNumber } from '@/@core/utils/general';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
@@ -118,58 +121,154 @@ const InvestmentReturnPageTable = () => {
   };
 
   const exportData = async () => {
-    setIsModalLoading(true);
-    const param = {
-      format: 'json',
-      offset: 0,
-      limit: 50,
-      search: '',
-    };
-    const resp = await axiosInstance.get(url, { params: param });
-    const rows = resp.data.results;
-    const dataToExport = rows.map((item: IInvesmentReturn, index: number) => ({
-      No: index + 1,
-      Nama: item.name,
-      Rate: item.rate,
-      Durasi: item.duration_days,
-      Deskripsi: item.description,
-    }));
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils?.json_to_sheet(dataToExport);
-    const colA = 5;
-    const colB = rows.reduce(
-      (w: number, r: IInvesmentReturn) =>
-        Math.max(w, r.name ? r.name.length : 10),
-      10
-    );
-    const colC = rows.reduce(
-      (w: number, r: IInvesmentReturn) =>
-        Math.max(w, r.rate ? r.rate.toString().length : 10),
-      10
-    );
-    const colD = rows.reduce(
-      (w: number, r: IInvesmentReturn) =>
-        Math.max(w, r.duration_days ? r.duration_days.toString().length : 10),
-      10
-    );
-    const colE = rows.reduce(
-      (w: number, r: IInvesmentReturn) =>
-        Math.max(w, r.description ? r.description.length : 10),
-      10
-    );
-    worksheet['!cols'] = [
-      { wch: colA },
-      { wch: colB },
-      { wch: colC },
-      { wch: colD },
-      { wch: colE },
-      { wch: 20 },
-    ];
+    try {
+      setIsModalLoading(true);
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'user');
-    // Save the workbook as an Excel file
-    XLSX.writeFile(workbook, `data_user.xlsx`);
-    setIsModalLoading(false);
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+      const param = {
+        format: 'json',
+        offset: 0,
+        limit: 50,
+        search: '',
+      };
+
+      const resp = await axiosInstance.get(url, { params: param });
+      const rows = resp.data.results || [];
+
+      const dataToExport = rows.map(
+        (item: IInvesmentReturn, index: number) => ({
+          No: index + 1,
+          Nama: item.name || '-',
+          Rate: item.rate ?? '-',
+          Durasi: item.duration_days ?? '-',
+          Deskripsi: item.description || '-',
+        })
+      );
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data Investment Return');
+
+      const thinBorder = {
+        top: { style: 'thin' as const },
+        left: { style: 'thin' as const },
+        bottom: { style: 'thin' as const },
+        right: { style: 'thin' as const },
+      };
+
+      // ======================
+      // JUDUL
+      // ======================
+      worksheet.mergeCells('A1:E1');
+      worksheet.getCell('A1').value = 'DATA MASTER INVESTMENT RETURN';
+      worksheet.getCell('A1').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A1').border = thinBorder;
+
+      // ======================
+      // HEADER INFO
+      // ======================
+      worksheet.mergeCells('A2:E2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A2').border = thinBorder;
+
+      worksheet.mergeCells('A3:E3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A3').border = thinBorder;
+
+      worksheet.addRow([]);
+
+      // ======================
+      // HEADER TABLE (STATIC)
+      // ======================
+      const header = ['No', 'Nama', 'Rate', 'Durasi', 'Deskripsi'];
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = thinBorder;
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
+      });
+
+      // ======================
+      // DATA ROW
+      // ======================
+      if (dataToExport.length > 0) {
+        dataToExport.forEach((row: any) => {
+          const rowValues = header.map(
+            (key) => row[key as keyof typeof row] ?? '-'
+          );
+
+          const newRow = worksheet.addRow(rowValues);
+
+          newRow.eachCell((cell) => {
+            cell.alignment = {
+              vertical: 'middle',
+              horizontal: 'left',
+              wrapText: true,
+            };
+            cell.border = thinBorder;
+          });
+        });
+      } else {
+        // Tetap buat 1 row kosong supaya border tabel tetap muncul
+        const emptyRow = worksheet.addRow(['', '', '', '', '']);
+
+        emptyRow.eachCell((cell) => {
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: 'left',
+          };
+          cell.border = thinBorder;
+        });
+      }
+
+      // ======================
+      // AUTO WIDTH
+      // ======================
+      worksheet.columns.forEach((col: any) => {
+        if (col != undefined) {
+          let maxLength = 0;
+
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) maxLength = val.length;
+          });
+
+          col.width = Math.max(maxLength + 2, 15);
+        }
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      saveAs(
+        new Blob([buffer]),
+        `data_investment_return_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsModalLoading(false);
+    }
   };
 
   const deleteData = (id: number | undefined) => {

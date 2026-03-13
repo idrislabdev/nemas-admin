@@ -1,5 +1,5 @@
 'use client';
-import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import { IPenggunaAplikasi, IUser } from '@/@core/@types/interface';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pagination, Table } from 'antd';
@@ -200,6 +200,8 @@ const DataPenggunaTokoPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       // ===== GET GOLD PRICE =====
       const goldResp = await axiosInstance.get('/core/gold/price/active');
       const activeGoldPrice = goldResp.data.gold_price_base || 0;
@@ -250,6 +252,9 @@ const DataPenggunaTokoPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Data Pengguna Toko');
 
+      const headers = Object.keys(data[0]);
+      const lastColumn = String.fromCharCode(64 + headers.length);
+
       // ===== BORDER HELPER =====
       const applyBorder = (
         cell: ExcelJS.Cell,
@@ -264,15 +269,31 @@ const DataPenggunaTokoPageTable = () => {
       };
 
       // ===== TITLE =====
-      ws.mergeCells('A1:J1');
+      ws.mergeCells(`A1:${lastColumn}1`);
       ws.getCell('A1').value = 'LAPORAN DATA PENGGUNA TOKO';
       ws.getCell('A1').font = { bold: true, size: 14 };
-      ws.getCell('A1').alignment = { horizontal: 'center' };
+      ws.getCell('A1').alignment = { horizontal: 'left' };
+
+      // ===== CREATED BY =====
+      ws.mergeCells(`A2:${lastColumn}2`);
+      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      ws.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== EXPORT DATE =====
+      ws.mergeCells(`A3:${lastColumn}3`);
+      ws.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      ws.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      ws.mergeCells(`A4:${lastColumn}4`);
+      ws.getCell('A4').value = `Total Data : ${rows.length}`;
+      ws.getCell('A4').alignment = { horizontal: 'left' };
 
       ws.addRow([]);
 
       // ===== HEADER =====
-      const headers = Object.keys(data[0]);
       const headerRow = ws.addRow(headers);
 
       headers.forEach((_, index) => {
@@ -299,6 +320,10 @@ const DataPenggunaTokoPageTable = () => {
 
           const isCurrency = header.includes('(Rp)');
 
+          if (isCurrency) {
+            cell.numFmt = '"Rp"#,##0';
+          }
+
           cell.alignment = {
             vertical: 'middle',
             horizontal: isCurrency ? 'right' : 'left',
@@ -309,9 +334,9 @@ const DataPenggunaTokoPageTable = () => {
       });
 
       // ===== FREEZE HEADER =====
-      ws.views = [{ state: 'frozen', ySplit: 3 }];
+      ws.views = [{ state: 'frozen', ySplit: 6 }];
 
-      // ===== AUTO WIDTH (TERMASUK CELL KOSONG) =====
+      // ===== AUTO WIDTH =====
       ws.columns.forEach((column) => {
         if (!column) return;
 

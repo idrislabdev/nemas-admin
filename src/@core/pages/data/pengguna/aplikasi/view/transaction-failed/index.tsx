@@ -2,7 +2,7 @@
 
 'use client';
 
-import { IHistoryTransaction } from '@/@core/@types/interface';
+import { IHistoryTransaction, IUser } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber, statusTransaksiLangMap } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
@@ -102,6 +102,8 @@ const ProfileTransactionFailed = (props: { id: string }) => {
 
   // --- EXPORT DATA MENGGUNAKAN EXCELJS ---
   const exportData = async () => {
+    const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
     let filterString = '&order_by=transaction_date&order_direction=ASC';
 
     const allValues = options.map((o) => o.value);
@@ -117,12 +119,10 @@ const ProfileTransactionFailed = (props: { id: string }) => {
       });
     }
 
-    console.log(filterString);
-
-    // ambil semua data
     const rows = await fetchAllData(filterString);
 
-    // mapping data untuk excel
+    if (!rows.length) return;
+
     const dataToExport = rows.map(
       (item: IHistoryTransaction, index: number) => ({
         No: index + 1,
@@ -140,14 +140,14 @@ const ProfileTransactionFailed = (props: { id: string }) => {
       })
     );
 
-    // ------------------------------
-    // EXCELJS MULAI
-    // ------------------------------
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('History Transaksi Gagal');
 
-    // Judul Utama
-    worksheet.mergeCells('A1:J1');
+    const header = Object.keys(dataToExport[0]);
+    const lastColumn = String.fromCharCode(64 + header.length);
+
+    // ===== TITLE =====
+    worksheet.mergeCells(`A1:${lastColumn}1`);
     worksheet.getCell('A1').value = 'LAPORAN HISTORY TRANSAKSI GAGAL';
     worksheet.getCell('A1').font = { size: 14, bold: true };
     worksheet.getCell('A1').alignment = {
@@ -155,15 +155,26 @@ const ProfileTransactionFailed = (props: { id: string }) => {
       vertical: 'middle',
     };
 
-    // Subjudul (jumlah data)
-    worksheet.mergeCells('A2:J2');
-    worksheet.getCell('A2').value = `Total Data: ${rows.length}`;
+    // ===== DIBUAT OLEH =====
+    worksheet.mergeCells(`A2:${lastColumn}2`);
+    worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
     worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+    // ===== TANGGAL EXPORT =====
+    worksheet.mergeCells(`A3:${lastColumn}3`);
+    worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+      'DD-MM-YYYY HH:mm'
+    )}`;
+    worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+    // ===== TOTAL DATA =====
+    worksheet.mergeCells(`A4:${lastColumn}4`);
+    worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+    worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
     worksheet.addRow([]);
 
-    // Header
-    const header = Object.keys(dataToExport[0]);
+    // ===== HEADER TABLE =====
     const headerRow = worksheet.addRow(header);
 
     headerRow.eachCell((cell) => {
@@ -175,9 +186,14 @@ const ProfileTransactionFailed = (props: { id: string }) => {
         bottom: { style: 'thin' },
         right: { style: 'thin' },
       };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFEFEFEF' },
+      };
     });
 
-    // Data rows
+    // ===== DATA ROWS =====
     dataToExport.forEach((row: any) => {
       const newRow = worksheet.addRow(header.map((h: any) => row[h]));
 
@@ -192,18 +208,24 @@ const ProfileTransactionFailed = (props: { id: string }) => {
       });
     });
 
-    // Auto column width
+    // ===== FREEZE HEADER =====
+    worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+
+    // ===== AUTO WIDTH =====
     worksheet.columns.forEach((col: any) => {
-      let maxLength = 0;
+      let maxLength = 10;
+
       col.eachCell({ includeEmpty: true }, (cell: any) => {
         const val = cell.value ? cell.value.toString() : '';
         maxLength = Math.max(maxLength, val.length);
       });
+
       col.width = Math.min(Math.max(maxLength + 2, 10), 40);
     });
 
-    // Download
+    // ===== DOWNLOAD =====
     const buffer = await workbook.xlsx.writeBuffer();
+
     saveAs(
       new Blob([buffer]),
       `history_transaksi_gagal_${moment().format('YYYYMMDD_HHmmss')}.xlsx`

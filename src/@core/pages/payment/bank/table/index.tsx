@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IBank } from '@/@core/@types/interface';
+import { IBank, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -228,6 +228,8 @@ const PaymentBankPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IBank, index: number) => ({
@@ -249,26 +251,44 @@ const PaymentBankPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Bank');
 
+      // ======================
+      // JUDUL
+      // ======================
       worksheet.mergeCells('A1:I1');
       worksheet.getCell('A1').value = 'DATA MASTER BANK';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       let statusText = 'Semua';
-
       if (params.bank_active === true) statusText = 'Aktif';
       if (params.bank_active === false) statusText = 'Tidak Aktif';
 
+      // ======================
+      // HEADER INFO
+      // ======================
       worksheet.mergeCells('A2:I2');
-      worksheet.getCell('A2').value = `Status : ${statusText}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      worksheet.mergeCells('A3:I3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      worksheet.mergeCells('A4:I4');
+      worksheet.getCell('A4').value = `Status : ${statusText}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
-      const header = Object.keys(dataToExport[0]);
+      // ======================
+      // HEADER TABLE
+      // ======================
+      const header = Object.keys(dataToExport[0] || {});
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
@@ -287,8 +307,11 @@ const PaymentBankPageTable = () => {
         };
       });
 
+      // ======================
+      // DATA ROW
+      // ======================
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key]);
+        const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
 
         newRow.eachCell((cell) => {
@@ -302,18 +325,22 @@ const PaymentBankPageTable = () => {
         });
       });
 
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+        if (col != undefined) {
+          let maxLength = 0;
 
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
+          col.eachCell({ includeEmpty: true }, (cell: any) => {
+            const val = cell.value ? cell.value.toString() : '';
+            if (val.length > maxLength) {
+              maxLength = val.length;
+            }
+          });
 
-          if (val.length > maxLength) {
-            maxLength = val.length;
-          }
-        });
-
-        col.width = maxLength + 2;
+          col.width = maxLength + 2;
+        }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();

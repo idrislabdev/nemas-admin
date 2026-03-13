@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
@@ -159,6 +160,8 @@ const TarikEmasSummaryTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, {
         params: { ...params, offset: 0, limit: 1000 },
       });
@@ -188,39 +191,76 @@ const TarikEmasSummaryTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Tarik Emas Summary');
 
-      worksheet.mergeCells('A1:P1');
-      worksheet.getCell('A1').value = 'LAPORAN TARIK EMAS SUMMARY';
-      worksheet.getCell('A1').font = { bold: true, size: 14 };
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      worksheet.mergeCells('A2:P2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
+      title.value = 'LAPORAN TARIK EMAS SUMMARY';
+      title.font = { bold: true, size: 14 };
+      title.alignment = { horizontal: 'left' };
+
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      /* ================= PERIODE ================= */
+
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode: ${dayjs(
         params.start_date
       ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
         'DD MMMM YYYY'
       )}`;
+      worksheet.getCell('A5').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
+
+      /* ================= HEADER ================= */
 
       const headerKeys = Object.keys(
         dataToExport[0]
       ) as (keyof ExportSummaryRow)[];
 
       const headerRow = worksheet.addRow(headerKeys);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center' };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
           fgColor: { argb: 'FFEFEFEF' },
         };
       });
+
+      /* ================= DATA ================= */
 
       dataToExport.forEach((row) => {
         const r = worksheet.addRow(headerKeys.map((k) => row[k]));
@@ -249,6 +289,8 @@ const TarikEmasSummaryTable = () => {
         });
       });
 
+      /* ================= TOTAL ================= */
+
       type NumericKey =
         | 'Qty'
         | 'Berat (gr)'
@@ -269,6 +311,7 @@ const TarikEmasSummaryTable = () => {
       ];
 
       const totals = {} as Record<NumericKey, number>;
+
       totalFields.forEach((f) => {
         totals[f] = dataToExport.reduce((sum, row) => sum + Number(row[f]), 0);
       });
@@ -276,17 +319,20 @@ const TarikEmasSummaryTable = () => {
       const totalRow = worksheet.addRow(
         headerKeys.map((key) => {
           if (key === 'Tanggal Order') return 'TOTAL';
+
           if (totalFields.includes(key as NumericKey)) {
             return new Intl.NumberFormat('id-ID').format(
               totals[key as NumericKey]
             );
           }
+
           return '';
         })
       );
 
       totalRow.eachCell((cell) => {
         cell.font = { bold: true };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -294,15 +340,26 @@ const TarikEmasSummaryTable = () => {
         };
       });
 
+      /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
         let max = 0;
+
         col.eachCell?.({ includeEmpty: true }, (cell) => {
           max = Math.max(max, cell.value?.toString().length || 0);
         });
+
         col.width = Math.min(max + 2, 40);
       });
 
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      /* ================= SAVE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_tarik_emas_summary_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`

@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldPriceConfig } from '@/@core/@types/interface';
+import { IGoldPriceConfig, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -199,6 +199,8 @@ const GoldPriceConfigPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -207,56 +209,100 @@ const GoldPriceConfigPageTable = () => {
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
-      const rows = resp.data.results;
+      const rows = resp.data.results || [];
 
       const dataToExport = rows.map(
         (item: IGoldPriceConfig, index: number) => ({
           No: index + 1,
-          Code: item.gpc_code,
-          Description: item.gpc_description,
-          'Price Buy Weekday': item.gold_price_setting_model_buy_weekday,
-          'Price Sell Weekday': item.gold_price_setting_model_sell_weekday,
-          'Price Buy Weekend': item.gold_price_setting_model_buy_weekend,
-          'Price Sell Weekend': item.gold_price_setting_model_sell_weekend,
+          Code: item.gpc_code || '-',
+          Description: item.gpc_description || '-',
+          'Price Buy Weekday': item.gold_price_setting_model_buy_weekday ?? '-',
+          'Price Sell Weekday':
+            item.gold_price_setting_model_sell_weekday ?? '-',
+          'Price Buy Weekend': item.gold_price_setting_model_buy_weekend ?? '-',
+          'Price Sell Weekend':
+            item.gold_price_setting_model_sell_weekend ?? '-',
           Status: item.gpc_active ? 'Aktif' : 'Tidak Aktif',
-          'Create By': item.create_user_name,
+          'Create By': item.create_user_name || '-',
           'Create Time': item.create_time
-            ? moment(item.create_time).format('DD/MM/YYYY HH:mm')
-            : '',
-          'Update By': item.upd_user_name,
+            ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+            : '-',
+          'Update By': item.upd_user_name || '-',
           'Update Time': item.upd_time
-            ? moment(item.upd_time).format('DD/MM/YYYY HH:mm')
-            : '',
+            ? moment(item.upd_time).format('DD MMM YYYY, HH:mm')
+            : '-',
         })
       );
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Price Config');
 
-      // Judul
+      const thinBorder = {
+        top: { style: 'thin' as const },
+        left: { style: 'thin' as const },
+        bottom: { style: 'thin' as const },
+        right: { style: 'thin' as const },
+      };
+
+      // ======================
+      // JUDUL
+      // ======================
       worksheet.mergeCells('A1:K1');
       worksheet.getCell('A1').value = 'DATA PRICE CONFIG';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A1').border = thinBorder;
 
-      worksheet.addRow([]); // baris kosong
+      // ======================
+      // HEADER INFO
+      // ======================
+      worksheet.mergeCells('A2:K2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A2').border = thinBorder;
 
-      // Header
-      const header = Object.keys(dataToExport[0]);
+      worksheet.mergeCells('A3:K3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMM YYYY, HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+      worksheet.getCell('A3').border = thinBorder;
+
+      worksheet.addRow([]);
+
+      // ======================
+      // HEADER TABLE (STATIC)
+      // ======================
+      const header = [
+        'No',
+        'Code',
+        'Description',
+        'Price Buy Weekday',
+        'Price Sell Weekday',
+        'Price Buy Weekend',
+        'Price Sell Weekend',
+        'Status',
+        'Create By',
+        'Create Time',
+        'Update By',
+        'Update Time',
+      ];
+
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
+        cell.border = thinBorder;
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -264,39 +310,76 @@ const GoldPriceConfigPageTable = () => {
         };
       });
 
-      // Data rows
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      // ======================
+      // DATA ROW
+      // ======================
+      if (dataToExport.length > 0) {
+        dataToExport.forEach((row: any) => {
+          const rowValues = header.map(
+            (key) => row[key as keyof typeof row] ?? '-'
+          );
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
+          const newRow = worksheet.addRow(rowValues);
+
+          newRow.eachCell((cell) => {
+            cell.alignment = {
+              vertical: 'middle',
+              horizontal: 'left',
+              wrapText: true,
+            };
+            cell.border = thinBorder;
+          });
         });
-      });
+      } else {
+        // Tetap buat 1 row kosong supaya border tabel tetap muncul
+        const emptyRow = worksheet.addRow([
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ]);
 
-      // Auto column width
+        emptyRow.eachCell((cell) => {
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: 'left',
+          };
+          cell.border = thinBorder;
+        });
+      }
+
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
+
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
-          col.width = maxLength + 2;
+
+          col.width = Math.max(maxLength + 2, 15);
         }
       });
 
-      // Save file
+      // ======================
+      // SAVE FILE
+      // ======================
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `data_price_config_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

@@ -182,15 +182,37 @@ const GoldPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      // Ambil user login dari localStorage/session (silakan sesuaikan key sesuai project kamu)
+      const storedUser =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('user') || sessionStorage.getItem('user')
+          : null;
+
+      let exportedBy = '-';
+
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          exportedBy =
+            parsedUser?.full_name ||
+            parsedUser?.user_name ||
+            parsedUser?.name ||
+            parsedUser?.username ||
+            '-';
+        } catch {
+          exportedBy = '-';
+        }
+      }
+
       const exportParams = {
         format: 'json',
         offset: 0,
-        limit: 100,
-        search: '',
+        limit: 1000,
+        search: params.search, // pakai search aktif saat ini
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
-      const rows = resp.data.results;
+      const rows = resp.data.results || [];
 
       const dataToExport = rows.map((item: IGold, index: number) => ({
         No: index + 1,
@@ -212,20 +234,61 @@ const GoldPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Gold');
 
-      // Judul
-      worksheet.mergeCells('A1:J1');
+      // Header fallback jika data kosong
+      const header =
+        dataToExport.length > 0
+          ? Object.keys(dataToExport[0])
+          : [
+              'No',
+              'Berat Emas',
+              'Berat Sertifikat',
+              'Type',
+              'Brand',
+              'Harga',
+              'Stok',
+              'Create By',
+              'Create Time',
+              'Update By',
+            ];
+
+      const totalColumns = header.length;
+      const lastColumnLetter = worksheet.getColumn(totalColumns).letter;
+
+      // ========================
+      // Title
+      // ========================
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = 'DATA MASTER GOLD';
       worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
+        horizontal: 'left',
         vertical: 'middle',
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      worksheet.addRow([]); // baris kosong
+      // ========================
+      // Metadata Export
+      // ========================
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      // Header
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
+      worksheet.getCell('A4').value = 'Diexport';
+      worksheet.getCell('B4').value =
+        `: ${moment().format('DD MMMM YYYY, HH:mm')}`;
+
+      worksheet.getCell('A5').value = 'Pencarian';
+      worksheet.getCell('B5').value = `: ${params.search || '-'}`;
+
+      ['A3', 'A4', 'A5'].forEach((cellKey) => {
+        worksheet.getCell(cellKey).font = { bold: true };
+      });
+
+      // Baris kosong sebelum tabel
+      worksheet.addRow([]); // row 6
+
+      // ========================
+      // Header Table
+      // ========================
+      const headerRow = worksheet.addRow(header); // row 7
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
@@ -243,7 +306,9 @@ const GoldPageTable = () => {
         };
       });
 
-      // Data rows
+      // ========================
+      // Data Rows
+      // ========================
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
@@ -263,7 +328,9 @@ const GoldPageTable = () => {
         });
       });
 
-      // Auto column width
+      // ========================
+      // Auto Column Width
+      // ========================
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
@@ -281,6 +348,11 @@ const GoldPageTable = () => {
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
+      api.error({
+        message: 'Export Excel',
+        description: 'Gagal export data gold',
+        placement: 'bottomRight',
+      });
     } finally {
       setIsModalLoading(false);
     }

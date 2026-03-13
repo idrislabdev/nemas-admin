@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldInvestmentReport } from '@/@core/@types/interface';
+import { IGoldInvestmentReport, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -206,6 +206,8 @@ const GoldInvestmentTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
 
       const dataToExport =
@@ -265,28 +267,54 @@ const GoldInvestmentTable = () => {
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
       // ======================
+      // DIBUAT OLEH
+      // ======================
+
+      worksheet.mergeCells('A2:K2');
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ======================
+      // TANGGAL EXPORT
+      // ======================
+
+      worksheet.mergeCells('A3:K3');
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ======================
+      // TOTAL DATA
+      // ======================
+
+      worksheet.mergeCells('A4:K4');
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      // ======================
       // PERIODE
       // ======================
 
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:K2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
+        worksheet.mergeCells('A5:K5');
+        worksheet.getCell('A5').value = `Periode: ${dayjs(
           params.start_date
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
-        worksheet.getCell('A2').alignment = { horizontal: 'left' };
+        worksheet.getCell('A5').alignment = { horizontal: 'left' };
       }
 
       // ======================
       // STATUS FILTER
       // ======================
 
-      worksheet.mergeCells('A3:K3');
-      worksheet.getCell('A3').value = `Status: ${
+      worksheet.mergeCells('A6:K6');
+      worksheet.getCell('A6').value = `Status: ${
         params.status ? params.status : 'Semua'
       }`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').alignment = { horizontal: 'left' };
 
       worksheet.addRow([]);
 
@@ -399,19 +427,9 @@ const GoldInvestmentTable = () => {
         '',
       ]);
 
-      totalRow.eachCell((cell, colNumber) => {
-        const headerName = header[colNumber - 1];
-
+      totalRow.eachCell((cell) => {
         cell.font = { bold: true };
-
-        if (
-          headerName?.toLowerCase().includes('nominal') ||
-          headerName?.toLowerCase().includes('berat')
-        ) {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-        } else {
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        }
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
 
         cell.border = {
           top: { style: 'thin' },

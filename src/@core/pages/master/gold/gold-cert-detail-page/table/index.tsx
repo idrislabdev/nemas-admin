@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldCertPriceDetail } from '@/@core/@types/interface';
+import { IGoldCertPriceDetail, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -180,6 +180,8 @@ const GoldCertDetailPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         format: 'json',
         offset: 0,
@@ -189,6 +191,8 @@ const GoldCertDetailPageTable = () => {
 
       const resp = await axiosInstance.get(url, { params: exportParams });
       const rows = resp.data.results;
+
+      if (!rows || rows.length === 0) return;
 
       const dataToExport = rows.map(
         (item: IGoldCertPriceDetail, index: number) => ({
@@ -209,28 +213,56 @@ const GoldCertDetailPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Detail Sertifikat');
 
-      worksheet.mergeCells('A1:H1');
-      worksheet.getCell('A1').value = 'DATA DETAIL SERTIFIKAT';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
+      title.value = 'DATA DETAIL SERTIFIKAT';
+      title.alignment = { horizontal: 'center', vertical: 'middle' };
+      title.font = { size: 14, bold: true };
+
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
 
       worksheet.addRow([]);
+
+      /* ================= HEADER ================= */
 
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -238,11 +270,23 @@ const GoldCertDetailPageTable = () => {
         };
       });
 
+      /* ================= DATA ================= */
+
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const rowValues = header.map((key) => row[key]);
+
         const newRow = worksheet.addRow(rowValues);
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+
+        newRow.eachCell((cell, colNumber) => {
+          const headerName = header[colNumber - 1];
+
+          const isNumeric = ['No', 'Satuan (gr)'].includes(headerName);
+
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -252,21 +296,31 @@ const GoldCertDetailPageTable = () => {
         });
       });
 
+      /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 40);
       });
 
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+
+      /* ================= EXPORT FILE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `data_cert_detail_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
 
       api.success({

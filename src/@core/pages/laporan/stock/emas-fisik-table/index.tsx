@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IReportGoldPhysic } from '@/@core/@types/interface';
+import { IReportGoldPhysic, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -183,7 +183,14 @@ const StockEmasFisikTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const rows = await fetchAllData(url, params);
+
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const dataToExport = rows.map((item: IReportGoldPhysic) => ({
         Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
@@ -205,21 +212,45 @@ const StockEmasFisikTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Stock Emas Fisik');
 
-      worksheet.mergeCells('A1:H1');
-      worksheet.getCell('A1').value = 'LAPORAN EMAS STOCK FISIK';
-      worksheet.getCell('A1').alignment = {
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      // ===== TITLE =====
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
+      title.value = 'LAPORAN EMAS STOCK FISIK';
+      title.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      title.font = { size: 14, bold: true };
 
+      // ===== DIBUAT OLEH =====
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== TANGGAL EXPORT =====
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      // ===== PERIODE =====
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A2:H2');
-        worksheet.getCell('A2').value = `Periode: ${dayjs(
+        worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+        worksheet.getCell('A5').value = `Periode: ${dayjs(
           params.start_date
         ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
           'DD-MM-YYYY'
         )}`;
+        worksheet.getCell('A5').alignment = { horizontal: 'left' };
       }
 
       worksheet.addRow([]);
@@ -227,25 +258,33 @@ const StockEmasFisikTable = () => {
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
-      // --- BORDER UNTUK HEADER ---
+      // ===== HEADER STYLE =====
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEFEFEF' },
+        };
       });
 
-      // --- BORDER UNTUK SEMUA ROW DATA ---
+      // ===== DATA ROW =====
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
 
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -255,22 +294,30 @@ const StockEmasFisikTable = () => {
         });
       });
 
-      // Auto column width
+      // ===== AUTO WIDTH =====
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;
+
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
+
           col.width = Math.min(Math.max(maxLength + 2, 10), 30);
         }
       });
 
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_stock_emas_fisik_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

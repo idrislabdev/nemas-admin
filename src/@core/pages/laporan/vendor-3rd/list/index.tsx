@@ -14,6 +14,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { useRouter, useSearchParams } from 'next/navigation';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
 
@@ -245,6 +246,8 @@ const Vendor3rdParty = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams: any = { ...params, offset: 0, limit: 50 };
 
       if (exportParams.is_failed === null) delete exportParams.is_failed;
@@ -268,20 +271,40 @@ const Vendor3rdParty = () => {
         'Metode Pembayaran': item.payment_method || '-',
         'Biaya Admin': item.admin_cost || 0,
         Fee: item.fee || 0,
-        Pendapatan: item.pendapatan || '-',
+        Pendapatan: item.pendapatan || 0,
         Status: item.is_failed ? 'Gagal' : 'Berhasil',
       }));
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Vendor 3rd Party');
 
-      // TITLE
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      worksheet.mergeCells('A1:J1');
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = 'LAPORAN VENDOR 3RD PARTY';
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // PERIODE
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD MMMM YYYY HH:mm'
+      )}`;
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      /* ================= PERIODE ================= */
 
       let periodeText = 'Semua Periode';
 
@@ -291,29 +314,31 @@ const Vendor3rdParty = () => {
         )} - ${moment(params.end_date).format('DD MMMM YYYY')}`;
       }
 
-      worksheet.mergeCells('A2:J2');
-      worksheet.getCell('A2').value = `Periode : ${periodeText}`;
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
 
-      // STATUS
+      /* ================= STATUS ================= */
 
       let statusText = 'Semua';
 
       if (params.is_failed === false) statusText = 'Berhasil';
       if (params.is_failed === true) statusText = 'Gagal';
 
-      worksheet.mergeCells('A3:J3');
-      worksheet.getCell('A3').value = `Status : ${statusText}`;
+      worksheet.mergeCells(`A6:${lastColumnLetter}6`);
+      worksheet.getCell('A6').value = `Status : ${statusText}`;
 
-      // TRANSACTION TYPE
+      /* ================= TRANSACTION TYPE ================= */
 
       const transactionTypeText = params.transaction_type
         ? params.transaction_type
         : 'Semua';
 
-      worksheet.mergeCells('A4:J4');
-      worksheet.getCell('A4').value = `Tipe Transaksi : ${transactionTypeText}`;
+      worksheet.mergeCells(`A7:${lastColumnLetter}7`);
+      worksheet.getCell('A7').value = `Tipe Transaksi : ${transactionTypeText}`;
 
       worksheet.addRow([]);
+
+      /* ================= HEADER ================= */
 
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
@@ -340,12 +365,31 @@ const Vendor3rdParty = () => {
         };
       });
 
+      /* ================= DATA ================= */
+
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key]);
 
         const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell) => {
+        newRow.eachCell((cell, col) => {
+          const headerName = header[col - 1];
+
+          const isNumeric =
+            headerName === 'No' ||
+            headerName === 'Amount' ||
+            headerName === 'Biaya Admin' ||
+            headerName === 'Fee' ||
+            headerName === 'Pendapatan';
+
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+          };
+
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          }
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -354,6 +398,8 @@ const Vendor3rdParty = () => {
           };
         });
       });
+
+      /* ================= AUTO WIDTH ================= */
 
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
@@ -366,8 +412,14 @@ const Vendor3rdParty = () => {
           }
         });
 
-        col.width = maxLength + 2;
+        col.width = Math.min(maxLength + 2, 40);
       });
+
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 9 }];
+
+      /* ================= SAVE ================= */
 
       const buffer = await workbook.xlsx.writeBuffer();
 

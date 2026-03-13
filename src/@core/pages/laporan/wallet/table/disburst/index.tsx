@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -205,13 +206,13 @@ const WalletDisburstTable = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const param = { ...params, offset: 0, limit: 10 };
       const rows = await fetchAllData(url, param);
 
-      if (rows.length === 0) {
-        setIsModalLoading(false);
-        return;
-      }
+      if (!rows || rows.length === 0) return;
 
       const dataToExport = rows.map((item: IReportWalletDisburst) => ({
         'Tanggal Transaksi': moment(item.disburst_timestamp).format(
@@ -223,9 +224,9 @@ const WalletDisburstTable = () => {
         'Kode Bank': item.disburst_payment_bank_code,
         'Nomor Rekening': item.disburst_payment_bank_number,
         'Nama Pemilik Rekening': item.disburst_payment_bank_account_holder_name,
-        'Nominal Disburst': parseFloat(item.disburst_amount.toString()),
-        'Admin Fee': parseFloat(item.disburst_admin.toString()),
-        'Total Disburst': parseFloat(item.disburst_total_amount.toString()),
+        'Nominal Disburst': Number(item.disburst_amount) || 0,
+        'Admin Fee': Number(item.disburst_admin) || 0,
+        'Total Disburst': Number(item.disburst_total_amount) || 0,
         Status: item.disburst_status,
         'Kode Referensi': item.disburst_payment_ref,
       }));
@@ -233,34 +234,67 @@ const WalletDisburstTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Disburst Wallet');
 
-      // === Header Utama ===
-      worksheet.mergeCells('A1:L1');
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = 'LAPORAN DISBURST WALLET';
       worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
 
-      worksheet.mergeCells('A2:L2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD-MM-YYYY'
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      /* ================= PERIODE ================= */
+
+      let periodeText = 'Semua Periode';
+
+      if (params.start_date && params.end_date) {
+        periodeText = `${dayjs(params.start_date).format(
+          'DD MMMM YYYY'
+        )} - ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
+      }
+
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
 
       worksheet.addRow([]);
 
-      // === Header Tabel ===
+      /* ================= HEADER ================= */
+
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -268,22 +302,27 @@ const WalletDisburstTable = () => {
         };
       });
 
-      // === Isi Data ===
+      /* ================= DATA ================= */
+
       dataToExport.forEach((row) => {
         const values = header.map((key) => row[key as keyof typeof row] ?? '');
+
         const newRow = worksheet.addRow(values);
-        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+
+        newRow.eachCell((cell, colNumber) => {
+          const headerName = header[colNumber - 1];
+
           const isNumeric = [
             'Nominal Disburst',
             'Admin Fee',
             'Total Disburst',
-          ].includes(header[colNumber - 1]);
+          ].includes(headerName);
+
           cell.alignment = {
             horizontal: isNumeric ? 'right' : 'left',
             vertical: 'middle',
           };
 
-          // Format Rupiah untuk kolom nominal
           if (isNumeric && typeof cell.value === 'number') {
             cell.value = `Rp${formatDecimal(cell.value)}`;
           }
@@ -297,15 +336,18 @@ const WalletDisburstTable = () => {
         });
       });
 
-      // === Baris Total ===
+      /* ================= TOTAL ================= */
+
       const totalNominal = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_amount || 0),
         0
       );
+
       const totalAdmin = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_admin || 0),
         0
       );
+
       const totalAll = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_total_amount || 0),
         0
@@ -326,17 +368,28 @@ const WalletDisburstTable = () => {
         '',
       ]);
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      totalRow.eachCell((cell, colNumber) => {
+        const headerName = header[colNumber - 1];
+
+        const isNumeric = [
+          'Nominal Disburst',
+          'Admin Fee',
+          'Total Disburst',
+        ].includes(headerName);
+
         cell.font = { bold: true };
+
         cell.alignment = {
-          horizontal: colNumber >= 8 && colNumber <= 10 ? 'right' : 'left',
+          horizontal: isNumeric ? 'right' : 'left',
           vertical: 'middle',
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+          fgColor: { argb: 'FFFCE29F' },
         };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -345,22 +398,31 @@ const WalletDisburstTable = () => {
         };
       });
 
-      // === Auto Width Aman ===
+      /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
-        if (!col) return;
         let maxLength = 0;
+
         col.eachCell?.({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
           maxLength = Math.max(maxLength, val.length);
         });
+
         col.width = Math.min(maxLength + 2, 50);
       });
 
-      // === Export File ===
+      /* ================= FREEZE HEADER ================= */
+
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      /* ================= EXPORT FILE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_disburst_wallet_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

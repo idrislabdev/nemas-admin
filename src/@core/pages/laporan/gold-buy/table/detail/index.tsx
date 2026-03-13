@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -135,48 +136,55 @@ const GoldBuyDigitalDetailTable = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const resp = await axiosInstance.get(url, {
         params: { ...params, offset: 0, limit: 1000 },
       });
+
       const rows = resp.data.results as IGoldBuyTransaction[];
 
-      if (!rows.length) {
-        setIsModalLoading(false);
-        return;
-      }
+      if (!rows || rows.length === 0) return;
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Pembelian Emas');
 
-      // === HEADER JUDUL LAPORAN ===
+      // ===== TITLE =====
       worksheet.mergeCells('A1:O1');
       worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PEMBELIAN EMAS';
       worksheet.getCell('A1').alignment = { horizontal: 'left' };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // === PERIODE LAPORAN ===
+      // ===== DIBUAT OLEH =====
       worksheet.mergeCells('A2:O2');
-      const periodeText =
-        params.start_date && params.end_date
-          ? `Periode: ${dayjs(params.start_date).format(
-              'DD MMMM YYYY'
-            )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`
-          : 'Periode: Semua Tanggal';
-      worksheet.getCell('A2').value = periodeText;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-      worksheet.getCell('A2').font = { italic: true };
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
 
+      // ===== TANGGAL EXPORT =====
       worksheet.mergeCells('A3:O3');
-      worksheet.getCell('A3').value = `Dicetak pada: ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
       )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-      worksheet.getCell('A3').font = { size: 10, color: { argb: '777777' } };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells('A4:O4');
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+
+      // ===== PERIODE =====
+      worksheet.mergeCells('A5:O5');
+
+      const periode =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD-MM-YYYY')}`
+          : '-';
+
+      worksheet.getCell('A5').value = `Periode : ${periode}`;
 
       worksheet.addRow([]);
-      worksheet.addRow([]);
 
-      // === HEADER TABEL ===
+      // ===== HEADER =====
       const header = [
         'Tanggal Transaksi',
         'Nomor Transaksi',
@@ -194,16 +202,20 @@ const GoldBuyDigitalDetailTable = () => {
         'Komisi (%)',
         'Jumlah Komisi',
       ];
+
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -211,7 +223,7 @@ const GoldBuyDigitalDetailTable = () => {
         };
       });
 
-      // === ISI DATA ===
+      // ===== DATA =====
       rows.forEach((item) => {
         const row = worksheet.addRow([
           moment(item.transaction_date).format('DD MMMM YYYY HH:mm'),
@@ -239,18 +251,7 @@ const GoldBuyDigitalDetailTable = () => {
             right: { style: 'thin' },
           };
 
-          // kolom numerik rata kanan
-          if (
-            [
-              7,
-              8,
-              9, // berat
-              10,
-              11, // harga, total
-              14,
-              15, // komisi
-            ].includes(colNumber)
-          ) {
+          if ([7, 8, 9, 10, 11, 14, 15].includes(colNumber)) {
             cell.alignment = { horizontal: 'right', vertical: 'middle' };
           } else {
             cell.alignment = { horizontal: 'left', vertical: 'middle' };
@@ -258,21 +259,26 @@ const GoldBuyDigitalDetailTable = () => {
         });
       });
 
-      // === BARIS TOTAL ===
+      // ===== TOTAL =====
       const totalWeight = rows.reduce((acc, r) => acc + (r.weight || 0), 0);
+
       const totalWeightBefore = rows.reduce(
         (acc, r) => acc + (parseFloat(r.weight_before) || 0),
         0
       );
+
       const totalWeightAfter = rows.reduce(
         (acc, r) => acc + (parseFloat(r.weight_after) || 0),
         0
       );
+
       const historyPrice = rows.reduce(
         (acc, r) => acc + (r.gold_history_price_buy || 0),
         0
       );
+
       const totalPrice = rows.reduce((acc, r) => acc + (r.total_price || 0), 0);
+
       const totalCommission = rows.reduce(
         (acc, r) => acc + parseFloat(r.commission_amount || '0'),
         0
@@ -298,42 +304,49 @@ const GoldBuyDigitalDetailTable = () => {
 
       totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         cell.font = { bold: true };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+          fgColor: { argb: 'FFFCE29F' },
         };
+
         cell.border = {
-          top: { style: 'thin' },
+          top: { style: 'medium' },
           left: { style: 'thin' },
-          bottom: { style: 'thin' },
+          bottom: { style: 'medium' },
           right: { style: 'thin' },
         };
 
-        if (
-          [7, 8, 9, 10, 11, 15].includes(colNumber) // kolom numerik total
-        ) {
+        if ([7, 8, 9, 10, 11, 15].includes(colNumber)) {
           cell.alignment = { horizontal: 'right', vertical: 'middle' };
         } else {
           cell.alignment = { horizontal: 'left', vertical: 'middle' };
         }
       });
 
-      // === AUTO WIDTH ===
+      // ===== AUTO WIDTH =====
       worksheet.columns.forEach((col: any) => {
         let maxLength = 0;
+
         col.eachCell({ includeEmpty: true }, (cell: any) => {
           const val = cell.value ? cell.value.toString() : '';
           if (val.length > maxLength) maxLength = val.length;
         });
+
         col.width = Math.min(Math.max(maxLength + 2, 12), 40);
       });
 
-      // === EXPORT FILE ===
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_gold_buy_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

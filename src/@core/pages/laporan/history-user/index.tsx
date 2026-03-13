@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import { IPenggunaAplikasi, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 
@@ -136,6 +136,8 @@ const HistoryUserTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         ...params,
         offset: 0,
@@ -144,6 +146,11 @@ const HistoryUserTable = () => {
 
       const resp = await axiosInstance.get(url, { params: exportParams });
       const rows = resp.data.results;
+
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const dataToExport = rows.map(
         (item: IPenggunaAplikasi, index: number) => ({
@@ -164,30 +171,54 @@ const HistoryUserTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Pengguna Toko');
 
-      // Judul
-      worksheet.mergeCells('A1:I1');
-      worksheet.getCell('A1').value = 'DATA PENGGUNA TOKO';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'center',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      worksheet.addRow([]); // baris kosong
+      // ===== TITLE =====
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const title = worksheet.getCell('A1');
+      title.value = 'DATA PENGGUNA TOKO';
+      title.font = { size: 14, bold: true };
+      title.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // Header
+      // ===== DIBUAT OLEH =====
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+
+      // ===== TANGGAL EXPORT =====
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+
+      // ===== TOTAL DATA =====
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+
+      worksheet.addRow([]);
+
+      // ===== HEADER =====
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -195,13 +226,14 @@ const HistoryUserTable = () => {
         };
       });
 
-      // Data rows
+      // ===== DATA ROW =====
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const rowValues = header.map((key) => row[key]);
         const newRow = worksheet.addRow(rowValues);
 
         newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -211,23 +243,30 @@ const HistoryUserTable = () => {
         });
       });
 
-      // Auto column width
+      // ===== AUTO COLUMN WIDTH =====
       worksheet.columns.forEach((col: any) => {
         if (col != undefined) {
           let maxLength = 0;
+
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
+
           col.width = maxLength + 2;
         }
       });
 
-      // Save file
+      // ===== FREEZE HEADER =====
+      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+
+      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `data_pengguna_toko_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

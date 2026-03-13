@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IPromo } from '@/@core/@types/interface';
+import { IPromo, IUser } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -252,10 +252,12 @@ const InformationPromoPageTable = () => {
     try {
       setIsModalLoading(true);
 
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const exportParams = {
         ...params,
         offset: 0,
-        limit: 1000, // ambil lebih banyak data saat export
+        limit: 1000,
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
@@ -280,7 +282,13 @@ const InformationPromoPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Promo');
 
-      worksheet.mergeCells('A1:L1');
+      const header = Object.keys(dataToExport[0]);
+      const lastColumn = String.fromCharCode(64 + header.length);
+
+      // ======================
+      // JUDUL
+      // ======================
+      worksheet.mergeCells(`A1:${lastColumn}1`);
       worksheet.getCell('A1').value = 'DATA PROMO';
       worksheet.getCell('A1').alignment = {
         horizontal: 'left',
@@ -288,22 +296,49 @@ const InformationPromoPageTable = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // 🔹 Tambahkan periode
-      worksheet.mergeCells('A2:L2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD-MM-YYYY'
-      )}`;
+      // ======================
+      // DIBUAT OLEH
+      // ======================
+      worksheet.mergeCells(`A2:${lastColumn}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
       worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      // ======================
+      // TANGGAL EXPORT
+      // ======================
+      worksheet.mergeCells(`A3:${lastColumn}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD-MM-YYYY HH:mm'
+      )}`;
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      // ======================
+      // PERIODE
+      // ======================
+      worksheet.mergeCells(`A4:${lastColumn}4`);
+      worksheet.getCell('A4').value = `Periode : ${dayjs(
+        params.start_date
+      ).format(
+        'DD-MM-YYYY'
+      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      worksheet.getCell('A4').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
       worksheet.addRow([]);
 
-      const header = Object.keys(dataToExport[0]);
+      // ======================
+      // HEADER TABLE
+      // ======================
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -320,9 +355,13 @@ const InformationPromoPageTable = () => {
         };
       });
 
+      // ======================
+      // DATA ROW
+      // ======================
       dataToExport.forEach((row: any) => {
         const rowValues = header.map((key) => row[key as keyof typeof row]);
         const newRow = worksheet.addRow(rowValues);
+
         newRow.eachCell((cell) => {
           cell.alignment = { vertical: 'middle' };
           cell.border = {
@@ -334,19 +373,26 @@ const InformationPromoPageTable = () => {
         });
       });
 
+      // ======================
+      // AUTO WIDTH
+      // ======================
       worksheet.columns.forEach((col: any) => {
         if (col) {
           let maxLength = 0;
+
           col.eachCell({ includeEmpty: true }, (cell: any) => {
             const val = cell.value ? cell.value.toString() : '';
             if (val.length > maxLength) maxLength = val.length;
           });
+
           col.width = Math.min(maxLength + 2, 35);
         }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `data_promo_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);

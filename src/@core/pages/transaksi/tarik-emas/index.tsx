@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ISalesOrder } from '@/@core/@types/interface';
+import { ISalesOrder, IUser } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -172,6 +172,9 @@ const ComTarikEmasPage = () => {
   const exportData = async () => {
     try {
       setIsModalLoading(true);
+
+      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+
       const param = {
         ...params,
         offset: 0,
@@ -179,6 +182,7 @@ const ComTarikEmasPage = () => {
       };
 
       const rows = await fetchAllData(url, param);
+
       if (!rows.length) {
         setIsModalLoading(false);
         return;
@@ -187,7 +191,12 @@ const ComTarikEmasPage = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Tarik Emas');
 
-      worksheet.mergeCells('A1:J1');
+      const totalColumns = 10;
+      const lastColumnLetter = 'J';
+
+      /* ================= TITLE ================= */
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
       worksheet.getCell('A1').value = 'LAPORAN TARIK EMAS';
       worksheet.getCell('A1').alignment = {
         horizontal: 'center',
@@ -195,68 +204,202 @@ const ComTarikEmasPage = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      worksheet.mergeCells('A2:J2');
-      worksheet.getCell('A2').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD-MM-YYYY'
+      /* ================= DIBUAT OLEH ================= */
+
+      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
+      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TANGGAL EXPORT ================= */
+
+      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
+      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
+        'DD MMMM YYYY HH:mm'
       )}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+      worksheet.getCell('A3').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= TOTAL DATA ================= */
+
+      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
+      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      /* ================= PERIODE ================= */
+
+      let periodeText = 'Semua Periode';
+
+      if (params.start_date && params.end_date) {
+        periodeText = `${dayjs(params.start_date).format(
+          'DD-MM-YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      }
+
+      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
+      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
+      worksheet.getCell('A5').alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
       worksheet.addRow([]);
-      const header = Object.keys({
-        'Nomor Order': '',
-        'Tanggal Order': '',
-        User: '',
-        'Berat Emas': '',
-        'Nominal Pesanan': '',
-        'Total Harga': '',
-        'Biaya Admin': '',
-        'Biaya Asuransi': '',
-        'Biaya Pengiriman': '',
-        'Grand Total': '',
-      });
+
+      /* ================= HEADER ================= */
+
+      const header = [
+        'Nomor Order',
+        'Tanggal Order',
+        'User',
+        'Berat Emas',
+        'Nominal Pesanan',
+        'Total Harga',
+        'Biaya Admin',
+        'Biaya Asuransi',
+        'Biaya Pengiriman',
+        'Grand Total',
+      ];
+
       const headerRow = worksheet.addRow(header);
+
       headerRow.eachCell((cell) => {
         cell.font = { bold: true };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE5E5E5' },
+        };
       });
 
+      /* ================= DATA ================= */
+
       rows.forEach((item: ISalesOrder) => {
-        worksheet.addRow([
+        const row = worksheet.addRow([
           item.order_number,
           moment(item.order_timestamp).format('DD MMMM YYYY'),
           item.user_name,
           `${formatDecimal(
-            parseFloat(item.order_item_weight.toString())
+            parseFloat(item.order_item_weight?.toString() || '0')
           )} Gram`,
-          `Rp${formatDecimal(parseFloat(item.order_amount.toString()))}`,
-          `Rp${formatDecimal(parseFloat(item.order_total_price.toString()))}`,
-          `Rp${formatDecimal(parseFloat(item.order_admin_amount.toString()))}`,
+          `Rp${formatDecimal(parseFloat(item.order_amount?.toString() || '0'))}`,
+          `Rp${formatDecimal(
+            parseFloat(item.order_total_price?.toString() || '0')
+          )}`,
+          `Rp${formatDecimal(
+            parseFloat(item.order_admin_amount?.toString() || '0')
+          )}`,
           `Rp${formatDecimal(
             parseFloat(
-              item.order_tracking_insurance_total_round
-                ? item.order_tracking_insurance_total_round.toString()
-                : '0'
+              item.order_tracking_insurance_total_round?.toString() || '0'
             )
           )}`,
           `Rp${formatDecimal(
             parseFloat(
-              item.order_tracking_total_amount_round
-                ? item.order_tracking_total_amount_round.toString()
-                : '0'
+              item.order_tracking_total_amount_round?.toString() || '0'
             )
           )}`,
           `Rp${formatDecimal(
-            parseFloat(item.order_grand_total_price.toString())
+            parseFloat(item.order_grand_total_price?.toString() || '0')
           )}`,
         ]);
+
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const isRightAlign = colNumber >= 4; // berat + semua nominal rata kanan
+
+          cell.alignment = {
+            horizontal: isRightAlign ? 'right' : 'left',
+            vertical: 'middle',
+          };
+
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
+        });
       });
+
+      /* ================= TOTAL ================= */
+
+      const totalGrandTotal = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_grand_total_price || 0),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        `Rp${formatDecimal(totalGrandTotal)}`,
+      ]);
+
+      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = {
+          horizontal: colNumber === totalColumns ? 'right' : 'left',
+          vertical: 'middle',
+        };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFCE29F' },
+        };
+      });
+
+      /* ================= AUTO WIDTH ================= */
+
+      worksheet.columns.forEach((col) => {
+        if (!col) return;
+
+        let maxLength = 0;
+
+        col.eachCell?.({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        });
+
+        col.width = Math.min(maxLength + 2, 30);
+      });
+
+      /* ================= FREEZE HEADER ================= */
+
+      // Header tabel ada di baris 7 (karena baris 6 kosong)
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+
+      /* ================= EXPORT FILE ================= */
 
       const buffer = await workbook.xlsx.writeBuffer();
       const fileName = `laporan_tarik_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
