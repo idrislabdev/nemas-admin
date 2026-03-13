@@ -7,7 +7,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table, notification } from 'antd';
+import { Pagination, Table, notification, Select } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import debounce from 'debounce';
 import Link from 'next/link';
@@ -35,12 +35,15 @@ const PaymentBankPageTable = () => {
   const [selectedId, setSelectedId] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  const [params, setParams] = useState({
+  const [statusActive, setStatusActive] = useState<boolean | null>(null);
+
+  const [params, setParams] = useState<any>({
     format: 'json',
     offset: 0,
     limit: 10,
     bank_merchant_code__icontains: '',
     bank_name__icontains: '',
+    bank_active: null,
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -129,23 +132,43 @@ const PaymentBankPageTable = () => {
   // Fetch Data
   // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const filteredParams = { ...params };
+
+    if (filteredParams.bank_active === null) {
+      delete filteredParams.bank_active;
+    }
+
+    const resp = await axiosInstance.get(url, { params: filteredParams });
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params, url]);
 
   const onChangePage = (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+    setParams((prev: any) => ({
+      ...prev,
+      offset: (val - 1) * prev.limit,
+    }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev: any) => ({
+      ...prev,
       offset: 0,
       bank_merchant_code__icontains: value,
       bank_name__icontains: value,
-    });
+    }));
   };
+
+  // ========================
+  // Sync Status Filter
+  // ========================
+  useEffect(() => {
+    setParams((prev: any) => ({
+      ...prev,
+      offset: 0,
+      bank_active: statusActive,
+    }));
+  }, [statusActive]);
 
   // ========================
   // Delete Data
@@ -160,12 +183,7 @@ const PaymentBankPageTable = () => {
   const confirmDelete = async () => {
     await axiosInstance.delete(`${url}${selectedId}/`);
     setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      bank_merchant_code__icontains: '',
-      bank_name__icontains: '',
-    });
+    fetchData();
     api.info({
       message: 'Data Bank',
       description: 'Data Bank Berhasil Dihapus',
@@ -174,7 +192,7 @@ const PaymentBankPageTable = () => {
   };
 
   // ========================
-  // Export Excel
+  // Fetch All Data
   // ========================
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
@@ -190,29 +208,27 @@ const PaymentBankPageTable = () => {
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
+
       const resp = await axiosInstance.get(url, {
         params: { ...params, limit, offset },
       });
+
       allRows = allRows.concat(resp.data.results);
+
       await new Promise((r) => setTimeout(r, 200));
     }
 
     return allRows;
   };
 
+  // ========================
+  // Export Excel
+  // ========================
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const exportParams = {
-        format: 'json',
-        offset: 0,
-        limit: 50,
-        bank_merchant_code__icontains: '',
-        bank_name__icontains: '',
-      };
-
-      const rows = await fetchAllData(url, exportParams);
+      const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IBank, index: number) => ({
         No: index + 1,
@@ -233,7 +249,6 @@ const PaymentBankPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Bank');
 
-      // Judul
       worksheet.mergeCells('A1:I1');
       worksheet.getCell('A1').value = 'DATA MASTER BANK';
       worksheet.getCell('A1').alignment = {
@@ -242,9 +257,17 @@ const PaymentBankPageTable = () => {
       };
       worksheet.getCell('A1').font = { size: 14, bold: true };
 
+      let statusText = 'Semua';
+
+      if (params.bank_active === true) statusText = 'Aktif';
+      if (params.bank_active === false) statusText = 'Tidak Aktif';
+
+      worksheet.mergeCells('A2:I2');
+      worksheet.getCell('A2').value = `Status : ${statusText}`;
+      worksheet.getCell('A2').alignment = { horizontal: 'center' };
+
       worksheet.addRow([]);
 
-      // Header
       const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
 
@@ -264,9 +287,8 @@ const PaymentBankPageTable = () => {
         };
       });
 
-      // Rows
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
+        const rowValues = header.map((key) => row[key]);
         const newRow = worksheet.addRow(rowValues);
 
         newRow.eachCell((cell) => {
@@ -280,19 +302,22 @@ const PaymentBankPageTable = () => {
         });
       });
 
-      // Auto width
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+        let maxLength = 0;
+
+        col.eachCell({ includeEmpty: true }, (cell: any) => {
+          const val = cell.value ? cell.value.toString() : '';
+
+          if (val.length > maxLength) {
+            maxLength = val.length;
+          }
+        });
+
+        col.width = maxLength + 2;
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `data_bank_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
@@ -311,21 +336,41 @@ const PaymentBankPageTable = () => {
   return (
     <>
       {contextHolder}
+
       <div className="flex items-center justify-between">
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+        <div className="flex items-center gap-2">
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="color-1 base"
+              placeholder="cari data"
+              onChange={debounce(
+                (event) => handleFilter(event.target.value),
+                1000
+              )}
+            />
+          </div>
+
+          <Select
+            allowClear
+            placeholder="Status"
+            className="w-[160px] h-[38px]"
+            value={statusActive}
+            onChange={(val) => {
+              if (val === undefined) setStatusActive(null);
+              else setStatusActive(val);
+            }}
+            options={[
+              { value: null, label: 'All' },
+              { value: true, label: 'Aktif' },
+              { value: false, label: 'Tidak Aktif' },
+            ]}
           />
         </div>
+
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
             <FileDownload02 />
@@ -337,6 +382,7 @@ const PaymentBankPageTable = () => {
           </Link>
         </div>
       </div>
+
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
@@ -347,6 +393,7 @@ const PaymentBankPageTable = () => {
           className="table-basic"
           rowKey="bank_id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -356,12 +403,14 @@ const PaymentBankPageTable = () => {
           />
         </div>
       </div>
+
       <ModalConfirm
         isModalOpen={openModalConfirm}
         setIsModalOpen={setOpenModalConfirm}
         content="Hapus Data Ini?"
         onConfirm={confirmDelete}
       />
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
