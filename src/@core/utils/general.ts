@@ -5,6 +5,15 @@ export const formatterNumber = (val: number) => {
     .replace(/\.(?=\d{0,2}$)/g, ',');
 };
 
+export const formatterNumber2 = (val?: number) => {
+  if (val == null) return '0';
+
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  }).format(val);
+};
+
 export const formatDecimal = (num?: number | string | null): string => {
   if (num === null || num === undefined || num === '') return '0';
 

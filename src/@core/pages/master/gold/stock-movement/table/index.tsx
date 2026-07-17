@@ -5,7 +5,7 @@
 import { IGoldStockMovement } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import { formatterNumber } from '@/@core/utils/general';
+import { formatterNumber2 } from '@/@core/utils/general';
 import { FileDownload02, Plus, SearchSm } from '@untitled-ui/icons-react';
 import { Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -56,7 +56,7 @@ const GoldStockMovementPageTable = () => {
       key: 'weight',
       width: 150,
       render: (_, record) =>
-        `${formatterNumber(parseFloat(record.weight?.toString() || '0'))} gr`,
+        `${formatterNumber2(parseFloat(record.weight?.toString() || '0'))} gr`,
     },
     {
       title: 'Stock Sebelum (gr)',
@@ -64,7 +64,7 @@ const GoldStockMovementPageTable = () => {
       key: 'stock_before',
       width: 150,
       render: (_, record) =>
-        `${formatterNumber(
+        `${formatterNumber2(
           parseFloat(record.stock_before?.toString() || '0')
         )} gr`,
     },
@@ -74,7 +74,7 @@ const GoldStockMovementPageTable = () => {
       key: 'stock_after',
       width: 150,
       render: (_, record) =>
-        `${formatterNumber(
+        `${formatterNumber2(
           parseFloat(record.stock_after?.toString() || '0')
         )} gr`,
     },
@@ -189,13 +189,13 @@ const GoldStockMovementPageTable = () => {
         (item: IGoldStockMovement, index: number) => ({
           No: index + 1,
           Tipe: item.movement_type,
-          'Berat Emas': `${formatterNumber(
+          'Berat Emas': `${formatterNumber2(
             parseFloat(item.weight?.toString() || '0')
           )} gr`,
-          'Stock Sebelum': `${formatterNumber(
+          'Stock Sebelum': `${formatterNumber2(
             parseFloat(item.stock_before?.toString() || '0')
           )} gr`,
-          'Stock Sesudah': `${formatterNumber(
+          'Stock Sesudah': `${formatterNumber2(
             parseFloat(item.stock_after?.toString() || '0')
           )} gr`,
           'Create Time': item.date
