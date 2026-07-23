@@ -91,24 +91,20 @@ const PergerakanEmas = () => {
         borderColor: '#0057B7',
         borderRadius: 12,
         shadow: false,
-        formatter: function () {
-          return `
-            <div style="padding:4px 6px">
-                <div style="font-size:12px;color:#64748B">
-                    ${this.x}
-                </div>
 
-                <div style="margin-top:6px;font-size:15px">
-                    Harga :
-                    <b>Rp ${Highcharts.numberFormat(
-                      Number(this.y),
-                      0,
-                      ',',
-                      '.'
-                    )}</b>
-                </div>
+        formatter: function (this: any): string {
+          return `
+          <div style="padding:4px 6px">
+            <div style="font-size:12px;color:#64748B">
+              ${this.category ?? this.x}
             </div>
-          `;
+
+            <div style="margin-top:6px;font-size:15px">
+              Harga :
+              <b>Rp ${Highcharts.numberFormat(Number(this.y), 0, ',', '.')}</b>
+            </div>
+          </div>
+        `;
         },
       },
 
@@ -191,18 +187,6 @@ const PergerakanEmas = () => {
               lineWidth: 3,
             },
           },
-
-          fillColor: {
-            linearGradient: [0, 0, 0, 320],
-
-            stops: [
-              [0, Highcharts.color('#64B5FF').setOpacity(0.65).get('rgba')],
-
-              [0.5, Highcharts.color('#A7D4FF').setOpacity(0.25).get('rgba')],
-
-              [1, Highcharts.color('#FFFFFF').setOpacity(0).get('rgba')],
-            ],
-          },
         },
       },
 
@@ -210,10 +194,23 @@ const PergerakanEmas = () => {
         {
           type: 'areaspline',
           name: 'Harga',
-
           color: '#0057B7',
-
           data: dataChart.data,
+
+          fillColor: {
+            linearGradient: {
+              x1: 0,
+              y1: 0,
+              x2: 0,
+              y2: 1,
+            },
+
+            stops: [
+              [0, Highcharts.color('#64B5FF').setOpacity(0.65).get()],
+              [0.5, Highcharts.color('#A7D4FF').setOpacity(0.25).get()],
+              [1, Highcharts.color('#FFFFFF').setOpacity(0).get()],
+            ],
+          },
         },
       ],
     });
