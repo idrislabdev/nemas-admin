@@ -75,46 +75,101 @@ const GoldTransactionBar = () => {
       const options = {
         chart: {
           type: 'column',
-          height: 320,
+          height: 340,
           backgroundColor: 'transparent',
+          spacingTop: 10,
+          spacingBottom: 10,
         },
-        title: { text: '' },
+
+        title: {
+          text: '',
+        },
+
         xAxis: {
           categories,
+
+          lineWidth: 0,
+
+          tickLength: 0,
+
+          gridLineWidth: 1,
+
+          gridLineColor: '#EEF4FB',
+
           labels: {
             style: {
-              color: '#2E7D32',
+              color: '#64748B',
               fontSize: '12px',
               fontWeight: '500',
             },
           },
         },
+
         yAxis: {
           min: 0,
-          title: { text: '' },
+
+          title: {
+            text: '',
+          },
+
+          gridLineColor: '#EEF4FB',
+
           labels: {
             style: {
-              color: '#2E7D32',
+              color: '#64748B',
               fontSize: '11px',
             },
           },
-          gridLineColor: '#E0E0E0',
         },
+
         tooltip: {
-          pointFormat: '<b>{point.y:,.2f} gram</b>',
+          useHTML: true,
+          backgroundColor: '#FFFFFF',
+          borderColor: '#0057B7',
+          borderRadius: 12,
+          shadow: false,
+          formatter: function (this: Highcharts.Point) {
+            return `
+        <div style="padding:4px 6px">
+            <div style="font-size:12px;color:#64748B">
+                ${this.category}
+            </div>
+
+            <div style="margin-top:6px;font-size:15px">
+                <b>${Number(this.y).toFixed(2)} Gram</b>
+            </div>
+        </div>
+      `;
+          },
         },
+
         plotOptions: {
           column: {
-            borderRadius: 5,
+            borderRadius: 8,
+
+            borderWidth: 0,
+
+            pointPadding: 0.12,
+
+            groupPadding: 0.08,
+
+            colorByPoint: false,
+
+            states: {
+              hover: {
+                brightness: -0.08,
+              },
+            },
+
             dataLabels: {
               enabled: true,
-              formatter: function (this: Highcharts.Point): string {
-                const value =
-                  typeof this.y === 'number' ? this.y.toFixed(2) : '0.00';
-                return `${value}g`;
+
+              formatter: function (this: Highcharts.Point) {
+                return `${Number(this.y).toFixed(2)} g`;
               },
+
               style: {
-                color: '#1B5E20',
+                color: '#0057B7',
                 fontSize: '11px',
                 fontWeight: '600',
                 textOutline: 'none',
@@ -122,15 +177,38 @@ const GoldTransactionBar = () => {
             },
           },
         },
+
         series: [
           {
-            name: 'Transaksi Emas',
+            type: 'column',
+
+            name: 'Transaksi',
+
             data: values,
-            color: '#81C784',
+
+            color: {
+              linearGradient: {
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: 1,
+              },
+
+              stops: [
+                [0, '#4DA3FF'],
+                [1, '#0057B7'],
+              ],
+            },
           },
         ],
-        legend: { enabled: false },
-        credits: { enabled: false },
+
+        legend: {
+          enabled: false,
+        },
+
+        credits: {
+          enabled: false,
+        },
       };
 
       setChartOptions(options);
@@ -163,7 +241,7 @@ const GoldTransactionBar = () => {
   return (
     <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
       <div className="flex justify-between items-center mb-3">
-        <h5 className="text-green-700 font-semibold">Transaksi Emas (gram)</h5>
+        <h5 className="text-primary font-semibold">Transaksi Emas (gram)</h5>
 
         {/* === Filter Bulan & Tahun === */}
         <div className="flex gap-2">

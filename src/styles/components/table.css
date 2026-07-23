@@ -6,24 +6,34 @@
   .ant-spin-nested-loading {
     .ant-spin-container {
       .ant-table {
+        @apply rounded-xl overflow-hidden border border-[#E5EFFD];
+
         .ant-table-header {
           table {
             thead {
               tr {
                 th {
-                  @apply px-[20px];
+                  @apply px-5 py-3 bg-[#F8FBFF] text-[#475569] font-semibold border-b border-[#E5EFFD];
                 }
               }
             }
           }
         }
+
         .ant-table-body {
           table {
             tbody {
               tr {
-                @apply h-[35px];
+                @apply h-[52px] transition-all duration-200;
+
+                &:hover {
+                  td {
+                    @apply bg-[#F8FBFF];
+                  }
+                }
+
                 td {
-                  @apply px-[20px];
+                  @apply px-5 border-b border-[#EEF4FB] text-[#334155];
                 }
               }
             }
@@ -35,36 +45,56 @@
 }
 
 table {
-  @apply table-auto w-full text-[14px]/[21px] text-neutral-600 font-semibold;
+  @apply w-full table-auto text-sm text-[#334155];
+
   thead {
     tr {
-      @apply bg-neutral-50 h-[30px] rounded-[4px] text-neutral-500;
+      @apply bg-[#F8FBFF];
+
       th {
-        @apply px-[20px] text-left font-medium;
+        @apply px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#64748B] border-b border-[#E5EFFD];
+
         &:first-child {
-          @apply rounded-l-[4px];
+          @apply rounded-tl-xl;
         }
+
         &:last-child {
-          @apply rounded-r-[4px];
+          @apply rounded-tr-xl;
         }
       }
     }
   }
+
   tbody {
     tr {
-      @apply h-[40px] text-[12px]/[18px];
+      @apply h-[52px] transition-all duration-200;
+
+      &:hover {
+        td {
+          @apply bg-[#F8FBFF];
+        }
+      }
+
       td {
-        @apply px-[20px] border-b border-b-neutral-200;
+        @apply px-5 py-3 text-[13px] text-[#334155] border-b border-[#EEF4FB];
+
         a {
-          @apply flex flex-col justify-center items-center;
+          @apply flex items-center justify-center;
+
           &.btn-action {
-            @apply cursor-pointer text-neutral-600 flex flex-row gap-1 items-center;
+            @apply flex flex-row items-center gap-1 rounded-md px-2 py-1 text-primary transition-all duration-200 hover:bg-[#EEF6FF];
 
             svg {
-              @apply w-[20px] h-[20px];
+              @apply h-5 w-5;
             }
           }
         }
+      }
+    }
+
+    tr:last-child {
+      td {
+        @apply border-b-0;
       }
     }
   }

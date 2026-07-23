@@ -12,10 +12,10 @@ import React from 'react';
 
 const DashboardPage = () => {
   return (
-    <div className="flex flex-col space-y-2 pb-2">
+    <div className="flex flex-col space-y-4 pb-2">
       <SummaryCards />
       <PergerakanEmas />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <div className="w-1/2">
           <GoldTransactionBar />
         </div>
@@ -23,7 +23,7 @@ const DashboardPage = () => {
           <SaldoWalletPie />
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <div className="w-1/2">
           <CostPie />
         </div>
@@ -31,7 +31,7 @@ const DashboardPage = () => {
           <RevenuePie />
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         <div className="w-1/2">
           <StatusDeliveryInvoice />
         </div>

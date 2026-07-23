@@ -33,6 +33,9 @@ export interface ISummaryInvestment {
   investment_weight: number;
 }
 
+const cardClass =
+  'flex flex-col justify-center gap-3 h-[120px] rounded-xl border border-[#DCEBFF] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg';
+
 const SummaryCards = () => {
   const [data, setData] = useState<ISummary>({} as ISummary);
   const [dataGold, setDataGold] = useState<ISummaryGold>({} as ISummaryGold);
@@ -43,150 +46,180 @@ const SummaryCards = () => {
     {} as ISummaryInvestment
   );
   const [dataLoan, setDataLoan] = useState<ISummaryLoan>({} as ISummaryLoan);
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/user-summary`);
+    const resp = await axiosInstance.get('/dashboard/user-summary');
     setData(resp.data);
   }, []);
 
   const fetchDataGold = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/gold-balance`);
+    const resp = await axiosInstance.get('/dashboard/gold-balance');
     setDataGold(resp.data);
   }, []);
 
   const fetchDataWallet = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/wallet-balance`);
+    const resp = await axiosInstance.get('/dashboard/wallet-balance');
     setDataWallet(resp.data);
   }, []);
 
   const fetchDataGadai = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/loan`);
+    const resp = await axiosInstance.get('/dashboard/loan');
     setDataLoan(resp.data);
   }, []);
 
   const fetchDataInvestment = useCallback(async () => {
-    const resp = await axiosInstance.get(`/dashboard/investment`);
+    const resp = await axiosInstance.get('/dashboard/investment');
     setDataInvestment(resp.data);
   }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
     fetchDataGold();
-  }, []);
-
-  useEffect(() => {
     fetchDataWallet();
-  }, []);
-
-  useEffect(() => {
     fetchDataInvestment();
-  }, []);
-
-  useEffect(() => {
     fetchDataGadai();
   }, []);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="w-1/4 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+    <div className="flex flex-col gap-4">
+      {/* ROW 1 */}
+      <div className="flex gap-4">
+        <div className={`w-1/4 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF4FF] text-[#2D7FF9]">
               <UsersCheck />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(data.total_active_user)}
             </span>
           </div>
-          <label className="text-sm text-green-700">Total Pengguna Aktif</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Total Pengguna Aktif
+          </label>
         </div>
-        <div className="w-1/4 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/4 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF4FF] text-[#2D7FF9]">
               <Users01 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(data.total_user)}
             </span>
           </div>
-          <label className="text-sm text-green-700">Total Pengguna</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Total Pengguna
+          </label>
         </div>
-        <div className="w-1/4 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/4 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF4FF] text-[#2D7FF9]">
               <Building02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(data.total_toko_user)}
             </span>
           </div>
-          <label className="text-sm text-green-700">Total Toko Terdaftar</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Total Toko Terdaftar
+          </label>
         </div>
-        <div className="w-1/4 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/4 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF4FF] text-[#2D7FF9]">
               <Wallet02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               Rp{formatterNumber(dataWallet.balance)}
             </span>
           </div>
-          <label className="text-sm text-green-700">Saldo Wallet</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Saldo Wallet
+          </label>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+      {/* ROW 2 */}
+      <div className="flex gap-4">
+        <div className={`w-1/3 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFF7E8] text-[#D4A017]">
               <CoinsStacked01 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(dataGold.saldo_nemas)} Gr
             </span>
           </div>
-          <label className="text-sm text-green-700">Saldo Emas (Nemas)</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Saldo Emas (NEMAS)
+          </label>
         </div>
-        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/3 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFF7E8] text-[#D4A017]">
               <CoinsStacked02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(dataGold.saldo_user)} Gr
             </span>
           </div>
-          <label className="text-sm text-green-700">Saldo Emas (User)</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Saldo Emas (User)
+          </label>
         </div>
-        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/3 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FDECEC] text-[#E53935]">
               <CoinsStacked02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(dataLoan.loan_weight)} Gr
             </span>
           </div>
-          <label className="text-sm text-green-700">Gadai Emas</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Gadai Emas
+          </label>
         </div>
-        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/3 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAFBF3] text-[#16A34A]">
               <CoinsStacked02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(dataInvestment.investment_weight)} Gr
             </span>
           </div>
-          <label className="text-sm text-green-700">Deposito</label>
+
+          <label className="text-sm font-medium text-slate-500">Deposito</label>
         </div>
-        <div className="w-1/3 flex flex-col justify-center gap-2 h-[120px] shadow-custom-1 rounded-md p-4">
-          <div className="flex items-center gap-2">
-            <span className="my-icon w-[36px] h-[36px] flex flex-col justify-center items-center rounded bg-green-500 text-white">
+
+        <div className={`w-1/3 ${cardClass}`}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFF3CD] text-[#C98A00]">
               <CoinsStacked02 />
             </span>
-            <span className="text-neutral-700 font-medium">
+
+            <span className="text-2xl font-bold text-[#1E3A5F]">
               {formatterNumber(
                 Number(
                   (
@@ -200,7 +233,10 @@ const SummaryCards = () => {
               Gr
             </span>
           </div>
-          <label className="text-sm text-green-700">Sisa Stok Emas</label>
+
+          <label className="text-sm font-medium text-slate-500">
+            Sisa Stok Emas
+          </label>
         </div>
       </div>
     </div>

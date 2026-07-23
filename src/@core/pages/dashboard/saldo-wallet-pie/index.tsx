@@ -11,30 +11,69 @@ const baseOptions = {
     height: 320,
     backgroundColor: 'transparent',
   },
-  title: { text: '' },
-  tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>' },
+
+  title: {
+    text: '',
+  },
+
+  credits: {
+    enabled: false,
+  },
+
+  legend: {
+    align: 'center',
+    verticalAlign: 'bottom',
+    itemStyle: {
+      color: '#475569',
+      fontWeight: '500',
+    },
+  },
+
+  tooltip: {
+    useHTML: true,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#0057B7',
+    borderRadius: 12,
+    shadow: false,
+    pointFormatter: function (this: any) {
+      return `
+        <span style="color:${this.color}">\u25CF</span>
+        <b>${this.name}</b><br/>
+        ${this.y}%`;
+    },
+  },
+
   plotOptions: {
     pie: {
       allowPointSelect: true,
       cursor: 'pointer',
+      innerSize: '58%', // Donut
+      borderWidth: 0,
+
       dataLabels: {
         enabled: true,
+        distance: 15,
         format: '{point.y:.1f}%',
-        distance: 20,
-        style: { fontSize: '12px', color: '#333' },
+        style: {
+          color: '#334155',
+          fontWeight: '600',
+          textOutline: 'none',
+          fontSize: '12px',
+        },
       },
-      showInLegend: false,
+
+      showInLegend: true,
     },
   },
+
   series: [
     {
       name: 'Persentase',
       colorByPoint: true,
       data: [],
-      colors: ['#4CAF50', '#81C784', '#A5D6A7'],
+      colors: ['#0057B7', '#4DA3FF', '#A9D7FF'],
     },
   ],
-  credits: { enabled: false },
 };
 
 const SaldoWalletPie = () => {
@@ -145,7 +184,7 @@ const SaldoWalletPie = () => {
   return (
     <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
       <div className="flex justify-between items-center mb-3">
-        <h5 className="text-green-700 font-semibold">
+        <h5 className="text-primary font-semibold">
           Topup, Tarik Saldo & Wallet
         </h5>
 
@@ -197,7 +236,7 @@ const SaldoWalletPie = () => {
             Topup Saldo:{' '}
             <span className="font-medium">
               {formatRupiah(summary.topup)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(((summary.topup / summary.total) * 100).toFixed(1))}
                 %)
@@ -208,7 +247,7 @@ const SaldoWalletPie = () => {
             Tarik Saldo:{' '}
             <span className="font-medium">
               {formatRupiah(summary.disburst)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.disburst / summary.total) * 100).toFixed(1)
@@ -221,7 +260,7 @@ const SaldoWalletPie = () => {
             Saldo Wallet:{' '}
             <span className="font-medium">
               {formatRupiah(summary.wallet)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.wallet / summary.total) * 100).toFixed(1)
@@ -231,7 +270,7 @@ const SaldoWalletPie = () => {
             </span>
           </p>
           {/* <hr className="my-2 border-neutral-200" />
-          <p className="font-semibold text-green-700">
+          <p className="font-semibold text-primary">
             Total:{' '}
             <span className="font-bold">{formatRupiah(summary.total)}</span>
           </p> */}

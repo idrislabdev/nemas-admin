@@ -11,30 +11,71 @@ const baseOptions = {
     height: 320,
     backgroundColor: 'transparent',
   },
-  title: { text: '' },
-  tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>' },
+
+  title: {
+    text: '',
+  },
+
+  credits: {
+    enabled: false,
+  },
+
+  legend: {
+    align: 'center',
+    verticalAlign: 'bottom',
+    itemStyle: {
+      color: '#475569',
+      fontWeight: '500',
+    },
+  },
+
+  tooltip: {
+    useHTML: true,
+    backgroundColor: '#FFF',
+    borderColor: '#0057B7',
+    borderRadius: 12,
+    shadow: false,
+    pointFormatter: function (this: any) {
+      return `
+        <span style="color:${this.color}">●</span>
+        <b>${this.name}</b><br/>
+        ${this.y}%
+      `;
+    },
+  },
+
   plotOptions: {
     pie: {
       allowPointSelect: true,
       cursor: 'pointer',
+      innerSize: '58%',
+      borderWidth: 0,
+
       dataLabels: {
         enabled: true,
+        distance: 16,
         format: '{point.y:.1f}%',
-        distance: 20,
-        style: { fontSize: '12px', color: '#333' },
+
+        style: {
+          color: '#334155',
+          fontWeight: '600',
+          textOutline: 'none',
+          fontSize: '12px',
+        },
       },
-      showInLegend: false,
+
+      showInLegend: true,
     },
   },
+
   series: [
     {
       name: 'Persentase',
       colorByPoint: true,
       data: [],
-      colors: ['#4CAF50', '#66BB6A', '#81C784', '#A5D6A7', '#C8E6C9'],
+      colors: ['#0057B7', '#2E7DE0', '#4DA3FF', '#78BCFF', '#A9D7FF'],
     },
   ],
-  credits: { enabled: false },
 };
 
 const RevenuePie = () => {
@@ -166,7 +207,7 @@ const RevenuePie = () => {
   return (
     <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
       <div className="flex justify-between items-center mb-3">
-        <h5 className="text-green-700 font-semibold">Total Pendapatan</h5>
+        <h5 className="text-primary font-semibold">Total Pendapatan</h5>
 
         {/* Filter Bulan & Tahun */}
         <div className="flex gap-2">
@@ -207,7 +248,7 @@ const RevenuePie = () => {
             Selisih Beli Emas:{' '}
             <span className="font-medium">
               {formatRupiah(summary.selisih_beli_emas)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.selisih_beli_emas / summary.total) * 100).toFixed(1)
@@ -220,7 +261,7 @@ const RevenuePie = () => {
             Selisih Jual Emas:{' '}
             <span className="font-medium">
               {formatRupiah(summary.selisih_jual_emas)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.selisih_jual_emas / summary.total) * 100).toFixed(1)
@@ -233,7 +274,7 @@ const RevenuePie = () => {
             Biaya Admin:{' '}
             <span className="font-medium">
               {formatRupiah(summary.biaya_admin)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.biaya_admin / summary.total) * 100).toFixed(1)
@@ -246,7 +287,7 @@ const RevenuePie = () => {
             Biaya Transfer:{' '}
             <span className="font-medium">
               {formatRupiah(summary.biaya_transfer)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.biaya_transfer / summary.total) * 100).toFixed(1)
@@ -259,7 +300,7 @@ const RevenuePie = () => {
             Biaya Bulanan:{' '}
             <span className="font-medium">
               {formatRupiah(summary.biaya_bulanan)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.biaya_bulanan / summary.total) * 100).toFixed(1)
@@ -269,7 +310,7 @@ const RevenuePie = () => {
             </span>
           </p>
           <hr className="my-2 border-neutral-200" />
-          <p className="font-semibold text-green-700">
+          <p className="font-semibold text-primary">
             Total:{' '}
             <span className="font-bold">{formatRupiah(summary.total)}</span>
           </p>

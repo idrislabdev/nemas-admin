@@ -2,6 +2,7 @@
 
 'use client';
 /* eslint-disable prefer-spread */
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
@@ -20,101 +21,202 @@ const PergerakanEmas = () => {
     categories: [],
     data: [],
   });
+
   const [options, setOptions] = useState<any>({});
   const [type, setType] = useState('buy');
+
   const chartRef = useRef<HighchartsReact.RefObject>(null);
 
-  // Fetch data chart
   const fetchData = useCallback(async () => {
     try {
-      const resp = await axiosInstance.get(`/reports/gold-chart/monthly`);
-      const data = resp.data;
+      const resp = await axiosInstance.get('/reports/gold-chart/monthly');
 
       const categories: string[] = [];
       const dataVal: number[] = [];
 
-      data.forEach(
+      resp.data.forEach(
         (item: {
           day: string;
           gold_price_buy: number;
           gold_price_sell: number;
         }) => {
           categories.push(moment(item.day).format('DD MMM'));
-          if (type == 'buy') {
-            dataVal.push(item.gold_price_buy);
-          } else {
-            dataVal.push(item.gold_price_sell);
-          }
+
+          dataVal.push(
+            type === 'buy' ? item.gold_price_buy : item.gold_price_sell
+          );
         }
       );
 
-      setDataChart({ categories, data: dataVal });
-    } catch (error) {
-      console.error('Failed to fetch gold chart data:', error);
+      setDataChart({
+        categories,
+        data: dataVal,
+      });
+    } catch (err) {
+      console.error(err);
     }
   }, [type]);
 
-  // Setup chart options
   const updateChart = useCallback(() => {
-    if (!dataChart?.categories?.length) return;
+    if (!dataChart.categories.length) return;
 
-    const temp = {
+    setOptions({
       chart: {
         type: 'areaspline',
         backgroundColor: 'transparent',
         height: 360,
+        animation: true,
+        spacingTop: 10,
+        spacingBottom: 0,
       },
+
       title: {
         text: '',
       },
-      colors: ['#008236'],
+
+      credits: {
+        enabled: false,
+      },
+
+      legend: {
+        enabled: false,
+      },
+
+      colors: ['#0057B7'],
+
+      tooltip: {
+        shared: true,
+        useHTML: true,
+        backgroundColor: '#FFF',
+        borderColor: '#0057B7',
+        borderRadius: 12,
+        shadow: false,
+        formatter: function () {
+          return `
+            <div style="padding:4px 6px">
+                <div style="font-size:12px;color:#64748B">
+                    ${this.x}
+                </div>
+
+                <div style="margin-top:6px;font-size:15px">
+                    Harga :
+                    <b>Rp ${Highcharts.numberFormat(
+                      Number(this.y),
+                      0,
+                      ',',
+                      '.'
+                    )}</b>
+                </div>
+            </div>
+          `;
+        },
+      },
+
       xAxis: {
         categories: dataChart.categories,
-        crosshair: { width: 1, color: '#0A0A07' },
-        labels: { step: 2, style: { fontSize: '12px' } },
-        gridLineWidth: 1,
-        gridLineColor: '#bbbbbb',
-        gridLineDashStyle: 'dash',
+
+        tickLength: 0,
+
         lineWidth: 0,
+
+        gridLineWidth: 1,
+
+        gridLineDashStyle: 'Dash',
+
+        gridLineColor: '#EEF4FB',
+
+        crosshair: {
+          width: 2,
+          color: '#BFD8FB',
+          dashStyle: 'ShortDot',
+        },
+
+        labels: {
+          step: 2,
+          style: {
+            color: '#64748B',
+            fontSize: '12px',
+          },
+        },
       },
+
       yAxis: {
-        title: { text: null },
-        labels: { enabled: true },
-        visible: true,
+        title: {
+          text: null,
+        },
+
         min: Math.min(...dataChart.data),
+
+        gridLineColor: '#EEF4FB',
+
+        labels: {
+          style: {
+            color: '#64748B',
+            fontSize: '12px',
+          },
+        },
       },
-      legend: { enabled: false },
-      credits: { enabled: false },
+
       plotOptions: {
         series: {
-          marker: false,
+          animation: {
+            duration: 800,
+          },
+
+          lineWidth: 3,
+
+          shadow: {
+            color: 'rgba(0,87,183,.15)',
+            width: 10,
+            offsetX: 0,
+            offsetY: 6,
+          },
+
+          marker: {
+            enabled: false,
+
+            states: {
+              hover: {
+                enabled: true,
+                radius: 5,
+                fillColor: '#0057B7',
+                lineWidth: 3,
+                lineColor: '#FFFFFF',
+              },
+            },
+          },
+
+          states: {
+            hover: {
+              lineWidth: 3,
+            },
+          },
+
           fillColor: {
-            linearGradient: [0, 0, 0, 300],
+            linearGradient: [0, 0, 0, 320],
+
             stops: [
-              [0, Highcharts.color('#008236').setOpacity(1).get('rgba')],
-              [1, Highcharts.color('#00a63e').setOpacity(0.3).get('rgba')],
+              [0, Highcharts.color('#64B5FF').setOpacity(0.65).get('rgba')],
+
+              [0.5, Highcharts.color('#A7D4FF').setOpacity(0.25).get('rgba')],
+
+              [1, Highcharts.color('#FFFFFF').setOpacity(0).get('rgba')],
             ],
           },
         },
       },
+
       series: [
         {
+          type: 'areaspline',
           name: 'Harga',
+
+          color: '#0057B7',
+
           data: dataChart.data,
-          color: '#008236',
-          lineWidth: 1.5,
-          fillColor: {
-            linearGradient: [0, 0, 0, 250],
-            stops: [
-              [0, Highcharts.color('#008236').setOpacity(1).get('rgba')],
-              [1, Highcharts.color('#00a63e').setOpacity(0.3).get('rgba')],
-            ],
-          },
         },
       ],
-    };
-
-    setOptions(temp);
+    });
   }, [dataChart]);
 
   useEffect(() => {
@@ -127,29 +229,36 @@ const PergerakanEmas = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      Highcharts.charts.forEach((chart) => chart?.redraw());
+      Highcharts.charts.forEach((chart) => chart?.reflow());
     };
+
     window.addEventListener('resize', handleResize);
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
-    <div className="shadow-custom-1 bg-white rounded-md p-4 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h5 className="text-green-700 font-semibold mb-3">
-          Pergerakan Harga {type == 'buy' ? 'Beli' : 'Jual'} Emas (1 Bulan
+    <div className="rounded-xl border border-[#D9E7FB] bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h5 className="text-lg font-semibold text-primary">
+          Pergerakan Harga {type === 'buy' ? 'Beli' : 'Jual'} Emas (1 Bulan
           Terakhir)
         </h5>
+
         <Select
-          allowClear
           size="large"
           className="w-[180px]"
-          placeholder="Status"
           value={type}
           onChange={setType}
           options={[
-            { value: 'buy', label: 'Beli' },
-            { value: 'sell', label: 'Jual' },
+            {
+              value: 'buy',
+              label: 'Beli',
+            },
+            {
+              value: 'sell',
+              label: 'Jual',
+            },
           ]}
         />
       </div>
@@ -157,7 +266,6 @@ const PergerakanEmas = () => {
       <HighchartsReact
         highcharts={Highcharts}
         options={options}
-        containerProps={{ className: 'w-full h-full' }}
         ref={chartRef}
       />
     </div>

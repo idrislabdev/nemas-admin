@@ -11,30 +11,71 @@ const baseOptions = {
     height: 320,
     backgroundColor: 'transparent',
   },
-  title: { text: '' },
-  tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>' },
+
+  title: {
+    text: '',
+  },
+
+  credits: {
+    enabled: false,
+  },
+
+  legend: {
+    align: 'center',
+    verticalAlign: 'bottom',
+    itemStyle: {
+      color: '#475569',
+      fontWeight: '500',
+    },
+  },
+
+  tooltip: {
+    useHTML: true,
+    backgroundColor: '#FFF',
+    borderColor: '#0057B7',
+    borderRadius: 12,
+    shadow: false,
+    pointFormatter: function (this: any) {
+      return `
+        <span style="color:${this.color}">●</span>
+        <b>${this.name}</b><br/>
+        ${this.y}%
+      `;
+    },
+  },
+
   plotOptions: {
     pie: {
       allowPointSelect: true,
       cursor: 'pointer',
+      innerSize: '58%',
+      borderWidth: 0,
+
       dataLabels: {
         enabled: true,
+        distance: 16,
         format: '{point.y:.1f}%',
-        distance: 20,
-        style: { fontSize: '12px', color: '#333' },
+
+        style: {
+          color: '#334155',
+          fontWeight: '600',
+          textOutline: 'none',
+          fontSize: '12px',
+        },
       },
-      showInLegend: false,
+
+      showInLegend: true,
     },
   },
+
   series: [
     {
       name: 'Persentase',
       colorByPoint: true,
       data: [],
-      colors: ['#4CAF50', '#A5D6A7'],
+      colors: ['#0057B7', '#6BB6FF'],
     },
   ],
-  credits: { enabled: false },
 };
 
 const CostPie = () => {
@@ -139,7 +180,7 @@ const CostPie = () => {
   return (
     <div className="shadow-custom-1 bg-white rounded-[8px] p-[20px] flex flex-col">
       <div className="flex justify-between items-center mb-3">
-        <h5 className="text-green-700 font-semibold">Total Cost</h5>
+        <h5 className="text-primary font-semibold">Total Cost</h5>
 
         {/* Filter Bulan & Tahun */}
         <div className="flex gap-2">
@@ -180,7 +221,7 @@ const CostPie = () => {
             Cost Fee Toko:{' '}
             <span className="font-medium">
               {formatRupiah(summary.fee_toko)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.fee_toko / summary.total) * 100).toFixed(1)
@@ -193,7 +234,7 @@ const CostPie = () => {
             Cost Pihak Ketiga:{' '}
             <span className="font-medium">
               {formatRupiah(summary.fee_third_party)}{' '}
-              <span className="text-green-700 text-xs font-bold">
+              <span className="text-primary text-xs font-bold">
                 (
                 {parseFloat(
                   ((summary.fee_third_party / summary.total) * 100).toFixed(1)
@@ -203,7 +244,7 @@ const CostPie = () => {
             </span>
           </p>
           <hr className="my-2 border-neutral-200" />
-          <p className="font-semibold text-green-700">
+          <p className="font-semibold text-primary">
             Total:{' '}
             <span className="font-bold">{formatRupiah(summary.total)}</span>
           </p>

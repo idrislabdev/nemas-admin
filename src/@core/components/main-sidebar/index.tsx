@@ -197,13 +197,13 @@ const MainSidebar = () => {
                     {/* HEADER LAPORAN */}
                     <div
                       onClick={() => setOpenReport(!openReport)}
-                      className="flex items-center justify-between cursor-pointer"
+                      className="flex items-center justify-between cursor-pointer p-3"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-[#4b638a] font-semibold">
                         <Printer />
-                        <span>Laporan</span>
+                        <span className="!px-0">Laporan</span>
                       </div>
-                      <span className="my-icon icon-sm">
+                      <span className="my-icon icon-sm text-[#4b638a]">
                         {openReport ? <ChevronUp /> : <ChevronDown />}
                       </span>
                     </div>

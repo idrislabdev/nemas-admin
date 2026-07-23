@@ -64,6 +64,7 @@ const GoldPricePageTable = () => {
       dataIndex: 'gold_price_weight',
       key: 'gold_price_weight',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         `${formatterNumber(record.gold_price_weight || 0)} gr`,
     },
@@ -72,23 +73,27 @@ const GoldPricePageTable = () => {
       dataIndex: 'gold_price_base',
       key: 'gold_price_base',
       width: 180,
+      align: 'right',
       render: (_, record) =>
-        `Rp${formatterNumber(record.gold_price_base || 0)}`,
+        `Rp ${formatterNumber(record.gold_price_base || 0)}`,
     },
     {
       title: 'Harga Jual',
       dataIndex: 'gold_price_sell',
       key: 'gold_price_sell',
       width: 180,
+      align: 'right',
       render: (_, record) =>
-        `Rp${formatterNumber(record.gold_price_sell || 0)}`,
+        `Rp ${formatterNumber(record.gold_price_sell || 0)}`,
     },
     {
       title: 'Harga Beli',
       dataIndex: 'gold_price_buy',
       key: 'gold_price_buy',
       width: 180,
-      render: (_, record) => `Rp${formatterNumber(record.gold_price_buy || 0)}`,
+      align: 'right',
+      render: (_, record) =>
+        `Rp ${formatterNumber(record.gold_price_buy || 0)}`,
     },
     {
       title: 'Create By',
@@ -101,6 +106,7 @@ const GoldPricePageTable = () => {
       dataIndex: 'create_time',
       key: 'create_time',
       width: 170,
+      align: 'center',
       render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     {
@@ -114,14 +120,16 @@ const GoldPricePageTable = () => {
       key: 'action',
       fixed: 'right',
       width: 100,
+      align: 'center',
       render: (_, record) => (
-        <div className="flex items-center gap-[5px] justify-center">
+        <div className="flex items-center justify-center gap-[5px]">
           <Link
             href={`/master/gold/price/${record.gold_price_id}`}
             className="btn-action"
           >
             <Edit05 />
           </Link>
+
           <a
             className="btn-action"
             onClick={() => deleteData(record.gold_price_id)}
@@ -203,7 +211,6 @@ const GoldPricePageTable = () => {
     try {
       setIsModalLoading(true);
 
-      // Ambil user login dari localStorage/session (sesuaikan key dengan project kamu)
       const storedUser =
         typeof window !== 'undefined'
           ? localStorage.getItem('user') || sessionStorage.getItem('user')
@@ -214,6 +221,7 @@ const GoldPricePageTable = () => {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+
           exportedBy =
             parsedUser?.full_name ||
             parsedUser?.user_name ||
@@ -237,23 +245,25 @@ const GoldPricePageTable = () => {
       const dataToExport = rows.map((item: IGoldPrice, index: number) => ({
         No: index + 1,
         'Gold Price Source': item.gold_price_source,
-        'Gold Price Weight': `${formatterNumber(
-          item.gold_price_weight || 0
-        )} gr`,
+        'Gold Price Weight': item.gold_price_weight || 0,
         'Gold Price Base': item.gold_price_base || 0,
         'Gold Price Sell': item.gold_price_sell || 0,
         'Gold Price Buy': item.gold_price_buy || 0,
-        'Create By': item.create_user_name,
+        'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
-          ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+          ? moment(item.create_time).format('DD MMM YYYY HH:mm')
           : '-',
-        'Update By': item.upd_user_name,
+        'Update By': item.upd_user_name || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Harga Emas');
 
-      // Header fallback jika data kosong
       const header =
         dataToExport.length > 0
           ? Object.keys(dataToExport[0])
@@ -269,111 +279,201 @@ const GoldPricePageTable = () => {
               'Update By',
             ];
 
-      const totalColumns = header.length;
-      const lastColumnLetter = worksheet.getColumn(totalColumns).letter;
+      const lastColumnLetter = worksheet.getColumn(header.length).letter;
 
-      // ========================
+      // =====================================
       // Title
-      // ========================
+      // =====================================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN HARGA EMAS';
-      worksheet.getCell('A1').alignment = {
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'LAPORAN HARGA EMAS';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // ========================
-      // Metadata Export
-      // ========================
+      // =====================================
+      // Export Information
+      // =====================================
+
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      worksheet.getCell('A4').value = 'Diexport';
-      worksheet.getCell('B4').value =
-        `: ${moment().format('DD MMMM YYYY, HH:mm')}`;
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${moment().format(
+        'DD MMMM YYYY HH:mm:ss'
+      )}`;
 
       worksheet.getCell('A5').value = 'Pencarian';
       worksheet.getCell('B5').value =
         `: ${params.gold_price_source__icontains || '-'}`;
 
-      ['A3', 'A4', 'A5'].forEach((cellKey) => {
-        worksheet.getCell(cellKey).font = { bold: true };
+      ['A3', 'A4', 'A5'].forEach((cell) => {
+        worksheet.getCell(cell).font = {
+          bold: true,
+        };
       });
 
-      // Baris kosong sebelum tabel
-      worksheet.addRow([]); // row 6
+      worksheet.addRow([]);
 
-      // ========================
-      // Header Table
-      // ========================
-      const headerRow = worksheet.addRow(header); // row 7
+      // =====================================
+      // Header
+      // =====================================
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // ========================
-      // Data Rows
-      // ========================
+      // =====================================
+      // Freeze Header
+      // =====================================
+
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 7,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A7',
+        to: `${lastColumnLetter}7`,
+      };
+
+      // =====================================
+      // Data
+      // =====================================
+
       dataToExport.forEach((row) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+        const values = header.map((key) => row[key as keyof typeof row]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra row
+        if (newRow.number % 2 === 0) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
 
         newRow.eachCell((cell, colNumber) => {
-          cell.alignment = { vertical: 'middle' };
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1:
+              horizontal = 'center';
+              break;
+
+            case 3:
+              horizontal = 'right';
+              cell.numFmt = '#,##0.####" gr"';
+              break;
+
+            case 4:
+            case 5:
+            case 6:
+              horizontal = 'right';
+              cell.numFmt = '"Rp" #,##0';
+              break;
+
+            case 8:
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = {
+            horizontal,
+            vertical: 'middle',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          // Format currency
-          const colHeader = header[colNumber - 1];
-          if (
-            colHeader === 'Gold Price Base' ||
-            colHeader === 'Gold Price Sell' ||
-            colHeader === 'Gold Price Buy'
-          ) {
-            cell.numFmt = '"Rp"#,##0';
-          }
         });
       });
 
-      // ========================
-      // Auto width
-      // ========================
-      worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+      // =====================================
+      // Auto Width
+      // =====================================
+
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+
+          maxLength = Math.max(maxLength, value.length);
+        });
+
+        column.width = Math.min(maxLength + 3, 40);
       });
 
+      // =====================================
+      // Export
+      // =====================================
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_harga_emas_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
       console.error('Export failed:', err);
+
       api.error({
         message: 'Export Excel',
         description: 'Gagal export data harga emas',
@@ -420,7 +520,7 @@ const GoldPricePageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

@@ -123,7 +123,7 @@ const LoginForm = () => {
       <div className="right-subcontainer">
         <div className="image-subcontainer">
           <Image
-            src="/images/login/login-picture.png"
+            src="/images/login/bg-login.png"
             alt="login-picture"
             width={0}
             height={0}

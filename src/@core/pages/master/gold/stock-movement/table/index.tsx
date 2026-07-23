@@ -55,6 +55,7 @@ const GoldStockMovementPageTable = () => {
       dataIndex: 'weight',
       key: 'weight',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         `${formatterNumber2(parseFloat(record.weight?.toString() || '0'))} gr`,
     },
@@ -63,6 +64,7 @@ const GoldStockMovementPageTable = () => {
       dataIndex: 'stock_before',
       key: 'stock_before',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         `${formatterNumber2(
           parseFloat(record.stock_before?.toString() || '0')
@@ -73,6 +75,7 @@ const GoldStockMovementPageTable = () => {
       dataIndex: 'stock_after',
       key: 'stock_after',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         `${formatterNumber2(
           parseFloat(record.stock_after?.toString() || '0')
@@ -199,7 +202,7 @@ const GoldStockMovementPageTable = () => {
             parseFloat(item.stock_after?.toString() || '0')
           )} gr`,
           'Create Time': item.date
-            ? moment(item.date).format('DD MMM YYYY, HH:mm')
+            ? moment(item.date).format('DD MMM YYYY HH:mm')
             : '-',
           Catatan: item.note || '-',
           'Create By': item.user_name || '-',
@@ -207,25 +210,48 @@ const GoldStockMovementPageTable = () => {
       );
 
       const workbook = new ExcelJS.Workbook();
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Gold Stock Movement');
 
       const exportedBy = getExportedBy();
-      const exportedAt = moment().format('DD MMMM YYYY, HH:mm:ss');
+      const exportedAt = moment().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns =
         dataToExport.length > 0 ? Object.keys(dataToExport[0]).length : 8;
+
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      // Judul
+      // =============================
+      // Title
+      // =============================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN PERGERAKAN STOK EMAS';
-      worksheet.getCell('A1').alignment = {
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'LAPORAN PERGERAKAN STOK EMAS';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // Info export
+      // =============================
+      // Export Info
+      // =============================
+
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
@@ -235,10 +261,12 @@ const GoldStockMovementPageTable = () => {
       worksheet.getCell('A3').font = { bold: true };
       worksheet.getCell('A4').font = { bold: true };
 
-      // Spacer
-      worksheet.addRow([]); // row 5
+      worksheet.addRow([]);
 
-      // Header mulai row 6
+      // =============================
+      // Header
+      // =============================
+
       const header = dataToExport.length
         ? Object.keys(dataToExport[0])
         : [
@@ -252,31 +280,104 @@ const GoldStockMovementPageTable = () => {
             'Create By',
           ];
 
-      const headerRow = worksheet.addRow(header); // row 6
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // Data rows
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      // =============================
+      // Freeze Header
+      // =============================
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle' };
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 6,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A6',
+        to: `${lastColumnLetter}6`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1:
+              horizontal = 'center';
+              break;
+
+            case 3:
+            case 4:
+            case 5:
+              horizontal = 'right';
+              break;
+
+            case 6:
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = {
+            horizontal,
+            vertical: 'middle',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -286,23 +387,32 @@ const GoldStockMovementPageTable = () => {
         });
       });
 
-      // Auto width
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+      // =============================
+      // Auto Width
+      // =============================
+
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+
+          maxLength = Math.max(maxLength, value.length);
+        });
+
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // Simpan file
+      // =============================
+      // Export
+      // =============================
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_pergerakan_stok_emas_${moment().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
@@ -351,7 +461,7 @@ const GoldStockMovementPageTable = () => {
       </div>
 
       {/* Table */}
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
