@@ -197,9 +197,10 @@ const MainSidebar = () => {
                       onClick={() => setOpenReport(!openReport)}
                       className="flex items-center justify-between w-full px-[12px] py-[10px]"
                     >
-                      <div className="flex items-center gap-[10px]">
+                      <div
+                        className={`flex items-center gap-[10px] ${pathname.startsWith('/laporan') ? 'text-white' : ''}`}
+                      >
                         <Printer />
-
                         <span>Laporan</span>
                       </div>
 
@@ -235,7 +236,14 @@ const MainSidebar = () => {
                                 : ''
                             }
                           >
-                            <Link href={`/laporan/${item.href}`}>
+                            <Link
+                              href={`/laporan/${item.href}`}
+                              className={
+                                pathname.startsWith(`/laporan`)
+                                  ? '!text-white'
+                                  : ''
+                              }
+                            >
                               {item.label}
                             </Link>
                           </li>
