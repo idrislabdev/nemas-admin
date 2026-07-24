@@ -1,102 +1,164 @@
 .main-sidebar {
-  @apply w-[260px] h-full flex flex-col overflow-y-auto overflow-hidden;
+  @apply w-[260px] h-full flex flex-col;
+
   position: relative;
+  overflow: hidden;
 
-  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 45%, #e4efff 100%);
+  background: linear-gradient(180deg, #f7fbff 0%, #eef6ff 45%, #e6f1ff 100%);
 
-  border-right: 1px solid #d8e7ff;
+  border-right: 1px solid #d7e7ff;
 
-  /* Scrollbar */
-  &::-webkit-scrollbar {
+  /* ================= Scrollbar ================= */
+
+  .menu-area::-webkit-scrollbar {
     width: 0;
-    transition: width 0.2s;
+    transition: width 0.2s ease;
   }
 
-  &:hover::-webkit-scrollbar {
+  .menu-area:hover::-webkit-scrollbar {
     width: 6px;
   }
 
-  &::-webkit-scrollbar-thumb {
-    background: rgba(37, 99, 235, 0.35);
-    border-radius: 10px;
+  .menu-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 87, 217, 0.25);
+    border-radius: 999px;
   }
 
-  /* ================= HEADER ================= */
+  /* ================= Header ================= */
 
   .header-area {
-    @apply h-[72px] px-4 flex items-center;
+    @apply h-[70px] px-[14px] flex items-center flex-shrink-0;
 
-    border-bottom: 1px solid #dce8ff;
+    border-bottom: 1px solid #dce9fb;
 
     .header-info {
-      @apply flex items-center gap-3;
+      @apply flex items-center gap-[8px] w-full;
 
       img {
-        @apply w-10 h-10;
+        @apply h-[34px] w-full;
+        object-fit: contain;
       }
 
       label {
-        @apply text-[20px] font-bold;
+        @apply text-[18px] font-semibold;
 
-        color: #2563eb;
+        color: #0057d9;
       }
     }
   }
 
-  /* ================= MENU ================= */
+  /* ================= Menu ================= */
 
   .menu-area {
-    @apply flex-1 flex flex-col gap-4 pt-4;
+    @apply flex-1 overflow-y-auto;
 
-    span {
-      @apply px-4;
+    min-height: 0;
 
-      &.label {
-        @apply uppercase text-[11px] font-semibold tracking-wider;
+    .label {
+      @apply block px-[14px] pt-3 pb-2 uppercase;
 
-        color: #7b93bc;
-      }
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+
+      color: #7b93bc;
     }
 
     .list-menu {
-      @apply px-3;
+      @apply px-[8px];
 
       ul {
-        @apply flex flex-col gap-2;
+        @apply flex flex-col gap-[4px];
 
         li {
-          @apply rounded-xl transition-all duration-200;
+          @apply rounded-xl;
 
-          a {
-            @apply flex items-center gap-3 px-3 py-3;
+          transition: all 0.18s ease;
 
-            color: #4b638a;
+          /* ======================== */
+          /* Link & Expand Button     */
+          /* ======================== */
+
+          > a,
+          > button {
+            @apply flex items-center gap-2 w-full px-[12px] py-[10px];
+
+            background: transparent;
+            border: none;
+            cursor: pointer;
+
+            font-size: 14px;
             font-weight: 500;
 
-            svg {
-              @apply w-5 h-5;
-            }
+            color: #47648e;
+
+            transition: 0.18s;
           }
+
+          > a > div,
+          > button > div {
+            @apply flex items-center gap-[10px];
+          }
+
+          > a svg,
+          > button svg {
+            @apply w-[18px] h-[18px];
+
+            color: #6f8db8;
+            transition: 0.18s;
+          }
+
+          > a span,
+          > button span {
+            padding: 0;
+          }
+
+          /* ======================== */
 
           &:hover {
-            background: white;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+            background: rgba(255, 255, 255, 0.85);
 
-            a {
-              color: #2563eb;
+            backdrop-filter: blur(8px);
+
+            box-shadow: 0 4px 14px rgba(0, 87, 217, 0.08);
+
+            > a,
+            > button {
+              color: #0057d9;
             }
 
             svg {
-              color: #2563eb;
+              color: #0057d9;
             }
           }
 
+          /* ======================== */
+
           &.active {
-            background: linear-gradient(135deg, #2563eb, #4f8cff);
+            background: linear-gradient(135deg, #0b63f6, #0057d9);
 
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 8px 18px rgba(0, 87, 217, 0.22);
 
-            a {
+            position: relative;
+
+            &::before {
+              content: '';
+
+              position: absolute;
+
+              left: 0;
+              top: 8px;
+              bottom: 8px;
+
+              width: 4px;
+
+              border-radius: 999px;
+
+              background: #f4c400;
+            }
+
+            > a,
+            > button {
               color: white;
               font-weight: 600;
             }
@@ -106,32 +168,48 @@
             }
           }
 
+          /* ======================== */
+
           ul.submenu {
-            @apply mt-2 ml-7 gap-1;
+            @apply mt-[4px] ml-[22px] mb-[4px] pl-[12px] flex flex-col gap-[2px];
+
+            border-left: 1px solid #cddffc;
 
             li {
               @apply rounded-lg;
 
-              a {
-                @apply py-2;
+              background: transparent;
+              box-shadow: none;
 
-                color: #6781ad;
-                font-size: 14px;
+              &::before {
+                display: none;
+              }
+
+              > a {
+                @apply px-[10px] py-[6px];
+
+                font-size: 13px;
+
+                color: #5e7da9;
+
+                background: none;
               }
 
               &:hover {
-                background: rgba(37, 99, 235, 0.08);
+                background: transparent;
+                box-shadow: none;
 
-                a {
-                  color: #2563eb;
+                > a {
+                  color: #0057d9;
                 }
               }
 
               &.active {
-                background: rgba(37, 99, 235, 0.12);
+                background: transparent;
 
-                a {
-                  color: #2563eb;
+                > a {
+                  color: #0057d9;
+                  font-weight: 600;
                 }
               }
             }
@@ -141,44 +219,64 @@
     }
   }
 
-  /* ================= FOOTER ================= */
+  /* ================= Footer ================= */
 
   .info-area {
-    @apply p-3;
+    @apply p-[10px] flex-shrink-0;
 
-    border-top: 1px solid #dce8ff;
+    border-top: 1px solid #dce9fb;
 
     .list-menu {
       ul {
-        @apply flex flex-col gap-2;
+        @apply flex flex-col gap-[4px];
 
         li {
-          @apply rounded-xl transition-all;
+          @apply rounded-xl;
+
+          transition: all 0.18s ease;
 
           a {
-            @apply flex items-center gap-3 px-3 py-3 w-full cursor-pointer;
+            @apply flex items-center gap-[10px] px-[12px] py-[10px] cursor-pointer;
 
-            color: #4b638a;
+            font-size: 14px;
+            font-weight: 500;
+
+            color: #47648e;
 
             svg {
-              @apply w-5 h-5;
+              @apply w-[18px] h-[18px];
+
+              color: #6f8db8;
             }
           }
 
           &:hover {
-            background: white;
+            background: rgba(255, 255, 255, 0.85);
 
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+            backdrop-filter: blur(8px);
+
+            box-shadow: 0 4px 14px rgba(0, 87, 217, 0.08);
 
             a {
-              color: #2563eb;
+              color: #0057d9;
+            }
+
+            svg {
+              color: #0057d9;
             }
           }
 
           &.active {
-            background: linear-gradient(135deg, #2563eb, #4f8cff);
+            background: linear-gradient(135deg, #0b63f6, #0057d9);
+
+            box-shadow: 0 8px 18px rgba(0, 87, 217, 0.22);
 
             a {
+              color: white;
+              font-weight: 600;
+            }
+
+            svg {
               color: white;
             }
           }

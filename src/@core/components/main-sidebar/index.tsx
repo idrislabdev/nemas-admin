@@ -61,13 +61,12 @@ const MainSidebar = () => {
           <div className="header-area">
             <Link href={'/'} className="header-info cursor-pointer">
               <Image
-                src="/images/main/nemas-logo.png"
+                src="/images/main/new-nemas-logo.png"
                 alt="logo nemas"
                 width={0}
                 height={0}
                 sizes="100%"
               />
-              <label>Nemas Admin</label>
             </Link>
           </div>
 
@@ -190,34 +189,30 @@ const MainSidebar = () => {
 
                 {checkMenu('Laporan') && (
                   <li
-                    className={`${
-                      pathname.split('/')[1] === 'laporan' ? 'active' : ''
-                    }`}
+                    className={`${pathname.startsWith('/laporan') ? 'active' : ''}`}
                   >
-                    {/* HEADER LAPORAN */}
-                    <div
+                    {/* HEADER */}
+                    <button
+                      type="button"
                       onClick={() => setOpenReport(!openReport)}
-                      className="flex items-center justify-between cursor-pointer p-3"
+                      className="flex items-center justify-between w-full px-[12px] py-[10px]"
                     >
-                      <div className="flex items-center gap-2 text-[#4b638a] font-semibold">
+                      <div className="flex items-center gap-[10px]">
                         <Printer />
-                        <span className="!px-0">Laporan</span>
+
+                        <span>Laporan</span>
                       </div>
-                      <span className="my-icon icon-sm text-[#4b638a]">
-                        {openReport ? <ChevronUp /> : <ChevronDown />}
-                      </span>
-                    </div>
+
+                      {openReport ? <ChevronUp /> : <ChevronDown />}
+                    </button>
 
                     {/* SUBMENU */}
                     {openReport && (
-                      <ul className="ml-6 mt-2 submenu">
+                      <ul className="submenu">
                         {[
                           { href: 'stock', label: 'Stock' },
                           { href: 'wallet', label: 'Wallet' },
-                          {
-                            href: 'penjualan-emas',
-                            label: 'Penjualan Emas',
-                          },
+                          { href: 'penjualan-emas', label: 'Penjualan Emas' },
                           { href: 'pembelian-emas', label: 'Pembelian Emas' },
                           { href: 'tarik-emas', label: 'Tarik Emas' },
                           { href: 'transfer-member', label: 'Transfer Member' },
