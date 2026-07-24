@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IGoldCertPrice, IUser } from '@/@core/@types/interface';
+import { IGoldCertPrice } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
@@ -24,7 +24,6 @@ import {
 
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
 
@@ -60,12 +59,24 @@ const GoldCertPageTable = () => {
       align: 'center',
       render: (_, __, index) => index + params.offset + 1,
     },
-    { title: 'Kode Sertifikat', dataIndex: 'cert_code', key: 'cert_code' },
-    { title: 'Nama Brand', dataIndex: 'cert_brand', key: 'cert_brand' },
+    {
+      title: 'Kode Sertifikat',
+      dataIndex: 'cert_code',
+      key: 'cert_code',
+      width: 150,
+    },
+    {
+      title: 'Nama Brand',
+      dataIndex: 'cert_brand',
+      key: 'cert_brand',
+      width: 180,
+    },
     {
       title: 'Satuan (gr)',
       dataIndex: 'gold_weight',
       key: 'gold_weight',
+      width: 140,
+      align: 'right',
       render: (_, record) =>
         `${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`,
     },
@@ -73,45 +84,49 @@ const GoldCertPageTable = () => {
       title: 'Harga Sertifikat',
       dataIndex: 'cert_price',
       key: 'cert_price',
+      width: 170,
+      align: 'right',
       render: (_, record) =>
-        `Rp${formatterNumber(record.cert_price ? record.cert_price : 0)}`,
+        `Rp ${formatterNumber(record.cert_price ? record.cert_price : 0)}`,
     },
     {
       title: 'Create By',
       dataIndex: 'create_user_name',
       key: 'create_user_name',
+      width: 150,
     },
     {
       title: 'Create Time',
       dataIndex: 'create_time',
       key: 'create_time',
       width: 170,
+      align: 'center',
       render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     {
       title: 'Update By',
       dataIndex: 'upd_user_name',
       key: 'upd_user_name',
+      width: 150,
     },
     {
       title: '',
       key: 'action',
       fixed: 'right',
       width: 100,
+      align: 'center',
       render: (_, record) => (
-        <div className="flex items-center gap-[5px] justify-center">
+        <div className="flex items-center justify-center gap-[5px]">
           <Link
             href={`/master/gold/cert/${record.cert_id}`}
             className="btn-action"
           >
             <Edit05 />
           </Link>
-          <button
-            className="btn-action"
-            onClick={() => deleteData(record.cert_id)}
-          >
+
+          <a className="btn-action" onClick={() => deleteData(record.cert_id)}>
             <Trash01 />
-          </button>
+          </a>
         </div>
       ),
     },
@@ -178,6 +193,33 @@ const GoldCertPageTable = () => {
     }
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      // Sesuaikan key localStorage sesuai project kamu
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   // ========================
   // Export Excel
   // ========================
@@ -185,17 +227,18 @@ const GoldCertPageTable = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
-
       const exportParams = {
         format: 'json',
         offset: 0,
         limit: total || 1000,
-        search: '',
+        search: params.search,
         cert_brand__icontains: '',
       };
 
-      const resp = await axiosInstance.get(url, { params: exportParams });
+      const resp = await axiosInstance.get(url, {
+        params: exportParams,
+      });
+
       const rows: IGoldCertPrice[] = resp.data?.results || [];
 
       if (!rows.length) {
@@ -204,17 +247,16 @@ const GoldCertPageTable = () => {
           description: 'Tidak ada data untuk di-export',
           placement: 'bottomRight',
         });
+
         return;
       }
 
-      const dataToExport = rows.map((item: IGoldCertPrice, index: number) => ({
+      const dataToExport = rows.map((item, index) => ({
         No: index + 1,
         'Kode Sertifikat': item.cert_code || '-',
-        'Nama Sertifikat': item.cert_brand || '-',
-        'Satuan (gr)': item.gold_weight
-          ? `${formatterNumber(item.gold_weight)} gr`
-          : '0 gr',
-        'Harga Sertifikat': item.cert_price ? item.cert_price : 0,
+        'Nama Brand': item.cert_brand || '-',
+        'Satuan (gr)': `${formatterNumber(item.gold_weight || 0)} gr`,
+        'Harga Sertifikat': item.cert_price || 0,
         'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY HH:mm')
@@ -223,89 +265,173 @@ const GoldCertPageTable = () => {
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Data Sertifikat');
 
-      const lastColumnLetter = 'H';
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
 
-      /* ================= TITLE ================= */
+      const worksheet = workbook.addWorksheet('Master Sertifikat');
+
+      const exportedBy = getExportedBy();
+      const exportedAt = moment().format('DD MMMM YYYY HH:mm:ss');
+
+      const header =
+        dataToExport.length > 0
+          ? Object.keys(dataToExport[0])
+          : [
+              'No',
+              'Kode Sertifikat',
+              'Nama Brand',
+              'Satuan (gr)',
+              'Harga Sertifikat',
+              'Create By',
+              'Create Time',
+              'Update By',
+            ];
+
+      const totalColumns = header.length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      // ==========================
+      // Title
+      // ==========================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN DATA MASTER SERTIFIKAT';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').alignment = {
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'DATA MASTER SERTIFIKAT';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
-      /* ================= DIBUAT OLEH ================= */
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      // ==========================
+      // Export Info
+      // ==========================
 
-      /* ================= TANGGAL EXPORT ================= */
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      /* ================= TOTAL DATA ================= */
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
 
-      /* ================= PERIODE ================= */
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = 'Periode : Semua Data';
-      worksheet.getCell('A5').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      worksheet.getCell('A5').value = 'Pencarian';
+      worksheet.getCell('B5').value = `: ${params.search || '-'}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
 
       worksheet.addRow([]);
 
-      /* ================= HEADER ================= */
-      const headers = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(headers);
+      // ==========================
+      // Header
+      // ==========================
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
         cell.alignment = {
           horizontal: 'center',
           vertical: 'middle',
         };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      /* ================= DATA ================= */
-      dataToExport.forEach((row) => {
-        const rowValues = headers.map((key) => (row as any)[key]);
-        const newRow = worksheet.addRow(rowValues);
+      // ==========================
+      // Freeze Header
+      // ==========================
 
-        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          const centerColumns = [1, 4]; // No, Satuan (gr)
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: headerRow.number,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: `A${headerRow.number}`,
+        to: `${lastColumnLetter}${headerRow.number}`,
+      };
+
+      // ==========================
+      // Data
+      // ==========================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1:
+              horizontal = 'center';
+              break;
+
+            case 4:
+            case 5:
+              horizontal = 'right';
+              break;
+
+            case 7:
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
 
           cell.alignment = {
+            horizontal,
             vertical: 'middle',
-            horizontal: centerColumns.includes(colNumber) ? 'center' : 'left',
           };
 
           cell.border = {
@@ -315,79 +441,51 @@ const GoldCertPageTable = () => {
             right: { style: 'thin' },
           };
 
-          // Kolom Harga Sertifikat = kolom ke-5
           if (colNumber === 5) {
-            cell.numFmt = '"Rp"#,##0';
+            cell.numFmt = '"Rp" #,##0';
           }
         });
       });
 
-      /* ================= TOTAL ================= */
-      const totalRow = worksheet.addRow([
-        'TOTAL',
-        rows.length,
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-      ]);
+      // ==========================
+      // Auto Width
+      // ==========================
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        const isNumeric = colNumber === 2;
-
-        cell.font = { bold: true };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' },
-        };
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'center' : 'left',
-        };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
-      });
-
-      /* ================= AUTO WIDTH ================= */
-      worksheet.columns.forEach((col) => {
+      worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
           const value = cell.value ? cell.value.toString() : '';
+
           maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 35);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      /* ================= FREEZE HEADER ================= */
-      // Header tabel ada di baris 7
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      // ==========================
+      // Export
+      // ==========================
 
-      /* ================= SAVE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_data_master_sertifikat_${dayjs().format(
+
+      const fileName = `data_master_sertifikat_${moment().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
 
       api.success({
-        message: 'Export Sukses',
-        description: 'File sertifikat berhasil diunduh',
+        message: 'Export Berhasil',
+        description: 'Data master sertifikat berhasil diunduh.',
         placement: 'bottomRight',
       });
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
+
       api.error({
         message: 'Export Gagal',
-        description: 'Terjadi kesalahan saat export data',
+        description: 'Terjadi kesalahan saat export data.',
         placement: 'bottomRight',
       });
     } finally {
@@ -431,7 +529,7 @@ const GoldCertPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

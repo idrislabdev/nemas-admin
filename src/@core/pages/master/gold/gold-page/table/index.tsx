@@ -5,7 +5,7 @@ import { IGold } from '@/@core/@types/interface';
 import ModalConfirm from '@/@core/components/modal/modal-confirm';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
-import { formatterNumber } from '@/@core/utils/general';
+import { formatterNumber, formatterNumber2 } from '@/@core/utils/general';
 
 import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -24,7 +24,6 @@ import {
 
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
 
@@ -65,36 +64,44 @@ const GoldPageTable = () => {
       dataIndex: 'gold_weight',
       key: 'gold_weight',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         `${parseFloat(
           record.gold_weight ? record.gold_weight.toString() : '0'
         )} gr`,
     },
-    // {
-    //   title: 'Berat Sertifikat (gr)',
-    //   dataIndex: 'certificate_weight',
-    //   key: 'certificate_weight',
-    //   width: 170,
-    //   render: (_, record) =>
-    //     `${parseFloat(
-    //       record.certificate_weight ? record.certificate_weight.toString() : '0'
-    //     )} gr`,
-    // },
-    { title: 'Tipe Emas', dataIndex: 'type', key: 'type', width: 120 },
-    { title: 'Merek', dataIndex: 'brand', key: 'brand', width: 120 },
+    {
+      title: 'Tipe Emas',
+      dataIndex: 'type',
+      key: 'type',
+      width: 120,
+    },
+    {
+      title: 'Merek',
+      dataIndex: 'brand',
+      key: 'brand',
+      width: 120,
+    },
     {
       title: 'Harga',
       dataIndex: 'gold_price_summary_roundup',
       key: 'gold_price_summary_roundup',
       width: 150,
+      align: 'right',
       render: (_, record) =>
-        `Rp${formatterNumber(
+        `Rp ${formatterNumber(
           record.gold_price_summary_roundup
             ? parseInt(record.gold_price_summary_roundup)
             : 0
         )}`,
     },
-    { title: 'Stok', dataIndex: 'stock', key: 'stock', width: 100 },
+    {
+      title: 'Stok',
+      dataIndex: 'stock',
+      key: 'stock',
+      width: 100,
+      align: 'right',
+    },
     {
       title: 'Create By',
       dataIndex: 'create_user_name',
@@ -119,6 +126,7 @@ const GoldPageTable = () => {
       key: 'action',
       fixed: 'right',
       width: 100,
+      align: 'center',
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
           <Link href={`/master/gold/${record.gold_id}`} className="btn-action">
@@ -175,6 +183,33 @@ const GoldPageTable = () => {
     });
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      // Sesuaikan key localStorage sesuai project kamu
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   // ========================
   // Export Excel
   // ========================
@@ -182,59 +217,51 @@ const GoldPageTable = () => {
     try {
       setIsModalLoading(true);
 
-      // Ambil user login dari localStorage/session (silakan sesuaikan key sesuai project kamu)
-      const storedUser =
-        typeof window !== 'undefined'
-          ? localStorage.getItem('user') || sessionStorage.getItem('user')
-          : null;
-
-      let exportedBy = '-';
-
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          exportedBy =
-            parsedUser?.full_name ||
-            parsedUser?.user_name ||
-            parsedUser?.name ||
-            parsedUser?.username ||
-            '-';
-        } catch {
-          exportedBy = '-';
-        }
-      }
-
       const exportParams = {
         format: 'json',
         offset: 0,
         limit: 1000,
-        search: params.search, // pakai search aktif saat ini
+        search: params.search,
       };
 
-      const resp = await axiosInstance.get(url, { params: exportParams });
+      const resp = await axiosInstance.get(url, {
+        params: exportParams,
+      });
+
       const rows = resp.data.results || [];
 
       const dataToExport = rows.map((item: IGold, index: number) => ({
         No: index + 1,
-        'Berat Emas': item.gold_weight,
-        'Berat Sertifikat': item.certificate_weight,
-        Type: item.type,
-        Brand: item.brand,
+        'Berat Emas': `${formatterNumber2(
+          parseFloat(item.gold_weight?.toString() || '0')
+        )} gr`,
+        'Berat Sertifikat': `${formatterNumber2(
+          parseFloat(item.certificate_weight?.toString() || '0')
+        )} gr`,
+        Tipe: item.type || '-',
+        Merek: item.brand || '-',
         Harga: item.gold_price_summary_roundup
           ? parseInt(item.gold_price_summary_roundup)
           : 0,
-        Stok: item.stock,
-        'Create By': item.create_user_name,
+        Stok: item.stock ?? 0,
+        'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
-          ? moment(item.create_time).format('DD MMM YYYY, HH:mm')
+          ? moment(item.create_time).format('DD MMM YYYY HH:mm')
           : '-',
-        'Update By': item.upd_user_name,
+        'Update By': item.upd_user_name || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Data Gold');
 
-      // Header fallback jika data kosong
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Master Gold');
+
+      const exportedBy = getExportedBy();
+      const exportedAt = moment().format('DD MMMM YYYY HH:mm:ss');
+
       const header =
         dataToExport.length > 0
           ? Object.keys(dataToExport[0])
@@ -242,8 +269,8 @@ const GoldPageTable = () => {
               'No',
               'Berat Emas',
               'Berat Sertifikat',
-              'Type',
-              'Brand',
+              'Tipe',
+              'Merek',
               'Harga',
               'Stok',
               'Create By',
@@ -252,69 +279,157 @@ const GoldPageTable = () => {
             ];
 
       const totalColumns = header.length;
-      const lastColumnLetter = worksheet.getColumn(totalColumns).letter;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      // ========================
+      // ==========================
       // Title
-      // ========================
+      // ==========================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'DATA MASTER GOLD';
-      worksheet.getCell('A1').alignment = {
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'DATA MASTER GOLD';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      // ========================
-      // Metadata Export
-      // ========================
+      // ==========================
+      // Export Info
+      // ==========================
+
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      worksheet.getCell('A4').value = 'Diexport';
-      worksheet.getCell('B4').value =
-        `: ${moment().format('DD MMMM YYYY, HH:mm')}`;
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
 
       worksheet.getCell('A5').value = 'Pencarian';
       worksheet.getCell('B5').value = `: ${params.search || '-'}`;
 
-      ['A3', 'A4', 'A5'].forEach((cellKey) => {
-        worksheet.getCell(cellKey).font = { bold: true };
-      });
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
 
-      // Baris kosong sebelum tabel
-      worksheet.addRow([]); // row 6
+      worksheet.addRow([]);
 
-      // ========================
-      // Header Table
-      // ========================
-      const headerRow = worksheet.addRow(header); // row 7
+      // ==========================
+      // Header
+      // ==========================
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // ========================
-      // Data Rows
-      // ========================
+      // ==========================
+      // Freeze Header & AutoFilter
+      // ==========================
+
+      const headerRowNumber = headerRow.number;
+      const headerCellStart = `A${headerRowNumber}`;
+      const headerCellEnd = `${lastColumnLetter}${headerRowNumber}`;
+
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: headerRowNumber,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: headerCellStart,
+        to: headerCellEnd,
+      };
+
+      // ==========================
+      // Data
+      // ==========================
+
       dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
 
         newRow.eachCell((cell, colNumber) => {
-          cell.alignment = { vertical: 'middle' };
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1:
+              horizontal = 'center';
+              break;
+
+            case 2: // Berat Emas
+            case 3: // Berat Sertifikat
+            case 6: // Harga
+            case 7: // Stok
+              horizontal = 'right';
+              break;
+
+            case 9: // Create Time
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = {
+            horizontal,
+            vertical: 'middle',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -322,35 +437,45 @@ const GoldPageTable = () => {
             right: { style: 'thin' },
           };
 
-          if (header[colNumber - 1] === 'Harga') {
-            cell.numFmt = '"Rp"#,##0';
+          if (colNumber === 6) {
+            cell.numFmt = '"Rp" #,##0';
           }
         });
       });
 
-      // ========================
-      // Auto Column Width
-      // ========================
-      worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-          col.width = maxLength + 2;
-        }
+      // ==========================
+      // Auto Width
+      // ==========================
+
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+
+          maxLength = Math.max(maxLength, value.length);
+        });
+
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // Save file
+      // ==========================
+      // Export
+      // ==========================
+
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `data_gold_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+
+      const fileName = `data_master_gold_${moment().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
+
       api.error({
         message: 'Export Excel',
-        description: 'Gagal export data gold',
+        description: 'Gagal export data master gold',
         placement: 'bottomRight',
       });
     } finally {
@@ -391,7 +516,7 @@ const GoldPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
