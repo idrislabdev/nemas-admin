@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ISalesOrder, IUser } from '@/@core/@types/interface';
+import { ISalesOrder } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -67,12 +67,18 @@ const PenjualanEmasFisikPage = () => {
       render: (_, record) =>
         moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
     },
-    { title: 'User', dataIndex: 'user_name', key: 'user_name', width: 150 },
+    {
+      title: 'User',
+      dataIndex: 'user_name',
+      key: 'user_name',
+      width: 150,
+    },
     {
       title: 'Berat Emas',
       dataIndex: 'order_item_weight',
       key: 'order_item_weight',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_item_weight
           ? `${formatDecimal(
@@ -85,6 +91,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_amount',
       key: 'order_amount',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_amount
           ? `Rp${formatDecimal(parseFloat(record.order_amount.toString()))}`
@@ -95,11 +102,10 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_total_price',
       key: 'order_total_price',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_total_price
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_total_price.toString())
-            )}`
+          ? `Rp${formatDecimal(parseFloat(record.order_total_price.toString()))}`
           : '-',
     },
     {
@@ -107,6 +113,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_admin_amount',
       key: 'order_admin_amount',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_admin_amount
           ? `Rp${formatDecimal(
@@ -119,6 +126,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_tracking_insurance_total_round',
       key: 'order_tracking_insurance_total_round',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_tracking_insurance_total_round
           ? `Rp${formatDecimal(
@@ -131,6 +139,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_tracking_total_amount_round',
       key: 'order_tracking_total_amount_round',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_tracking_total_amount_round
           ? `Rp${formatDecimal(
@@ -143,6 +152,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_grand_total_price',
       key: 'order_grand_total_price',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.order_grand_total_price
           ? `Rp${formatDecimal(
@@ -155,6 +165,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_status',
       key: 'order_status',
       width: 150,
+      align: 'center',
       fixed: 'right',
     },
     {
@@ -162,6 +173,7 @@ const PenjualanEmasFisikPage = () => {
       dataIndex: 'order_gold_payment_status',
       key: 'order_gold_payment_status',
       width: 150,
+      align: 'center',
       fixed: 'right',
     },
   ];
@@ -208,87 +220,168 @@ const PenjualanEmasFisikPage = () => {
     return allRows;
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
-
       const rows = await fetchAllData(url, params);
+
       if (!rows || rows.length === 0) {
         console.warn('Tidak ada data untuk diekspor.');
         return;
       }
 
-      const dataToExport = rows.map((item: ISalesOrder) => ({
+      const dataToExport = rows.map((item: ISalesOrder, index: number) => ({
+        No: index + 1,
         'Nomor Order': item.order_number || '-',
-        'Tanggal Order': moment(item.order_timestamp).format('DD MMMM YYYY'),
+        'Tanggal Order': moment(item.order_timestamp).format(
+          'DD MMMM YYYY HH:mm'
+        ),
         User: item.user_name || '-',
-        'Berat Emas (Gram)': Number(item.order_item_weight || 0),
-        'Nominal Pesanan (Rp)': Number(item.order_amount || 0),
-        'Total Harga (Rp)': Number(item.order_total_price || 0),
-        'Biaya Admin (Rp)': Number(item.order_admin_amount || 0),
-        'Biaya Asuransi (Rp)': Number(
-          item.order_tracking_insurance_total_round || 0
-        ),
-        'Biaya Pengiriman (Rp)': Number(
-          item.order_tracking_total_amount_round || 0
-        ),
-        'Grand Total (Rp)': Number(item.order_grand_total_price || 0),
+        'Berat Emas': `${formatDecimal(
+          Number(item.order_item_weight || 0)
+        )} Gram`,
+        'Nominal Pesanan': `Rp${formatDecimal(Number(item.order_amount || 0))}`,
+        'Total Harga': `Rp${formatDecimal(Number(item.order_total_price || 0))}`,
+        'Biaya Admin': `Rp${formatDecimal(
+          Number(item.order_admin_amount || 0)
+        )}`,
+        'Biaya Asuransi': `Rp${formatDecimal(
+          Number(item.order_tracking_insurance_total_round || 0)
+        )}`,
+        'Biaya Pengiriman': `Rp${formatDecimal(
+          Number(item.order_tracking_total_amount_round || 0)
+        )}`,
+        'Grand Total': `Rp${formatDecimal(
+          Number(item.order_grand_total_price || 0)
+        )}`,
         'Status Pesanan': item.order_status || '-',
         'Status Pembayaran': item.order_gold_payment_status || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Penjualan Emas Fisik');
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Penjualan Emas Fisik');
+
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      // ===== TITLE =====
+      // =============================
+      // Title
+      // =============================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN PENJUALAN EMAS FISIK';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      const titleCell = worksheet.getCell('A1');
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      titleCell.value = 'LAPORAN PENJUALAN EMAS FISIK';
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
 
-      // ===== PERIODE =====
+      titleCell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      // =============================
+      // Export Info
+      // =============================
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${getExportedBy()}`;
+
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
+
+      let periodeText = 'Semua Periode';
+
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-        worksheet.getCell('A5').value = `Periode: ${dayjs(
-          params.start_date
-        ).format(
-          'DD-MM-YYYY'
-        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
-        worksheet.getCell('A5').alignment = { horizontal: 'left' };
+        periodeText = `${dayjs(params.start_date).format(
+          'DD MMMM YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
       }
+
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
-      // ===== TABLE HEADER =====
-      const headerKeys = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(headerKeys);
+      // =============================
+      // Header
+      // =============================
+
+      const header = Object.keys(dataToExport[0]);
+
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
 
         cell.border = {
           top: { style: 'thin' },
@@ -296,27 +389,75 @@ const PenjualanEmasFisikPage = () => {
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
-        };
       });
 
-      // ===== TABLE ROWS =====
-      dataToExport.forEach((row) => {
-        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      // =============================
+      // Freeze Header
+      // =============================
+
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
 
         newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
-          const isNumeric =
-            header.includes('(Rp)') || header.includes('(Gram)');
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No
+              horizontal = 'center';
+              break;
+
+            case 5: // Berat
+            case 6: // Nominal
+            case 7: // Total Harga
+            case 8: // Admin
+            case 9: // Asuransi
+            case 10: // Pengiriman
+            case 11: // Grand Total
+              horizontal = 'right';
+              break;
+
+            case 12: // Status Pesanan
+            case 13: // Status Pembayaran
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
 
           cell.alignment = {
+            horizontal,
             vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
           };
 
           cell.border = {
@@ -325,95 +466,142 @@ const PenjualanEmasFisikPage = () => {
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
-          }
         });
       });
 
-      // ===== TOTAL =====
-      const totalFields: (keyof (typeof dataToExport)[number])[] = [
-        'Berat Emas (Gram)',
-        'Nominal Pesanan (Rp)',
-        'Total Harga (Rp)',
-        'Biaya Admin (Rp)',
-        'Biaya Asuransi (Rp)',
-        'Biaya Pengiriman (Rp)',
-        'Grand Total (Rp)',
-      ];
+      // =============================
+      // Total
+      // =============================
 
-      const totals: Record<string, number> = {};
+      const totalWeight = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_item_weight || 0),
+        0
+      );
 
-      totalFields.forEach((field) => {
-        totals[field] = dataToExport.reduce(
-          (sum, row) => sum + (Number(row[field]) || 0),
-          0
-        );
-      });
+      const totalOrder = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_amount || 0),
+        0
+      );
 
-      const totalRowValues = headerKeys.map((key) => {
-        if (key === 'Nomor Order') return 'TOTAL';
+      const totalPrice = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_total_price || 0),
+        0
+      );
 
-        if (totalFields.includes(key as any)) {
-          return new Intl.NumberFormat('id-ID').format(totals[key]);
-        }
+      const totalAdmin = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_admin_amount || 0),
+        0
+      );
 
-        return '';
-      });
+      const totalInsurance = rows.reduce(
+        (acc, cur) =>
+          acc + Number(cur.order_tracking_insurance_total_round || 0),
+        0
+      );
 
-      const totalRow = worksheet.addRow(totalRowValues);
+      const totalShipping = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_tracking_total_amount_round || 0),
+        0
+      );
+
+      const totalGrand = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_grand_total_price || 0),
+        0
+      );
+
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        `${formatDecimal(totalWeight)} Gram`,
+        `Rp${formatDecimal(totalOrder)}`,
+        `Rp${formatDecimal(totalPrice)}`,
+        `Rp${formatDecimal(totalAdmin)}`,
+        `Rp${formatDecimal(totalInsurance)}`,
+        `Rp${formatDecimal(totalShipping)}`,
+        `Rp${formatDecimal(totalGrand)}`,
+        '',
+        '',
+      ]);
 
       totalRow.eachCell((cell, colNumber) => {
-        const header: any = headerKeys[colNumber - 1];
-        const isNumeric = totalFields.includes(header);
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-        cell.font = { bold: true };
+        switch (colNumber) {
+          case 1:
+            horizontal = 'center';
+            break;
 
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'right' : 'left',
-        };
+          case 5:
+          case 6:
+          case 7:
+          case 8:
+          case 9:
+          case 10:
+          case 11:
+            horizontal = 'right';
+            break;
 
-        cell.border = {
-          top: { style: 'medium' },
-          left: { style: 'thin' },
-          bottom: { style: 'medium' },
-          right: { style: 'thin' },
+          case 12:
+          case 13:
+            horizontal = 'center';
+            break;
+
+          default:
+            horizontal = 'left';
+        }
+
+        cell.font = {
+          bold: true,
         };
 
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
+        };
+
+        cell.alignment = {
+          horizontal,
+          vertical: 'middle',
+        };
+
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col) => {
-        if (!col) return;
+      // =============================
+      // Auto Width
+      // =============================
 
-        let maxLength = 0;
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 40);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      // =============================
+      // Export
+      // =============================
 
-      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const fileName = `laporan_penjualan_emas_fisik_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
-
-      saveAs(new Blob([buffer]), fileName);
+      saveAs(
+        new Blob([buffer]),
+        `laporan_penjualan_emas_fisik_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -450,7 +638,7 @@ const PenjualanEmasFisikPage = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] mt-3">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px] mt-3">
         <Table
           columns={columns}
           dataSource={dataTable}

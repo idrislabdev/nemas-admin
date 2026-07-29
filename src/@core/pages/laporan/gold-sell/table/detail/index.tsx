@@ -145,57 +145,60 @@ const GoldSellTransactionDetailsTable = () => {
 
       const rows = resp.data.results as IGoldSellTransaction[];
 
-      if (!rows || rows.length === 0) return;
-
-      // === Helper format Rupiah ===
-      const formatRupiah = (value: number | string): string => {
-        const num = typeof value === 'string' ? parseFloat(value) : value || 0;
-        return num.toLocaleString('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
-      };
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Penjualan Emas');
 
-      // ===== TITLE =====
-      worksheet.mergeCells('A1:M1');
-      worksheet.getCell('A1').value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const totalColumns = 13;
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells('A2:M2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      // =============================
+      // Title
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN TRANSAKSI PENJUALAN EMAS';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells('A3:M3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
+      // =============================
+      // Metadata Info
+      // =============================
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells('A4:M4');
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== PERIODE =====
-      worksheet.mergeCells('A5:M5');
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      const periode =
+      const periodeText =
         params?.start_date && params?.end_date
-          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
               params.end_date
-            ).format('DD-MM-YYYY')}`
-          : '-';
+            ).format('DD MMMM YYYY')}`
+          : 'Semua Periode';
 
-      worksheet.getCell('A5').value = `Periode : ${periode}`;
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.addRow([]);
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      // ===== HEADER =====
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // Header (Row 8)
+      // =============================
       const header = [
         'Tanggal Transaksi',
         'Nomor Transaksi',
@@ -213,71 +216,105 @@ const GoldSellTransactionDetailsTable = () => {
       ];
 
       const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFDDDDDD' },
-        };
       });
 
-      // ===== TOTAL VARIABLE =====
-      let totalWeight = 0;
-      let totalWeightBefore = 0;
-      let totalWeightAfter = 0;
-      let totalPrice = 0;
+      // Format Numbering Excel
+      const currencyFormat = '"Rp"#,,##0;("Rp"#,,##0);"-"';
+      const weightFormat = '#,,##0.00" Gram"';
 
-      // ===== DATA =====
-      rows.forEach((item) => {
-        totalWeight += Number(item.weight) || 0;
-        totalWeightBefore += Number(item.weight_before) || 0;
-        totalWeightAfter += Number(item.weight_after) || 0;
-        totalPrice += Number(item.total_price) || 0;
+      // =============================
+      // Data Rows
+      // =============================
+      rows.forEach((item, index) => {
+        const rowValues = [
+          item.transaction_date
+            ? moment(item.transaction_date).format('DD MMMM YYYY HH:mm')
+            : '-',
+          item.gold_sell_number || '-',
+          item.user_name || '-',
+          item.user_member_number || '-',
+          item.user_email || '-',
+          item.user_phone_number || '-',
+          Number(item.weight || 0),
+          Number(item.weight_before || 0),
+          Number(item.weight_after || 0),
+          Number(item.gold_history_price_sell || 0),
+          Number(item.total_price || 0),
+          item.status || '-',
+          item.user_seller_unique_code || '-',
+        ];
 
-        const row = worksheet.addRow([
-          moment(item.transaction_date).format('DD MMMM YYYY HH:mm'),
-          item.gold_sell_number,
-          item.user_name,
-          item.user_member_number,
-          item.user_email,
-          item.user_phone_number,
-          item.weight,
-          item.weight_before,
-          item.weight_after,
-          formatRupiah(item.gold_history_price_sell),
-          formatRupiah(item.total_price),
-          item.status,
-          item.user_seller_unique_code,
-        ]);
+        const newRow = worksheet.addRow(rowValues);
 
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 7: // Berat
+            case 8: // Berat Sebelum
+            case 9: // Berat Sesudah
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 10: // Harga /gr
+            case 11: // Total Harga
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            case 12: // Status
+            case 13: // Kode Seller
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if ([7, 8, 9, 10, 11].includes(colNumber)) {
-            cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          } else {
-            cell.alignment = { horizontal: 'left', vertical: 'middle' };
-          }
         });
       });
 
-      // ===== TOTAL ROW =====
+      // =============================
+      // Total Row
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
+
       const totalRow = worksheet.addRow([
         'TOTAL',
         '',
@@ -285,57 +322,72 @@ const GoldSellTransactionDetailsTable = () => {
         '',
         '',
         '',
-        totalWeight,
-        totalWeightBefore,
-        totalWeightAfter,
+        { formula: `SUM(G${startRow}:G${endRow})` },
+        { formula: `SUM(H${startRow}:H${endRow})` },
+        { formula: `SUM(I${startRow}:I${endRow})` },
         '',
-        formatRupiah(totalPrice),
+        { formula: `SUM(K${startRow}:K${endRow})` },
         '',
         '',
       ]);
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        cell.font = { bold: true };
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:F${totalRowNumber}`);
 
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (colNumber >= 7 && colNumber <= 11) horizontal = 'right';
+        else if (colNumber >= 12) horizontal = 'center';
+
+        // NumFmt untuk total
+        if (colNumber >= 7 && colNumber <= 9) cell.numFmt = weightFormat;
+        if (colNumber === 11) cell.numFmt = currencyFormat;
+
+        cell.font = { bold: true };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' },
+          fgColor: { argb: 'FFFFF59D' },
         };
-
+        cell.alignment = { horizontal, vertical: 'middle' };
         cell.border = {
-          top: { style: 'medium' },
+          top: { style: 'thin' },
           left: { style: 'thin' },
-          bottom: { style: 'medium' },
+          bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        if ([7, 8, 9, 10, 11].includes(colNumber)) {
-          cell.alignment = { horizontal: 'right' };
-        } else {
-          cell.alignment = { horizontal: 'left' };
-        }
       });
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+      // =============================
+      // Freeze, Filter & Auto Width
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLength) maxLength = val.length;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        // Hanya kalkulasi lebar dari baris 8 (Header) ke bawah
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
+        column.width = Math.min(maxLength + 4, 40);
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      // ===== EXPORT FILE =====
+      // =============================
+      // Save File
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
-
-      const fileName = `laporan_gold_sell_${dayjs().format(
+      const fileName = `laporan_penjualan_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
 
@@ -354,83 +406,125 @@ const GoldSellTransactionDetailsTable = () => {
         dataIndex: 'transaction_date',
         key: 'transaction_date',
         sorter: true,
-        render: (val) => moment(val).format('DD MMMM YYYY HH:mm'),
+        render: (val) => (val ? moment(val).format('DD MMMM YYYY HH:mm') : '-'),
       },
       {
         title: 'Nomor Transaksi',
         dataIndex: 'gold_sell_number',
         key: 'gold_sell_number',
         sorter: true,
+        render: (val) => val || '-',
       },
       {
         title: 'Nama User',
         dataIndex: 'user_name',
         key: 'user_name',
         sorter: true,
+        render: (val) => val || '-',
       },
       {
         title: 'Nomor Member',
         dataIndex: 'user_member_number',
         key: 'user_member_number',
         sorter: true,
+        render: (val) => val || '-',
       },
       {
         title: 'Email',
         dataIndex: 'user_email',
         key: 'user_email',
+        render: (val) => val || '-',
       },
       {
         title: 'No. HP',
         dataIndex: 'user_phone_number',
         key: 'user_phone_number',
+        render: (val) => val || '-',
       },
+
+      // =============================
+      // Kolom Gram (Rata Kanan)
+      // =============================
       {
         title: 'Berat (gram)',
         dataIndex: 'weight',
         key: 'weight',
         sorter: true,
-        render: (val) => formatDecimal(val),
+        align: 'right',
+        render: (val) =>
+          val !== null && val !== undefined
+            ? `${formatDecimal(Number(val))} Gram`
+            : '-',
       },
       {
         title: 'Berat Sebelum (gram)',
         dataIndex: 'weight_before',
         key: 'weight_before',
         width: 150,
+        align: 'right',
+        render: (val) =>
+          val !== null && val !== undefined
+            ? `${formatDecimal(Number(val))} Gram`
+            : '-',
       },
       {
         title: 'Berat Sesudah (gram)',
         dataIndex: 'weight_after',
         key: 'weight_after',
         width: 150,
+        align: 'right',
+        render: (val) =>
+          val !== null && val !== undefined
+            ? `${formatDecimal(Number(val))} Gram`
+            : '-',
       },
+
+      // =============================
+      // Kolom Nominal Uang (Rata Kanan)
+      // =============================
       {
         title: 'Harga Emas /gr',
         dataIndex: 'gold_history_price_sell',
         key: 'gold_history_price_sell',
         sorter: true,
-        render: (val) => `Rp${formatDecimal(val)}`,
+        align: 'right',
+        render: (val) =>
+          val !== null && val !== undefined
+            ? `Rp${formatDecimal(Number(val))}`
+            : '-',
       },
       {
         title: 'Total Harga',
         dataIndex: 'total_price',
         key: 'total_price',
         sorter: true,
-        render: (val) => `Rp${formatDecimal(val)}`,
+        align: 'right',
+        render: (val) =>
+          val !== null && val !== undefined
+            ? `Rp${formatDecimal(Number(val))}`
+            : '-',
       },
+
+      // =============================
+      // Status & Kode (Rata Tengah)
+      // =============================
       {
         title: 'Status',
         dataIndex: 'status',
         key: 'status',
+        align: 'center',
+        render: (val) => val || '-',
       },
       {
         title: 'Kode Seller',
         dataIndex: 'user_seller_unique_code',
         key: 'user_seller_unique_code',
+        align: 'center',
+        render: (val) => val || '-',
       },
     ],
     []
   );
-
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -459,7 +553,7 @@ const GoldSellTransactionDetailsTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
