@@ -58,6 +58,7 @@ const GoldInvestmentUserTable: React.FC = () => {
       dataIndex: 'jumlah_transaksi',
       key: 'jumlah_transaksi',
       width: 150,
+      align: 'right',
       render: (val) => formatDecimal(val),
     },
     {
@@ -65,6 +66,8 @@ const GoldInvestmentUserTable: React.FC = () => {
       dataIndex: 'total_invested_weight',
       key: 'total_invested_weight',
       width: 200,
+      align: 'right',
+
       render: (val) => `${formatDecimal(val)} Gram`,
     },
     {
@@ -72,6 +75,7 @@ const GoldInvestmentUserTable: React.FC = () => {
       dataIndex: 'total_invested_amount',
       key: 'total_invested_amount',
       width: 220,
+      align: 'right',
       render: (val) => `Rp${formatDecimal(val)}`,
     },
     {
@@ -79,6 +83,7 @@ const GoldInvestmentUserTable: React.FC = () => {
       dataIndex: 'total_return_weight',
       key: 'total_return_weight',
       width: 200,
+      align: 'right',
       render: (val) => `${formatDecimal(val)} Gram`,
     },
     {
@@ -86,6 +91,7 @@ const GoldInvestmentUserTable: React.FC = () => {
       dataIndex: 'total_active_weight',
       key: 'total_active_weight',
       width: 200,
+      align: 'right',
       render: (val) => `${formatDecimal(val)} Gram`,
     },
   ];
@@ -167,42 +173,57 @@ const GoldInvestmentUserTable: React.FC = () => {
       const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
       const rows = await fetchAllData(url, params);
 
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
-
-      // ======================
-      // METADATA HEADER
-      // ======================
-      worksheet.mergeCells('A1:G1');
-      worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS - PER INVESTOR';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-
-      worksheet.mergeCells('A2:G2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-
-      worksheet.mergeCells('A3:G3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-
-      worksheet.mergeCells('A4:G4');
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A5:G5');
-        worksheet.getCell('A5').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-          'DD-MM-YYYY'
-        )}`;
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
       }
 
-      worksheet.addRow([]); // Baris kosong pembatas
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
 
-      // ======================
-      // TABLE HEADER
-      // ======================
-      const headers = [
+      const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
+      const totalColumns = 7;
+
+      // =============================
+      // TITLE & METADATA
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN INVESTASI EMAS - PER INVESTOR';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
+
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
+
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
+
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
+
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = [
         'Nomor Anggota',
         'Nama Investor',
         'Jumlah Transaksi',
@@ -212,11 +233,16 @@ const GoldInvestmentUserTable: React.FC = () => {
         'Total Berat Aktif (Gram)',
       ];
 
-      const headerRowIndex = worksheet.addRow(headers).number;
-      const headerRow = worksheet.getRow(headerRowIndex);
+      const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
@@ -224,142 +250,157 @@ const GoldInvestmentUserTable: React.FC = () => {
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // ======================
+      // Native Excel Formats
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
+      const numberFormat = '#,##0';
+
+      // =============================
       // DATA ROWS
-      // ======================
-      rows.forEach((item) => {
-        const row = worksheet.addRow([
+      // =============================
+      rows.forEach((item, index) => {
+        const rowValues = [
           item.investor_member_number || '-',
           item.investor_name || '-',
-          item.jumlah_transaksi ?? 0,
-          item.total_invested_weight ?? 0,
-          item.total_invested_amount ?? 0,
-          item.total_return_weight ?? 0,
-          item.total_active_weight ?? 0,
-        ]);
+          Number(item.jumlah_transaksi || 0),
+          Number(item.total_invested_weight || 0),
+          Number(item.total_invested_amount || 0),
+          Number(item.total_return_weight || 0),
+          Number(item.total_active_weight || 0),
+        ];
 
-        row.eachCell((cell, colNumber) => {
+        const newRow = worksheet.addRow(rowValues);
+
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // Nomor Anggota
+              horizontal = 'center';
+              break;
+
+            case 3: // Jumlah Transaksi
+              horizontal = 'right';
+              cell.numFmt = numberFormat;
+              break;
+
+            case 4: // Total Berat Investasi
+            case 6: // Total Berat Return
+            case 7: // Total Berat Aktif
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 5: // Total Nominal Investasi
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            default: // Nama Investor
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          // Tipe Kolom Angka (Index 3 ke atas)
-          if (colNumber >= 3) {
-            cell.alignment = { horizontal: 'right', vertical: 'middle' };
-
-            // Terapkan Excel Number Format agar angka asli tetap bisa dihitung di Excel
-            if (colNumber === 5) {
-              cell.numFmt = '"Rp"#,##0'; // Format Rupiah
-            } else if (colNumber === 3) {
-              cell.numFmt = '#,##0'; // Format Integer
-            } else {
-              cell.numFmt = '#,##0.00" Gram"'; // Format Berat/Desimal
-            }
-          } else {
-            cell.alignment = { horizontal: 'left', vertical: 'middle' };
-          }
         });
       });
 
-      // ======================
+      // =============================
       // TOTAL ROW
-      // ======================
-      const totalJumlahTransaksi = rows.reduce(
-        (sum, item) => sum + (item.jumlah_transaksi ?? 0),
-        0
-      );
-      const totalBeratInvestasi = rows.reduce(
-        (sum, item) => sum + (item.total_invested_weight ?? 0),
-        0
-      );
-      const totalNominalInvestasi = rows.reduce(
-        (sum, item) => sum + (item.total_invested_amount ?? 0),
-        0
-      );
-      const totalBeratReturn = rows.reduce(
-        (sum, item) => sum + (item.total_return_weight ?? 0),
-        0
-      );
-      const totalBeratAktif = rows.reduce(
-        (sum, item) => sum + (item.total_active_weight ?? 0),
-        0
-      );
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
       const totalRow = worksheet.addRow([
         'TOTAL',
         '',
-        totalJumlahTransaksi,
-        totalBeratInvestasi,
-        totalNominalInvestasi,
-        totalBeratReturn,
-        totalBeratAktif,
+        { formula: `SUM(C${startRow}:C${endRow})` },
+        { formula: `SUM(D${startRow}:D${endRow})` },
+        { formula: `SUM(E${startRow}:E${endRow})` },
+        { formula: `SUM(F${startRow}:F${endRow})` },
+        { formula: `SUM(G${startRow}:G${endRow})` },
       ]);
 
-      // Merge sel 'TOTAL' untuk Kolom A & B
-      const totalRowIndex = totalRow.number;
-      worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:B${totalRowNumber}`);
 
       totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) {
+          horizontal = 'center';
+        } else if (colNumber >= 3 && colNumber <= 7) {
+          horizontal = 'right';
+        }
+
+        // Format NumFmt pada Total
+        if (colNumber === 3) cell.numFmt = numberFormat;
+        if (colNumber === 4 || colNumber === 6 || colNumber === 7) {
+          cell.numFmt = weightFormat;
+        }
+        if (colNumber === 5) cell.numFmt = currencyFormat;
+
         cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' },
+        };
+        cell.alignment = { horizontal, vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF2F2F2' },
-        };
-
-        if (colNumber >= 3) {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          if (colNumber === 5) {
-            cell.numFmt = '"Rp"#,##0';
-          } else if (colNumber === 3) {
-            cell.numFmt = '#,##0';
-          } else {
-            cell.numFmt = '#,##0.00" Gram"';
-          }
-        } else {
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        }
       });
 
-      // ======================
-      // AUTO COLUMN WIDTH
-      // ======================
-      worksheet.columns.forEach((col, colIdx) => {
-        if (!col) return;
-        let maxLength = headers[colIdx] ? headers[colIdx].length : 12;
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-        // Hanya hitung dari baris header ke bawah agar tidak terpengaruh judul utama
-        for (let r = headerRowIndex; r <= totalRowIndex; r++) {
-          const cellValue = worksheet.getRow(r).getCell(colIdx + 1).value;
-          if (cellValue) {
-            const strLen = cellValue.toString().length;
-            if (strLen > maxLength) maxLength = strLen;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        // Kalkulasi lebar hanya berdasarkan isi data & header tabel (Baris 8 ke bawah)
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
           }
-        }
+        });
 
-        col.width = Math.min(Math.max(maxLength + 4, 12), 40);
+        column.width = Math.min(maxLength + 4, 35);
       });
 
-      // ======================
+      // =============================
       // SAVE FILE
-      // ======================
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
+
       const fileName = `laporan_investasi_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
@@ -396,7 +437,7 @@ const GoldInvestmentUserTable: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

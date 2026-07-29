@@ -14,6 +14,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 import { IUser } from '@/@core/@types/interface';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -60,7 +61,7 @@ const GadaiEmasRekapTablePage = () => {
     return () => clearTimeout(delay);
   }, [searchText]);
 
-  // Table Columns
+  // Table Columns (dengan align: 'right' pada kolom numerik/nominal)
   const columns: ColumnsType<IGoldLoanSummary> = [
     {
       title: 'User ID',
@@ -80,28 +81,32 @@ const GadaiEmasRekapTablePage = () => {
       dataIndex: 'loan_total',
       key: 'loan_total',
       width: 150,
-      render: (v) => v.toLocaleString('id-ID'),
+      align: 'right',
+      render: (v) => (v ? v.toLocaleString('id-ID') : 0),
     },
     {
       title: 'Total Gadai (Rp)',
       dataIndex: 'loan_amt_total',
       key: 'loan_amt_total',
       width: 180,
-      render: (v) => `Rp${v.toLocaleString('id-ID')}`,
+      align: 'right',
+      render: (v) => (v ? `Rp${v.toLocaleString('id-ID')}` : 'Rp0'),
     },
     {
       title: 'Total Biaya (Rp)',
       dataIndex: 'loan_fee_total',
       key: 'loan_fee_total',
       width: 180,
-      render: (v) => `Rp${v.toLocaleString('id-ID')}`,
+      align: 'right',
+      render: (v) => (v ? `Rp${v.toLocaleString('id-ID')}` : 'Rp0'),
     },
     {
       title: 'Jatuh Tempo Bulan Ini (Rp)',
       dataIndex: 'loan_due_date_this_month',
       key: 'loan_due_date_this_month',
       width: 220,
-      render: (v) => `Rp${v.toLocaleString('id-ID')}`,
+      align: 'right',
+      render: (v) => (v ? `Rp${v.toLocaleString('id-ID')}` : 'Rp0'),
       fixed: 'right',
     },
   ];
@@ -166,180 +171,221 @@ const GadaiEmasRekapTablePage = () => {
       const rows = await fetchAllData();
       if (!rows || rows.length === 0) return;
 
-      const mapped = rows.map((r: IGoldLoanSummary) => ({
-        'User ID': r.user_id,
-        User: r.user_name || '-',
-        'Total Transaksi': Number(r.loan_total || 0),
-        'Total Gadai (Rp)': Number(r.loan_amt_total || 0),
-        'Total Biaya (Rp)': Number(r.loan_fee_total || 0),
-        'Jatuh Tempo Bulan Ini (Rp)': Number(r.loan_due_date_this_month || 0),
-      }));
-
       const workbook = new ExcelJS.Workbook();
-      const ws = workbook.addWorksheet('Rekap Gadai Emas');
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
 
-      // ===== TITLE =====
-      ws.mergeCells('A1:F1');
-      const title = ws.getCell('A1');
-      title.value = 'REKAP GADAI EMAS';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left' };
+      const worksheet = workbook.addWorksheet('Rekap Gadai Emas');
+      const totalColumns = 6;
 
-      // ===== DIBUAT OLEH =====
-      ws.mergeCells('A2:F2');
-      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      // =============================
+      // TITLE & METADATA
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'REKAP GADAI EMAS';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== TANGGAL EXPORT =====
-      ws.mergeCells('A3:F3');
-      ws.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
 
-      // ===== TOTAL DATA =====
-      ws.mergeCells('A4:F4');
-      ws.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== PERIODE =====
-      ws.mergeCells('A5:F5');
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      const periode =
+      const periodeText =
         params?.start_date && params?.end_date
-          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
               params.end_date
-            ).format('DD-MM-YYYY')}`
+            ).format('DD MMMM YYYY')}`
           : '-';
 
-      ws.getCell('A5').value = `Periode : ${periode}`;
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      ws.addRow([]);
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      // ===== HEADER =====
-      const headerKeys = Object.keys(mapped[0]);
-      const headerRow = ws.addRow(headerKeys);
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = [
+        'User ID',
+        'User',
+        'Total Transaksi',
+        'Total Gadai (Rp)',
+        'Total Biaya (Rp)',
+        'Jatuh Tempo Bulan Ini (Rp)',
+      ];
+
+      const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
-        };
       });
 
-      // ===== DATA =====
-      mapped.forEach((row) => {
-        const values = headerKeys.map((k) => row[k as keyof typeof row]);
-        const newRow = ws.addRow(values);
+      // Native Excel Formats
+      const integerFormat = '#,##0';
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+
+      // =============================
+      // DATA ROWS
+      // =============================
+      rows.forEach((item: IGoldLoanSummary, index: number) => {
+        const rowValues = [
+          item.user_id || '-',
+          item.user_name || '-',
+          Number(item.loan_total || 0),
+          Number(item.loan_amt_total || 0),
+          Number(item.loan_fee_total || 0),
+          Number(item.loan_due_date_this_month || 0),
+        ];
+
+        const newRow = worksheet.addRow(rowValues);
+
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
 
         newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
-          const isNumeric =
-            header.includes('(Rp)') || header.includes('Transaksi');
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
-          };
+          switch (colNumber) {
+            case 1: // User ID
+              horizontal = 'center';
+              break;
 
+            case 3: // Total Transaksi
+              horizontal = 'right';
+              cell.numFmt = integerFormat;
+              break;
+
+            case 4: // Total Gadai (Rp)
+            case 5: // Total Biaya (Rp)
+            case 6: // Jatuh Tempo Bulan Ini (Rp)
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            default: // User Name
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
-          }
         });
       });
 
-      // ===== TOTAL =====
-      const totals = {
-        'Total Transaksi': mapped.reduce((s, r) => s + r['Total Transaksi'], 0),
-        'Total Gadai (Rp)': mapped.reduce(
-          (s, r) => s + r['Total Gadai (Rp)'],
-          0
-        ),
-        'Total Biaya (Rp)': mapped.reduce(
-          (s, r) => s + r['Total Biaya (Rp)'],
-          0
-        ),
-        'Jatuh Tempo Bulan Ini (Rp)': mapped.reduce(
-          (s, r) => s + r['Jatuh Tempo Bulan Ini (Rp)'],
-          0
-        ),
-      };
+      // =============================
+      // TOTAL ROW
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
-      const totalRow = ws.addRow([
+      const totalRow = worksheet.addRow([
         'TOTAL',
         '',
-        new Intl.NumberFormat('id-ID').format(totals['Total Transaksi']),
-        new Intl.NumberFormat('id-ID').format(totals['Total Gadai (Rp)']),
-        new Intl.NumberFormat('id-ID').format(totals['Total Biaya (Rp)']),
-        new Intl.NumberFormat('id-ID').format(
-          totals['Jatuh Tempo Bulan Ini (Rp)']
-        ),
+        { formula: `SUM(C${startRow}:C${endRow})` },
+        { formula: `SUM(D${startRow}:D${endRow})` },
+        { formula: `SUM(E${startRow}:E${endRow})` },
+        { formula: `SUM(F${startRow}:F${endRow})` },
       ]);
 
-      totalRow.eachCell((cell, colNumber) => {
-        const header = headerKeys[colNumber - 1];
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:B${totalRowNumber}`);
 
-        const isNumeric =
-          header?.includes('(Rp)') || header?.includes('Transaksi');
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) {
+          horizontal = 'center';
+        } else if (colNumber >= 3 && colNumber <= 6) {
+          horizontal = 'right';
+        }
+
+        // Format NumFmt pada Total
+        if (colNumber === 3) cell.numFmt = integerFormat;
+        if (colNumber >= 4 && colNumber <= 6) cell.numFmt = currencyFormat;
 
         cell.font = { bold: true };
-
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'right' : 'left',
-        };
-
-        cell.border = {
-          top: { style: 'medium' },
-          bottom: { style: 'medium' },
-          left: { style: 'thin' },
-          right: { style: 'thin' },
-        };
-
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: { argb: 'FFFFF59D' },
+        };
+        cell.alignment = { horizontal, vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      // ===== AUTO WIDTH =====
-      ws.columns.forEach((col: any) => {
-        let max = 10;
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-        col.eachCell?.({ includeEmpty: true }, (cell: any) => {
-          const v = cell.value ? cell.value.toString().length : 10;
-          if (v > max) max = v;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        col.width = Math.min(max + 2, 40);
+        column.width = Math.min(maxLength + 4, 35);
       });
 
-      // ===== FREEZE HEADER =====
-      ws.views = [{ state: 'frozen', ySplit: 7 }];
-
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const filename = `rekap_gadai_emas_${dayjs().format(
+      const fileName = `rekap_gadai_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
 
-      saveAs(new Blob([buffer]), filename);
+      saveAs(new Blob([buffer]), fileName);
     } catch (e) {
       console.error(e);
     } finally {
@@ -379,7 +425,7 @@ const GadaiEmasRekapTablePage = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

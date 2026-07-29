@@ -132,121 +132,55 @@ const GadaiEmasTablePage = () => {
         return;
       }
 
-      const dataToExport = rows.map((item: IGoldLoan) => ({
-        'No. Gadai': item.loan_ref_number || '-',
-        'Tanggal Gadai': moment(item.loan_date_time).format(
-          'DD MMMM YYYY HH:mm'
-        ),
-        User: item.user_name || '-',
-        'Berat Emas (Gram)': Number(item.loan_gold_wgt || 0),
-        'Harga Jual Emas (Rp)': Number(item.loan_gold_price_sell || 0),
-        'Jumlah Gadai (Gram)': Number(item.loan_amt || 0),
-        'Biaya Admin (Rp)': Number(item.loan_cost_admin || 0),
-        'Biaya Transfer (Rp)': Number(item.loan_cost_transfer || 0),
-        'Total Nilai Aktif (Rp)': Number(item.loan_total_amt || 0),
-        'Jumlah Transfer (Rp)': Number(item.loan_transfer_amount || 0),
-        'Tanggal Jatuh Tempo': moment(item.loan_due_date).format(
-          'DD MMMM YYYY'
-        ),
-        Status: item.loan_status_name || '-',
-        Catatan: item.loan_note || '-',
-      }));
-
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Gadai Emas');
+      const totalColumns = 13;
 
-      // ===== TITLE =====
-      worksheet.mergeCells('A1:M1');
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN GADAI EMAS';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left', vertical: 'middle' };
+      // =============================
+      // TITLE & METADATA
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN GADAI EMAS';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells('A2:M2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells('A3:M3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells('A4:M4');
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      // ===== PERIODE =====
-      worksheet.mergeCells('A5:M5');
-
-      const periode =
+      const periodeText =
         params?.start_date && params?.end_date
-          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
               params.end_date
-            ).format('DD-MM-YYYY')}`
+            ).format('DD MMMM YYYY')}`
           : '-';
 
-      worksheet.getCell('A5').value = `Periode: ${periode}`;
-      worksheet.getCell('A5').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.addRow([]);
-
-      // ===== HEADER =====
-      const headerKeys = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(headerKeys);
-
-      headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
-        };
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
       });
 
-      // ===== DATA ROW =====
-      dataToExport.forEach((row) => {
-        const rowValues = headerKeys.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      worksheet.addRow([]); // Baris kosong (Row 7)
 
-        newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
-
-          const isNumeric =
-            header.includes('(Rp)') || header.includes('(Gram)');
-
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
-          };
-
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
-          }
-        });
-      });
-
-      // ===== HITUNG TOTAL =====
-      const totalFields: (keyof (typeof dataToExport)[number])[] = [
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = [
+        'No. Gadai',
+        'Tanggal Gadai',
+        'User',
         'Berat Emas (Gram)',
         'Harga Jual Emas (Rp)',
         'Jumlah Gadai (Gram)',
@@ -254,72 +188,197 @@ const GadaiEmasTablePage = () => {
         'Biaya Transfer (Rp)',
         'Total Nilai Aktif (Rp)',
         'Jumlah Transfer (Rp)',
+        'Tanggal Jatuh Tempo',
+        'Status',
+        'Catatan',
       ];
 
-      const totals: Record<string, number> = {};
+      const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
-      totalFields.forEach((field) => {
-        totals[field] = dataToExport.reduce(
-          (sum, row) => sum + ((row[field] as number) || 0),
-          0
-        );
-      });
-
-      const totalRowValues = headerKeys.map((key) => {
-        if (key === 'No. Gadai') return 'TOTAL';
-
-        if (totalFields.includes(key as any)) {
-          return new Intl.NumberFormat('id-ID').format(totals[key]);
-        }
-
-        return '';
-      });
-
-      const totalRow = worksheet.addRow(totalRowValues);
-
-      totalRow.eachCell((cell, colNumber) => {
-        const header: any = headerKeys[colNumber - 1];
-        const isNumeric = totalFields.includes(header);
-
-        cell.font = { bold: true };
-
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'right' : 'left',
-        };
-
-        cell.border = {
-          top: { style: 'medium' },
-          left: { style: 'thin' },
-          bottom: { style: 'medium' },
-          right: { style: 'thin' },
-        };
-
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: { argb: 'FF0057B7' },
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col) => {
-        if (!col) return;
+      // Native Excel Formats
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
 
-        let maxLength = 0;
+      // =============================
+      // DATA ROWS
+      // =============================
+      rows.forEach((item: IGoldLoan, index: number) => {
+        const rowValues = [
+          item.loan_ref_number || '-',
+          item.loan_date_time
+            ? moment(item.loan_date_time).format('DD MMM YYYY HH:mm')
+            : '-',
+          item.user_name || '-',
+          Number(item.loan_gold_wgt || 0),
+          Number(item.loan_gold_price_sell || 0),
+          Number(item.loan_amt || 0),
+          Number(item.loan_cost_admin || 0),
+          Number(item.loan_cost_transfer || 0),
+          Number(item.loan_total_amt || 0),
+          Number(item.loan_transfer_amount || 0),
+          item.loan_due_date
+            ? moment(item.loan_due_date).format('DD MMM YYYY')
+            : '-',
+          item.loan_status_name || '-',
+          item.loan_note || '-',
+        ];
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+        const newRow = worksheet.addRow(rowValues);
+
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No. Gadai
+            case 2: // Tanggal Gadai
+            case 11: // Tanggal Jatuh Tempo
+            case 12: // Status
+              horizontal = 'center';
+              break;
+
+            case 4: // Berat Emas (Gram)
+            case 6: // Jumlah Gadai (Gram)
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 5: // Harga Jual Emas (Rp)
+            case 7: // Biaya Admin (Rp)
+            case 8: // Biaya Transfer (Rp)
+            case 9: // Total Nilai Aktif (Rp)
+            case 10: // Jumlah Transfer (Rp)
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            default: // User, Catatan
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
         });
-
-        col.width = Math.min(maxLength + 2, 40);
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      // =============================
+      // TOTAL ROW
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
-      // ===== SAVE FILE =====
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        { formula: `SUM(D${startRow}:D${endRow})` },
+        { formula: `SUM(E${startRow}:E${endRow})` },
+        { formula: `SUM(F${startRow}:F${endRow})` },
+        { formula: `SUM(G${startRow}:G${endRow})` },
+        { formula: `SUM(H${startRow}:H${endRow})` },
+        { formula: `SUM(I${startRow}:I${endRow})` },
+        { formula: `SUM(J${startRow}:J${endRow})` },
+        '',
+        '',
+        '',
+      ]);
+
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:C${totalRowNumber}`);
+
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (colNumber >= 4 && colNumber <= 10) {
+          horizontal = 'right';
+        }
+
+        // Format NumFmt pada Total
+        if (colNumber === 4 || colNumber === 6) cell.numFmt = weightFormat;
+        if (
+          colNumber === 5 ||
+          colNumber === 7 ||
+          colNumber === 8 ||
+          colNumber === 9 ||
+          colNumber === 10
+        ) {
+          cell.numFmt = currencyFormat;
+        }
+
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' },
+        };
+        cell.alignment = { horizontal, vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
+
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        // Kalkulasi lebar hanya berdasarkan isi data & header tabel (Baris 8 ke bawah)
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
+        });
+
+        column.width = Math.min(maxLength + 4, 35);
+      });
+
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
       const fileName = `laporan_gadai_emas_${dayjs().format(
@@ -450,6 +509,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_gold_wgt',
       key: 'loan_gold_wgt',
       width: 130,
+      align: 'right',
       render: (_, record) =>
         record.loan_gold_wgt
           ? `${formatDecimal(record.loan_gold_wgt)} Gram`
@@ -460,6 +520,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_gold_price_sell',
       key: 'loan_gold_price_sell',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.loan_gold_price_sell
           ? `Rp${formatDecimal(record.loan_gold_price_sell)}`
@@ -470,6 +531,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_amt',
       key: 'loan_amt',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.loan_amt ? `Rp${formatDecimal(record.loan_amt)}` : '-',
     },
@@ -478,6 +540,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_cost_admin',
       key: 'loan_cost_admin',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.loan_cost_admin
           ? `Rp${formatDecimal(record.loan_cost_admin)}`
@@ -488,6 +551,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_cost_transfer',
       key: 'loan_cost_transfer',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.loan_cost_transfer
           ? `Rp${formatDecimal(record.loan_cost_transfer)}`
@@ -498,6 +562,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_total_amt',
       key: 'loan_total_amt',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.loan_total_amt
           ? `Rp${formatDecimal(record.loan_total_amt)}`
@@ -508,6 +573,7 @@ const GadaiEmasTablePage = () => {
       dataIndex: 'loan_transfer_amount',
       key: 'loan_transfer_amount',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.loan_transfer_amount
           ? `Rp${formatDecimal(record.loan_transfer_amount)}`
