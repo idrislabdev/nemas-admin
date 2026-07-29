@@ -11,7 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { IReportWalletTopupSummary, IUser } from '@/@core/@types/interface';
+import { IReportWalletTopupSummary } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -69,6 +69,7 @@ const WalletTopupSummaryTable = () => {
       dataIndex: 'jumlah_transaksi',
       key: 'jumlah_transaksi',
       width: 180,
+      align: 'right',
       render: (val) => val?.toLocaleString('id-ID'),
     },
     {
@@ -76,6 +77,7 @@ const WalletTopupSummaryTable = () => {
       dataIndex: 'total_topup',
       key: 'total_topup',
       width: 180,
+      align: 'right',
       render: (val) =>
         val ? `Rp${formatDecimal(parseFloat(val.toString()))}` : '-',
     },
@@ -84,6 +86,7 @@ const WalletTopupSummaryTable = () => {
       dataIndex: 'total_diterima',
       key: 'total_diterima',
       width: 180,
+      align: 'right',
       render: (val) =>
         val ? `Rp${formatDecimal(parseFloat(val.toString()))}` : '-',
     },
@@ -139,106 +142,229 @@ const WalletTopupSummaryTable = () => {
   };
 
   // 📦 Ekspor ke Excel
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const exportParams = {
+        ...params,
+        offset: 0,
+        limit: 10,
+      };
 
-      const param = { ...params, offset: 0, limit: 10 };
-      const rows = await fetchAllData(url, param);
+      const rows = await fetchAllData(url, exportParams);
 
-      if (rows.length === 0) {
-        setIsModalLoading(false);
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
         return;
       }
 
-      const dataToExport = rows.map((item: IReportWalletTopupSummary) => ({
-        'Nomor Member': item.user_member_number,
-        'Nama User': item.user_name,
-        'Jumlah Transaksi': item.jumlah_transaksi,
-        'Total Topup': parseFloat(item.total_topup.toString()),
-        'Total Diterima': parseFloat(item.total_diterima.toString()),
-      }));
+      const dataToExport = rows.map(
+        (item: IReportWalletTopupSummary, index: number) => ({
+          No: index + 1,
+          'Nomor Member': item.user_member_number,
+          'Nama User': item.user_name,
+          'Jumlah Transaksi': formatDecimal(Number(item.jumlah_transaksi || 0)),
+          'Total Topup': `Rp${formatDecimal(Number(item.total_topup || 0))}`,
+          'Total Diterima': `Rp${formatDecimal(
+            Number(item.total_diterima || 0)
+          )}`,
+        })
+      );
 
       const workbook = new ExcelJS.Workbook();
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Summary Saldo Wallet');
 
-      // === Header Utama ===
-      worksheet.mergeCells('A1:E1');
-      worksheet.getCell('A1').value = 'LAPORAN SUMMARY SALDO WALLET';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
+      const exportedBy = getExportedBy();
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
-      // === Dibuat Oleh ===
-      worksheet.mergeCells('A2:E2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      // === Tanggal Export ===
-      worksheet.mergeCells('A3:E3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      // =============================
+      // Title
+      // =============================
 
-      // === Periode ===
-      worksheet.mergeCells('A4:E4');
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'LAPORAN SUMMARY TOPUP WALLET';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      // =============================
+      // Export Info
+      // =============================
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
+
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
+
       if (params.start_date && params.end_date) {
         periodeText = `${dayjs(params.start_date).format(
-          'DD-MM-YYYY'
-        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+          'DD MMMM YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
       }
 
-      worksheet.getCell('A4').value = `Periode: ${periodeText}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
-      // === Header Tabel ===
+      // =============================
+      // Header
+      // =============================
+
       const header = Object.keys(dataToExport[0]);
+
       const headerRow = worksheet.addRow(header);
 
+      headerRow.height = 24;
+
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // === Isi Data ===
-      dataToExport.forEach((row) => {
-        const values = header.map((key) => row[key as keyof typeof row] ?? '');
+      // =============================
+      // Freeze Header
+      // =============================
+
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
         const newRow = worksheet.addRow(values);
 
-        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          const isNumeric = colNumber >= 3; // kolom 3,4,5 adalah angka
+        // Zebra Row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No
+              horizontal = 'center';
+              break;
+
+            case 4: // Jumlah Transaksi
+            case 5: // Total Topup
+            case 6: // Total Diterima
+              horizontal = 'right';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
 
           cell.alignment = {
-            horizontal: isNumeric ? 'right' : 'left',
+            horizontal,
             vertical: 'middle',
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            // kolom jumlah transaksi tanpa Rp
-            if (colNumber === 3) {
-              cell.value = `${formatDecimal(cell.value)}`;
-            } else {
-              // kolom nominal pakai Rp
-              cell.value = `Rp${formatDecimal(cell.value)}`;
-            }
-          }
 
           cell.border = {
             top: { style: 'thin' },
@@ -249,7 +375,10 @@ const WalletTopupSummaryTable = () => {
         });
       });
 
-      // === Baris Total ===
+      // =============================
+      // Total
+      // =============================
+
       const totalTransaksi = rows.reduce(
         (acc, cur) => acc + Number(cur.jumlah_transaksi || 0),
         0
@@ -268,53 +397,82 @@ const WalletTopupSummaryTable = () => {
       const totalRow = worksheet.addRow([
         'TOTAL',
         '',
+        '',
         formatDecimal(totalTransaksi),
         `Rp${formatDecimal(totalTopup)}`,
         `Rp${formatDecimal(totalDiterima)}`,
       ]);
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        cell.font = { bold: true };
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        switch (colNumber) {
+          case 1:
+            horizontal = 'center';
+            break;
+
+          case 4:
+          case 5:
+          case 6:
+            horizontal = 'right';
+            break;
+
+          default:
+            horizontal = 'left';
+        }
+
+        cell.font = {
+          bold: true,
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
+        };
+
         cell.alignment = {
-          horizontal: colNumber >= 3 ? 'right' : 'left',
+          horizontal,
           vertical: 'middle',
         };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' }, // warna kuning lembut
-        };
       });
 
-      // === Auto Width ===
-      worksheet.columns.forEach((col) => {
-        if (!col) return;
-        let maxLength = 0;
+      // =============================
+      // Auto Width
+      // =============================
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 50);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // === Freeze Header ===
-      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+      // =============================
+      // Export
+      // =============================
 
-      // === Export File ===
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_ringkasan_topup_wallet_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
 
-      saveAs(new Blob([buffer]), fileName);
+      saveAs(
+        new Blob([buffer]),
+        `laporan_ringkasan_topup_wallet_${dayjs().format(
+          'YYYYMMDD_HHmmss'
+        )}.xlsx`
+      );
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -354,7 +512,7 @@ const WalletTopupSummaryTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

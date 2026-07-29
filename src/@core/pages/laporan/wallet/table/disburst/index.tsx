@@ -11,7 +11,6 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -100,6 +99,7 @@ const WalletDisburstTable = () => {
       dataIndex: 'disburst_payment_bank_code',
       key: 'disburst_payment_bank_code',
       width: 100,
+      align: 'center',
     },
     {
       title: 'Nomor Rekening',
@@ -118,6 +118,7 @@ const WalletDisburstTable = () => {
       dataIndex: 'disburst_amount',
       key: 'disburst_amount',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.disburst_amount
           ? `Rp${formatDecimal(parseFloat(record.disburst_amount.toString()))}`
@@ -128,6 +129,7 @@ const WalletDisburstTable = () => {
       dataIndex: 'disburst_admin',
       key: 'disburst_admin',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.disburst_admin
           ? `Rp${formatDecimal(parseFloat(record.disburst_admin.toString()))}`
@@ -138,6 +140,7 @@ const WalletDisburstTable = () => {
       dataIndex: 'disburst_total_amount',
       key: 'disburst_total_amount',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.disburst_total_amount
           ? `Rp${formatDecimal(
@@ -150,6 +153,7 @@ const WalletDisburstTable = () => {
       dataIndex: 'disburst_status',
       key: 'disburst_status',
       width: 150,
+      align: 'center',
     },
     {
       title: 'Kode Referensi',
@@ -203,85 +207,167 @@ const WalletDisburstTable = () => {
     return allRows;
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const exportParams = {
+        ...params,
+        offset: 0,
+        limit: 10,
+      };
 
-      const param = { ...params, offset: 0, limit: 10 };
-      const rows = await fetchAllData(url, param);
+      const rows = await fetchAllData(url, exportParams);
 
-      if (!rows || rows.length === 0) return;
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
-      const dataToExport = rows.map((item: IReportWalletDisburst) => ({
-        'Tanggal Transaksi': moment(item.disburst_timestamp).format(
-          'DD MMMM YYYY HH:mm'
-        ),
-        'Nomor Disburst': item.disburst_number,
-        'Nama User': item.user_name,
-        'Nomor Member': item.user_member_number,
-        'Kode Bank': item.disburst_payment_bank_code,
-        'Nomor Rekening': item.disburst_payment_bank_number,
-        'Nama Pemilik Rekening': item.disburst_payment_bank_account_holder_name,
-        'Nominal Disburst': Number(item.disburst_amount) || 0,
-        'Admin Fee': Number(item.disburst_admin) || 0,
-        'Total Disburst': Number(item.disburst_total_amount) || 0,
-        Status: item.disburst_status,
-        'Kode Referensi': item.disburst_payment_ref,
-      }));
+      const dataToExport = rows.map(
+        (item: IReportWalletDisburst, index: number) => ({
+          No: index + 1,
+          'Tanggal Transaksi': moment(item.disburst_timestamp).format(
+            'DD MMMM YYYY HH:mm'
+          ),
+          'Nomor Disburst': item.disburst_number,
+          'Nama User': item.user_name,
+          'Nomor Member': item.user_member_number,
+          'Kode Bank': item.disburst_payment_bank_code,
+          'Nomor Rekening': item.disburst_payment_bank_number,
+          'Nama Pemilik Rekening':
+            item.disburst_payment_bank_account_holder_name,
+          'Nominal Disburst': `Rp${formatDecimal(
+            Number(item.disburst_amount) || 0
+          )}`,
+          'Admin Fee': `Rp${formatDecimal(Number(item.disburst_admin) || 0)}`,
+          'Total Disburst': `Rp${formatDecimal(
+            Number(item.disburst_total_amount) || 0
+          )}`,
+          Status: item.disburst_status,
+          'Kode Referensi': item.disburst_payment_ref,
+        })
+      );
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Disburst Wallet');
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Disburst Wallet');
+
+      const exportedBy = getExportedBy();
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      /* ================= TITLE ================= */
+      // =============================
+      // Title
+      // =============================
 
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN DISBURST WALLET';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
 
-      /* ================= DIBUAT OLEH ================= */
+      const titleCell = worksheet.getCell('A1');
 
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      titleCell.value = 'LAPORAN DISBURST WALLET';
 
-      /* ================= TANGGAL EXPORT ================= */
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
 
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
+      titleCell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
-      /* ================= TOTAL DATA ================= */
+      // =============================
+      // Export Info
+      // =============================
 
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      /* ================= PERIODE ================= */
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
 
       if (params.start_date && params.end_date) {
         periodeText = `${dayjs(params.start_date).format(
           'DD MMMM YYYY'
-        )} - ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
+        )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
       }
 
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
-      /* ================= HEADER ================= */
+      // =============================
+      // Header
+      // =============================
 
       const header = Object.keys(dataToExport[0]);
+
       const headerRow = worksheet.addRow(header);
 
+      headerRow.height = 24;
+
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
 
         cell.alignment = {
           horizontal: 'center',
@@ -294,38 +380,70 @@ const WalletDisburstTable = () => {
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      /* ================= DATA ================= */
+      // =============================
+      // Freeze Header
+      // =============================
 
-      dataToExport.forEach((row) => {
-        const values = header.map((key) => row[key as keyof typeof row] ?? '');
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
 
         const newRow = worksheet.addRow(values);
 
-        newRow.eachCell((cell, colNumber) => {
-          const headerName = header[colNumber - 1];
+        // Zebra Row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
 
-          const isNumeric = [
-            'Nominal Disburst',
-            'Admin Fee',
-            'Total Disburst',
-          ].includes(headerName);
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No
+            case 6: // Kode Bank
+            case 11: // Status
+              horizontal = 'center';
+              break;
+
+            case 8: // Nominal
+            case 9: // Admin
+            case 10: // Total
+              horizontal = 'right';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
 
           cell.alignment = {
-            horizontal: isNumeric ? 'right' : 'left',
+            horizontal,
             vertical: 'middle',
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = `Rp${formatDecimal(cell.value)}`;
-          }
 
           cell.border = {
             top: { style: 'thin' },
@@ -336,7 +454,9 @@ const WalletDisburstTable = () => {
         });
       });
 
-      /* ================= TOTAL ================= */
+      // =============================
+      // Total
+      // =============================
 
       const totalNominal = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_amount || 0),
@@ -348,7 +468,7 @@ const WalletDisburstTable = () => {
         0
       );
 
-      const totalAll = rows.reduce(
+      const totalDisburst = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_total_amount || 0),
         0
       );
@@ -363,31 +483,49 @@ const WalletDisburstTable = () => {
         '',
         `Rp${formatDecimal(totalNominal)}`,
         `Rp${formatDecimal(totalAdmin)}`,
-        `Rp${formatDecimal(totalAll)}`,
+        `Rp${formatDecimal(totalDisburst)}`,
+        '',
         '',
         '',
       ]);
 
       totalRow.eachCell((cell, colNumber) => {
-        const headerName = header[colNumber - 1];
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-        const isNumeric = [
-          'Nominal Disburst',
-          'Admin Fee',
-          'Total Disburst',
-        ].includes(headerName);
+        switch (colNumber) {
+          case 1:
+            horizontal = 'center';
+            break;
 
-        cell.font = { bold: true };
+          case 8:
+          case 9:
+          case 10:
+            horizontal = 'right';
+            break;
 
-        cell.alignment = {
-          horizontal: isNumeric ? 'right' : 'left',
-          vertical: 'middle',
+          case 11:
+            horizontal = 'center';
+            break;
+
+          default:
+            horizontal = 'left';
+        }
+
+        cell.font = {
+          bold: true,
         };
 
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' },
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
+        };
+
+        cell.alignment = {
+          horizontal,
+          vertical: 'middle',
         };
 
         cell.border = {
@@ -398,32 +536,31 @@ const WalletDisburstTable = () => {
         };
       });
 
-      /* ================= AUTO WIDTH ================= */
+      // =============================
+      // Auto Width
+      // =============================
 
-      worksheet.columns.forEach((col) => {
-        let maxLength = 0;
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 50);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      /* ================= EXPORT FILE ================= */
+      // =============================
+      // Export
+      // =============================
 
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const fileName = `laporan_disburst_wallet_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
-
-      saveAs(new Blob([buffer]), fileName);
+      saveAs(
+        new Blob([buffer]),
+        `laporan_disburst_wallet_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -464,7 +601,7 @@ const WalletDisburstTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

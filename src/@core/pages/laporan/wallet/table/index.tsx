@@ -12,7 +12,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { IReportWalletTopUP, IUser } from '@/@core/@types/interface';
+import { IReportWalletTopUP } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -95,6 +95,7 @@ const WalletTopupTable = () => {
       dataIndex: 'topup_amount',
       key: 'topup_amount',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.topup_amount
           ? `Rp${formatDecimal(parseFloat(record.topup_amount.toString()))}`
@@ -105,6 +106,7 @@ const WalletTopupTable = () => {
       dataIndex: 'topup_admin',
       key: 'topup_admin',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.topup_admin
           ? `Rp${formatDecimal(parseFloat(record.topup_admin.toString()))}`
@@ -115,6 +117,7 @@ const WalletTopupTable = () => {
       dataIndex: 'topup_total_amount',
       key: 'topup_total_amount',
       width: 180,
+      align: 'right',
       render: (_, record) =>
         record.topup_total_amount
           ? `Rp${formatDecimal(
@@ -127,6 +130,7 @@ const WalletTopupTable = () => {
       dataIndex: 'topup_status',
       key: 'topup_status',
       width: 150,
+      align: 'center',
     },
   ];
 
@@ -177,81 +181,154 @@ const WalletTopupTable = () => {
     return allRows;
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
-
       const rows = await fetchAllData(url, params);
-      if (!rows || rows.length === 0) return;
 
-      const dataToExport = rows.map((item: IReportWalletTopUP) => ({
-        'Tanggal Transaksi': moment(item.create_date).format('DD MMMM YYYY'),
-        'Nomor Topup': item.topup_number,
-        'Nama User': item.user_name,
-        'Nomor Member': item.user_member_number,
-        'Bank Pembayaran': item.topup_payment_bank_name,
-        'Kode Referensi': item.topup_payment_ref_code,
-        'Nominal Topup': Number(item.topup_amount) || 0,
-        'Admin Fee': Number(item.topup_admin) || 0,
-        'Total Topup': Number(item.topup_total_amount) || 0,
-        Status: item.topup_status,
-      }));
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
+
+      const dataToExport = rows.map(
+        (item: IReportWalletTopUP, index: number) => ({
+          No: index + 1,
+          'Tanggal Transaksi': moment(item.create_date).format('DD MMMM YYYY'),
+          'Nomor Topup': item.topup_number,
+          'Nama User': item.user_name,
+          'Nomor Member': item.user_member_number,
+          'Bank Pembayaran': item.topup_payment_bank_name,
+          'Kode Referensi': item.topup_payment_ref_code,
+          'Nominal Topup': `Rp${formatDecimal(Number(item.topup_amount) || 0)}`,
+          'Admin Fee': `Rp${formatDecimal(Number(item.topup_admin) || 0)}`,
+          'Total Topup': `Rp${formatDecimal(
+            Number(item.topup_total_amount) || 0
+          )}`,
+          Status: item.topup_status,
+        })
+      );
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Topup Wallet');
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Topup Wallet');
+
+      const exportedBy = getExportedBy();
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      /* ================= TITLE ================= */
+      // =============================
+      // Title
+      // =============================
 
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN TOPUP WALLET';
-      title.font = { size: 14, bold: true };
 
-      /* ================= DIBUAT OLEH ================= */
+      const titleCell = worksheet.getCell('A1');
 
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      titleCell.value = 'LAPORAN TOPUP WALLET';
 
-      /* ================= TANGGAL EXPORT ================= */
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
 
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
+      titleCell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
-      /* ================= TOTAL DATA ================= */
+      // =============================
+      // Export Info
+      // =============================
 
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      /* ================= PERIODE ================= */
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
 
       if (params.start_date && params.end_date) {
         periodeText = `${dayjs(params.start_date).format(
           'DD MMMM YYYY'
-        )} - ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
+        )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
+
+        worksheet.getCell('A6').value = 'Periode';
+        worksheet.getCell('B6').value = `: ${periodeText}`;
       }
 
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
-      /* ================= HEADER ================= */
+      // =============================
+      // Header
+      // =============================
 
-      const headerKeys = Object.keys(dataToExport[0]);
+      const header = Object.keys(dataToExport[0]);
 
-      const headerRow = worksheet.addRow(headerKeys);
+      const headerRow = worksheet.addRow(header);
+
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
 
         cell.alignment = {
           horizontal: 'center',
@@ -264,38 +341,76 @@ const WalletTopupTable = () => {
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      /* ================= DATA ================= */
+      // =============================
+      // Freeze Header
+      // =============================
 
-      dataToExport.forEach((row) => {
-        const newRow = worksheet.addRow(
-          headerKeys.map((key) => row[key as keyof typeof row])
-        );
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra Row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
 
         newRow.eachCell((cell, colNumber) => {
-          const headerName = headerKeys[colNumber - 1];
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-          const isNumeric = [
-            'Nominal Topup',
-            'Admin Fee',
-            'Total Topup',
-          ].includes(headerName);
+          switch (colNumber) {
+            case 1: // No
+              horizontal = 'center';
+              break;
+
+            case 2: // Tanggal
+              horizontal = 'center';
+              break;
+
+            case 8: // Nominal
+            case 9: // Admin
+            case 10: // Total
+              horizontal = 'right';
+              break;
+
+            case 11: // Status
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
 
           cell.alignment = {
-            horizontal: isNumeric ? 'right' : 'left',
+            horizontal,
             vertical: 'middle',
           };
-
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = `Rp${formatDecimal(cell.value)}`;
-          }
 
           cell.border = {
             top: { style: 'thin' },
@@ -306,7 +421,9 @@ const WalletTopupTable = () => {
         });
       });
 
-      /* ================= TOTAL ================= */
+      // =============================
+      // Total
+      // =============================
 
       const totalNominal = rows.reduce(
         (acc, cur) => acc + (Number(cur.topup_amount) || 0),
@@ -330,6 +447,7 @@ const WalletTopupTable = () => {
         '',
         '',
         '',
+        '',
         `Rp${formatDecimal(totalNominal)}`,
         `Rp${formatDecimal(totalAdmin)}`,
         `Rp${formatDecimal(totalTopup)}`,
@@ -337,24 +455,41 @@ const WalletTopupTable = () => {
       ]);
 
       totalRow.eachCell((cell, colNumber) => {
-        const headerName = headerKeys[colNumber - 1];
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-        const isNumeric = [
-          'Nominal Topup',
-          'Admin Fee',
-          'Total Topup',
-        ].includes(headerName);
+        switch (colNumber) {
+          case 1:
+            horizontal = 'center';
+            break;
 
-        cell.font = { bold: true };
+          case 8:
+          case 9:
+          case 10:
+            horizontal = 'right';
+            break;
+
+          case 11:
+            horizontal = 'center';
+            break;
+
+          default:
+            horizontal = 'left';
+        }
+
+        cell.font = {
+          bold: true,
+        };
 
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFFF59D' },
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
         };
 
         cell.alignment = {
-          horizontal: isNumeric ? 'right' : 'left',
+          horizontal,
           vertical: 'middle',
         };
 
@@ -366,32 +501,32 @@ const WalletTopupTable = () => {
         };
       });
 
-      /* ================= AUTO WIDTH ================= */
+      // =============================
+      // Auto Width
+      // =============================
 
-      worksheet.columns.forEach((col) => {
-        let maxLength = 0;
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+
+          maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 40);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      /* ================= SAVE FILE ================= */
+      // =============================
+      // Export
+      // =============================
 
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const fileName = `laporan_topup_wallet_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
-
-      saveAs(new Blob([buffer]), fileName);
+      saveAs(
+        new Blob([buffer]),
+        `laporan_topup_wallet_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -432,7 +567,7 @@ const WalletTopupTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

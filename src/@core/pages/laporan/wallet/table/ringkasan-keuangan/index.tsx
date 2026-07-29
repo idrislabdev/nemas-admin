@@ -11,7 +11,6 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import { IUser } from '@/@core/@types/interface';
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -85,134 +84,253 @@ const WalletFinancialSummary = () => {
   };
 
   // 📦 Export Excel
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
-
       const resp = await axiosInstance.get(url, { params });
       const rows: IWalletFinancialSummary = resp.data;
 
-      // === Helper format rupiah ===
-      const formatRupiah = (num: number): string => {
-        if (isNaN(num)) return 'Rp0,00';
-        return new Intl.NumberFormat('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          minimumFractionDigits: 2,
-        })
-          .format(num)
-          .replace(/\s/g, '');
-      };
+      const formatRupiah = (num: number) =>
+        `Rp${formatDecimal(Number(num) || 0)}`;
 
       const workbook = new ExcelJS.Workbook();
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Ringkasan Keuangan Wallet');
 
-      // === Judul ===
-      worksheet.mergeCells('A1:E1');
-      worksheet.getCell('A1').value = 'LAPORAN RINGKASAN KEUANGAN WALLET';
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const exportedBy = getExportedBy();
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
-      // === Dibuat Oleh ===
-      worksheet.mergeCells('A2:E2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      const mapData = [
+        { type: 'Topup', ...rows.topup },
+        { type: 'Disburst', ...rows.disburst },
+      ];
 
-      // === Tanggal Export ===
-      worksheet.mergeCells('A3:E3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      const dataToExport = mapData.map((item, index) => ({
+        No: index + 1,
+        'Tipe Transaksi': item.type,
+        'Total Transaksi': formatDecimal(item.total_transaction || 0),
+        'Total Amount': formatRupiah(item.total_amount || 0),
+        'Total Admin': formatRupiah(item.total_admin || 0),
+        'Total Nett': formatRupiah(item.total_nett || 0),
+      }));
 
-      // === Periode ===
-      worksheet.mergeCells('A4:E4');
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+
+      // =============================
+      // Title
+      // =============================
+
+      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'LAPORAN RINGKASAN KEUANGAN WALLET';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
+
+      // =============================
+      // Export Info
+      // =============================
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
+
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${mapData.length}`;
 
       let periodeText = 'Semua Periode';
+
       if (params.start_date && params.end_date) {
         periodeText = `${dayjs(params.start_date).format(
-          'DD-MM-YYYY'
-        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+          'DD MMMM YYYY'
+        )} s/d ${dayjs(params.end_date).format('DD MMMM YYYY')}`;
       }
 
-      worksheet.getCell('A4').value = `Periode: ${periodeText}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
-      // === Header ===
-      const header = [
-        'Tipe Transaksi',
-        'Total Transaksi',
-        'Total Amount',
-        'Total Admin',
-        'Total Nett',
-      ];
+      // =============================
+      // Header
+      // =============================
+
+      const header = Object.keys(dataToExport[0]);
+
       const headerRow = worksheet.addRow(header);
 
+      headerRow.height = 24;
+
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // === Data ===
-      const mapData = [
-        { type: 'Topup', ...rows.topup },
-        { type: 'Disburst', ...rows.disburst },
+      // =============================
+      // Freeze Header
+      // =============================
+
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
       ];
 
-      mapData.forEach((item) => {
-        const row = worksheet.addRow([
-          item.type,
-          item.total_transaction,
-          formatRupiah(item.total_amount),
-          formatRupiah(item.total_admin),
-          formatRupiah(item.total_nett),
-        ]);
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
 
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra Row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No
+              horizontal = 'center';
+              break;
+
+            case 4: // Total Transaksi
+            case 5: // Total Amount
+            case 6: // Total Admin
+            case 7: // Total Nett
+              horizontal = 'right';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = {
+            horizontal,
+            vertical: 'middle',
+          };
+
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          // kolom numerik rata kanan
-          if (colNumber >= 2) {
-            cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          } else {
-            cell.alignment = { horizontal: 'left', vertical: 'middle' };
-          }
         });
       });
 
-      // === Baris Total ===
+      // =============================
+      // Total
+      // =============================
+
       const totalTransaction = mapData.reduce(
         (acc, item) => acc + (item.total_transaction || 0),
         0
       );
+
       const totalAmount = mapData.reduce(
         (acc, item) => acc + (item.total_amount || 0),
         0
       );
+
       const totalAdmin = mapData.reduce(
         (acc, item) => acc + (item.total_admin || 0),
         0
       );
+
       const totalNett = mapData.reduce(
         (acc, item) => acc + (item.total_nett || 0),
         0
@@ -220,56 +338,81 @@ const WalletFinancialSummary = () => {
 
       const totalRow = worksheet.addRow([
         'TOTAL',
-        totalTransaction,
+        '',
+        formatDecimal(totalTransaction),
         formatRupiah(totalAmount),
         formatRupiah(totalAdmin),
         formatRupiah(totalNett),
       ]);
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        cell.font = { bold: true };
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        switch (colNumber) {
+          case 1:
+            horizontal = 'center';
+            break;
+
+          case 4:
+          case 5:
+          case 6:
+            horizontal = 'right';
+            break;
+
+          default:
+            horizontal = 'left';
+        }
+
+        cell.font = {
+          bold: true,
+        };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' }, // kuning lembut
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
         };
+
+        cell.alignment = {
+          horizontal,
+          vertical: 'middle',
+        };
+
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        if (colNumber >= 2) {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-        } else {
-          cell.alignment = { horizontal: 'left', vertical: 'middle' };
-        }
       });
 
-      // === Auto Width ===
-      worksheet.columns.forEach((col) => {
-        if (!col) return;
-        let maxLength = 0;
+      // =============================
+      // Auto Width
+      // =============================
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
+
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 40);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // === Freeze Header ===
-      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+      // =============================
+      // Export
+      // =============================
 
-      // === Export ===
       const buffer = await workbook.xlsx.writeBuffer();
-      const fileName = `laporan_ringkasan_wallet_${dayjs().format(
-        'YYYYMMDD_HHmmss'
-      )}.xlsx`;
 
-      saveAs(new Blob([buffer]), fileName);
+      saveAs(
+        new Blob([buffer]),
+        `laporan_ringkasan_wallet_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+      );
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -309,18 +452,25 @@ const WalletFinancialSummary = () => {
 
   const columns: ColumnsType<any> = useMemo(
     () => [
-      { title: 'Tipe Transaksi', dataIndex: 'type', key: 'type', width: 150 },
+      {
+        title: 'Tipe Transaksi',
+        dataIndex: 'type',
+        key: 'type',
+        width: 150,
+      },
       {
         title: 'Total Transaksi',
         dataIndex: 'total_transaction',
         key: 'total_transaction',
         width: 180,
+        align: 'right',
       },
       {
         title: 'Total Amount',
         dataIndex: 'total_amount',
         key: 'total_amount',
         width: 180,
+        align: 'right',
         render: (val) => `Rp${formatDecimal(val)}`,
       },
       {
@@ -328,6 +478,7 @@ const WalletFinancialSummary = () => {
         dataIndex: 'total_admin',
         key: 'total_admin',
         width: 180,
+        align: 'right',
         render: (val) => `Rp${formatDecimal(val)}`,
       },
       {
@@ -335,12 +486,12 @@ const WalletFinancialSummary = () => {
         dataIndex: 'total_nett',
         key: 'total_nett',
         width: 180,
+        align: 'right',
         render: (val) => `Rp${formatDecimal(val)}`,
       },
     ],
     []
   );
-
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -370,7 +521,7 @@ const WalletFinancialSummary = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={tableData}

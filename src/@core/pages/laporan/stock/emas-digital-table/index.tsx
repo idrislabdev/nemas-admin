@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IReportGoldDigital, IUser } from '@/@core/@types/interface';
+import { IReportGoldDigital } from '@/@core/@types/interface';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
@@ -65,30 +65,27 @@ const StockEmasDigitalTable = () => {
         title: 'Debet',
         dataIndex: 'debet',
         key: 'debet',
-        render: (_, record) => (
-          <>
-            {record.weight_debet !== null
-              ? `${formatDecimal(parseFloat(record.weight_debet))} Gram`
-              : '-'}
-          </>
-        ),
+        align: 'right',
+        render: (_, record) =>
+          record.weight_debet !== null
+            ? `${formatDecimal(parseFloat(record.weight_debet))} Gram`
+            : '-',
       },
       {
         title: 'Credit',
         dataIndex: 'credit',
         key: 'credit',
-        render: (_, record) => (
-          <>
-            {record.weight_credit !== null
-              ? `${formatDecimal(parseFloat(record.weight_credit))} Gram`
-              : '-'}
-          </>
-        ),
+        align: 'right',
+        render: (_, record) =>
+          record.weight_credit !== null
+            ? `${formatDecimal(parseFloat(record.weight_credit))} Gram`
+            : '-',
       },
       // {
       //   title: 'Saldo Akhir',
       //   dataIndex: 'weight',
       //   key: 'weight',
+      //   align: 'right',
       //   render: (_, record) =>
       //     record.weight != null
       //       ? `${formatDecimal(parseFloat(record.weight))} Gram`
@@ -174,11 +171,35 @@ const StockEmasDigitalTable = () => {
     return allRows;
   };
 
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
-
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
 
       const rows = await fetchAllData(url, params);
 
@@ -187,74 +208,118 @@ const StockEmasDigitalTable = () => {
         return;
       }
 
-      const dataToExport = rows.map((item: IReportGoldDigital) => ({
-        Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
-        Tipe: item.transaction_type_name,
-        'Update User': item.user_name,
-        'Update Time': dayjs(item.date).format('HH:mm'),
-        Debit:
-          item.weight_debet !== null
-            ? `${formatDecimal(parseFloat(item.weight_debet))} Gram`
-            : '-',
-        Credit:
-          item.weight_credit !== null
-            ? `${formatDecimal(parseFloat(item.weight_credit))} Gram`
-            : '-',
-      }));
+      const dataToExport = rows.map(
+        (item: IReportGoldDigital, index: number) => ({
+          No: index + 1,
+          Tanggal: dayjs(item.date).format('DD-MM-YYYY'),
+          Tipe: item.transaction_type_name,
+          'Update User': item.user_name || '-',
+          'Update Time': dayjs(item.date).format('HH:mm'),
+          Debit:
+            item.weight_debet !== null
+              ? `${formatDecimal(parseFloat(item.weight_debet))} Gram`
+              : '-',
+          Credit:
+            item.weight_credit !== null
+              ? `${formatDecimal(parseFloat(item.weight_credit))} Gram`
+              : '-',
+        })
+      );
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Laporan Stock Emas Digital');
+
+      workbook.creator = 'NEMAS';
+      workbook.company = 'NEMAS';
+      workbook.created = new Date();
+
+      const worksheet = workbook.addWorksheet('Stock Emas Digital');
+
+      const exportedBy = getExportedBy();
+      const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
-      // ===== TITLE =====
+      // =============================
+      // Title
+      // =============================
+
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN EMAS STOCK DIGITAL';
-      title.alignment = {
+
+      const titleCell = worksheet.getCell('A1');
+
+      titleCell.value = 'LAPORAN STOK EMAS DIGITAL';
+
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: {
+          argb: 'FF0057B7',
+        },
+      };
+
+      titleCell.alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
-      title.font = { size: 14, bold: true };
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      // =============================
+      // Export Info
+      // =============================
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
 
-      // ===== PERIODE =====
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
+
       if (params.start_date && params.end_date) {
-        worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-        worksheet.getCell('A5').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
+        worksheet.getCell('A6').value = 'Periode';
+        worksheet.getCell('B6').value = `: ${dayjs(params.start_date).format(
           'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A5').alignment = { horizontal: 'left' };
+        )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
       }
+
+      worksheet.getCell('A3').font = { bold: true };
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').font = { bold: true };
+      worksheet.getCell('A6').font = { bold: true };
 
       worksheet.addRow([]);
 
+      // =============================
+      // Header
+      // =============================
+
       const header = Object.keys(dataToExport[0]);
+
       const headerRow = worksheet.addRow(header);
 
-      // ===== HEADER STYLE =====
+      headerRow.height = 24;
+
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.font = {
+          bold: true,
+          color: {
+            argb: 'FFFFFFFF',
+          },
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: {
+            argb: 'FF0057B7',
+          },
+        };
+
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+        };
 
         cell.border = {
           top: { style: 'thin' },
@@ -262,21 +327,75 @@ const StockEmasDigitalTable = () => {
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
-        };
       });
 
-      // ===== DATA ROW =====
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key as keyof typeof row]);
-        const newRow = worksheet.addRow(rowValues);
+      // =============================
+      // Freeze Header
+      // =============================
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      worksheet.views = [
+        {
+          state: 'frozen',
+          ySplit: 8,
+        },
+      ];
+
+      worksheet.autoFilter = {
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
+      };
+
+      // =============================
+      // Data
+      // =============================
+
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+
+        const newRow = worksheet.addRow(values);
+
+        // Zebra Row
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: {
+                argb: 'FFF8FBFF',
+              },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 1: // No
+              horizontal = 'center';
+              break;
+
+            case 2: // Tanggal
+              horizontal = 'center';
+              break;
+
+            case 5: // Update Time
+              horizontal = 'center';
+              break;
+
+            case 6: // Debit
+            case 7: // Credit
+              horizontal = 'right';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = {
+            horizontal,
+            vertical: 'middle',
+          };
 
           cell.border = {
             top: { style: 'thin' },
@@ -287,24 +406,26 @@ const StockEmasDigitalTable = () => {
         });
       });
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
+      // =============================
+      // Auto Width
+      // =============================
 
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
+      worksheet.columns.forEach((column: any) => {
+        let maxLength = 10;
 
-          col.width = Math.min(Math.max(maxLength + 2, 10), 30);
-        }
+        column.eachCell({ includeEmpty: true }, (cell: any) => {
+          const value = cell.value ? cell.value.toString() : '';
+
+          maxLength = Math.max(maxLength, value.length);
+        });
+
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      // =============================
+      // Export
+      // =============================
 
-      // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
 
       const fileName = `laporan_stock_emas_digital_${dayjs().format(
@@ -349,7 +470,7 @@ const StockEmasDigitalTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
