@@ -163,63 +163,74 @@ const TagihanBulananTablePage = () => {
       title: 'Order Number',
       dataIndex: 'order_number',
       width: 160,
+      align: 'left',
     },
     {
       title: 'Nama User',
       dataIndex: 'user_name',
       width: 180,
+      align: 'left',
     },
     {
       title: 'Nomor HP',
       dataIndex: 'user_phone_number',
       width: 160,
+      align: 'left',
     },
     {
       title: 'Tanggal Tagihan',
       dataIndex: 'monthly_cost_issue_date',
       width: 160,
-      render: (val) => (val ? moment(val).format('DD MMM YYYY') : '-'),
+      align: 'center',
+      render: (val) => (val ? dayjs(val).format('DD MMM YYYY') : '-'),
     },
     {
       title: 'Level',
       dataIndex: 'level',
-      width: 120,
+      width: 100,
+      align: 'center',
       render: (val) => formatDecimal(val),
     },
     {
       title: 'Biaya Bulanan',
       dataIndex: 'monthly_cost',
       width: 150,
+      align: 'right',
       render: (val) => `Rp${formatDecimal(val)}`,
     },
     {
       title: 'Berat Emas',
       dataIndex: 'gold_weight',
       width: 150,
+      align: 'right',
       render: (val) => `${formatDecimal(val)} Gram`,
     },
     {
       title: 'Total Tagihan',
       dataIndex: 'total_cost',
       width: 180,
+      align: 'right',
       render: (val) => `Rp${formatDecimal(val)}`,
     },
     {
       title: 'Diskon',
       dataIndex: 'discount',
       width: 150,
+      align: 'right',
       render: (val) => `Rp${formatDecimal(val)}`,
     },
     {
       title: 'Status',
       dataIndex: 'is_paid',
-      width: 120,
+      width: 130,
+      align: 'center',
       render: (val) => (val ? 'Lunas' : 'Belum Lunas'),
     },
     {
       title: 'Periode',
       dataIndex: 'current_period',
       width: 150,
+      align: 'center',
     },
   ];
 
@@ -263,9 +274,14 @@ const TagihanBulananTablePage = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
 
-      const exportParams: any = { ...params, offset: 0, limit: 50 };
+      const exportParams: any = { ...params, offset: 0, limit: 1000 };
 
       if (exportParams.is_paid === null) delete exportParams.is_paid;
       if (!exportParams.start_date) delete exportParams.start_date;
@@ -274,183 +290,247 @@ const TagihanBulananTablePage = () => {
       const rows = await fetchAllData(url, exportParams);
 
       if (!rows || rows.length === 0) {
-        console.warn('Tidak ada data untuk di export');
-        setIsModalLoading(false);
+        console.warn('Tidak ada data untuk diekspor.');
         return;
       }
 
-      const dataToExport = rows.map((item: ITagihanBulanan, index: number) => ({
-        No: index + 1,
-        'Order Number': item.order_number || '-',
-        'Nama User': item.user_name || '-',
-        'Nomor HP': item.user_phone_number || '-',
-        'Tanggal Tagihan': item.monthly_cost_issue_date
-          ? moment(item.monthly_cost_issue_date).format('DD MMM YYYY')
-          : '-',
-        Level: item.level || '-',
-        'Biaya Bulanan': item.monthly_cost || 0,
-        'Berat Emas (Gram)': item.gold_weight || 0,
-        'Total Tagihan': item.total_cost || 0,
-        Diskon: item.discount || 0,
-        Status: item.is_paid ? 'Lunas' : 'Belum Lunas',
-        Periode: item.current_period || '-',
-      }));
-
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Tagihan Bulanan');
+      const totalColumns = 11;
 
-      const totalColumns = Object.keys(dataToExport[0]).length;
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+      // =============================
+      // TITLE & METADATA (Row 1 - 6)
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN TAGIHAN BULANAN';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ======================
-      // Title
-      // ======================
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
 
-      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      title.value = 'LAPORAN TAGIHAN BULANAN';
-      title.alignment = { horizontal: 'left', vertical: 'middle' };
-      title.font = { size: 14, bold: true };
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      // ======================
-      // Dibuat Oleh
-      // ======================
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
 
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      // ======================
-      // Tanggal Export
-      // ======================
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.addRow([]); // Baris kosong (Row 7)
 
-      // ======================
-      // Total Data
-      // ======================
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = [
+        'Order Number',
+        'Nama User',
+        'Nomor HP',
+        'Tanggal Tagihan',
+        'Level',
+        'Biaya Bulanan',
+        'Berat Emas (gr)',
+        'Total Tagihan',
+        'Diskon',
+        'Status',
+        'Periode',
+      ];
 
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      // ======================
-      // Periode Filter
-      // ======================
-
-      let periodeText = 'Semua Periode';
-
-      if (params.start_date && params.end_date) {
-        periodeText = `${moment(params.start_date).format(
-          'DD MMMM YYYY'
-        )} - ${moment(params.end_date).format('DD MMMM YYYY')}`;
-      }
-
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode : ${periodeText}`;
-      worksheet.getCell('A5').alignment = { horizontal: 'left' };
-
-      // ======================
-      // Status Filter
-      // ======================
-
-      let statusText = 'Semua';
-
-      if (params.is_paid === true) statusText = 'Lunas';
-      if (params.is_paid === false) statusText = 'Belum Lunas';
-
-      worksheet.mergeCells(`A6:${lastColumnLetter}6`);
-      worksheet.getCell('A6').value = `Status : ${statusText}`;
-      worksheet.getCell('A6').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
-
-      // ======================
-      // Header Table
-      // ======================
-
-      const header = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' }, // Biru Utama
         };
-
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // ======================
-      // Data Rows
-      // ======================
+      // Format Asli Excel (Native Number Format)
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
 
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key]);
+      // =============================
+      // DATA ROWS (Row 9+)
+      // =============================
+      rows.forEach((item: ITagihanBulanan, index: number) => {
+        const rowValues = [
+          item.order_number || '-',
+          item.user_name || '-',
+          item.user_phone_number || '-',
+          item.monthly_cost_issue_date
+            ? dayjs(item.monthly_cost_issue_date).format('DD MMM YYYY')
+            : '-',
+          Number(item.level || 0),
+          Number(item.monthly_cost || 0),
+          Number(item.gold_weight || 0),
+          Number(item.total_cost || 0),
+          Number(item.discount || 0),
+          item.is_paid ? 'Lunas' : 'Belum Lunas',
+          item.current_period || '-',
+        ];
 
         const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell) => {
+        // Zebra Striping (Selang-seling warna soft)
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 4: // Tanggal Tagihan
+            case 5: // Level
+            case 10: // Status
+            case 11: // Periode
+              horizontal = 'center';
+              break;
+
+            case 7: // Berat Emas (gr)
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 6: // Biaya Bulanan
+            case 8: // Total Tagihan
+            case 9: // Diskon
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
-
-          cell.alignment = {
-            vertical: 'middle',
-          };
         });
       });
 
-      // ======================
-      // Auto Column Width
-      // ======================
+      // =============================
+      // TOTAL ROW
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
-      worksheet.columns.forEach((col: any) => {
-        if (col) {
-          let maxLength = 0;
+      const totalRow = worksheet.addRow([
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        { formula: `SUM(F${startRow}:F${endRow})` }, // Biaya Bulanan
+        { formula: `SUM(G${startRow}:G${endRow})` }, // Berat Emas
+        { formula: `SUM(H${startRow}:H${endRow})` }, // Total Tagihan
+        { formula: `SUM(I${startRow}:I${endRow})` }, // Diskon
+        '',
+        '',
+      ]);
 
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:E${totalRowNumber}`);
 
-          col.width = Math.min(Math.max(maxLength + 2, 10), 30);
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (colNumber >= 6 && colNumber <= 9) {
+          horizontal = 'right';
         }
+
+        // Apply Format Angka pada Baris Total
+        if (colNumber === 7) cell.numFmt = weightFormat;
+        if (colNumber === 6 || colNumber === 8 || colNumber === 9) {
+          cell.numFmt = currencyFormat;
+        }
+
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' }, // Kuning Highlight
+        };
+        cell.alignment = { horizontal, vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
       });
 
-      // ======================
-      // Freeze Header
-      // ======================
-
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
       worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        // Kalkulasi lebar hanya berdasarkan isi data & header tabel (Baris 8 ke bawah)
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
+        });
+
+        column.width = Math.min(maxLength + 4, 35);
+      });
+
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
-      saveAs(
-        new Blob([buffer]),
-        `laporan_tagihan_bulanan_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
-      );
+      const fileName = `laporan_tagihan_bulanan_${dayjs().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+
+      saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
     } finally {

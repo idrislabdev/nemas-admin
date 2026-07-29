@@ -13,6 +13,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { IUser } from '@/@core/@types/interface';
 
 const { RangePicker } = DatePicker;
 
@@ -88,30 +89,36 @@ const Vendor3rdPartySummary = () => {
       title: 'Total Transaksi',
       dataIndex: 'total_transaksi',
       width: 150,
+      alignment: 'right',
       render: (v: number) => new Intl.NumberFormat('id-ID').format(v),
     },
     {
       title: 'Nilai Transaksi (Rp)',
       dataIndex: 'nilai_transaksi',
       width: 180,
+      alignment: 'right',
       render: (v: number) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Fee Transaksi (Rp)',
       dataIndex: 'fee_transaksi',
       width: 180,
+      alignment: 'right',
+
       render: (v: number) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Cost Fee (Rp)',
       dataIndex: 'cost_fee',
       width: 180,
+      alignment: 'right',
       render: (v: number) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
     {
       title: 'Pendapatan (Rp)',
       dataIndex: 'pendapatan',
       width: 180,
+      alignment: 'right',
       render: (v: number) => `Rp${new Intl.NumberFormat('id-ID').format(v)}`,
     },
   ];
@@ -124,157 +131,242 @@ const Vendor3rdPartySummary = () => {
 
     setIsModalLoading(true);
     try {
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
+
       const wb = new ExcelJS.Workbook();
+      wb.creator = (user as IUser)?.name || 'System';
+      wb.created = new Date();
+
       const ws = wb.addWorksheet('Summary Vendor 3rd Party');
+      const totalColumns = 6;
 
-      ws.mergeCells('A1:F1');
-      ws.getCell('A1').value = 'LAPORAN SUMMARY VENDOR 3RD PARTY';
-      ws.getCell('A1').font = { size: 14, bold: true };
+      // Helper Border Standar
+      const applyStandardBorder = (cell: ExcelJS.Cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      };
 
-      ws.mergeCells('A2:F2');
-      ws.getCell('A2').value = `Periode: ${dayjs(params.start_date).format(
-        'DD-MM-YYYY'
-      )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
+      // Native Number Formats
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const integerFormat = '#,##0';
 
-      ws.addRow([]);
+      // =============================
+      // TITLE & METADATA (Row 1 - 5)
+      // =============================
+      ws.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = ws.getCell('A1');
+      titleCell.value = 'LAPORAN SUMMARY VENDOR 3RD PARTY';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      ws.getCell('A3').value = 'Dibuat Oleh';
+      ws.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
+
+      ws.getCell('A4').value = 'Tanggal Export';
+      ws.getCell('B4').value = `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
+
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
+
+      ws.getCell('A5').value = 'Periode';
+      ws.getCell('B5').value = `: ${periodeText}`;
+
+      ['A3', 'A4', 'A5'].forEach((key) => {
+        ws.getCell(key).font = { bold: true };
+      });
+
+      ws.addRow([]); // Blank Row (Row 6)
+
+      // Column Labels / Display Titles
+      const headerDisplayNames: Record<string, string> = {
+        payment_method: 'Metode Pembayaran',
+        total_transaksi: 'Total Transaksi',
+        nilai_transaksi: 'Nilai Transaksi',
+        fee_transaksi: 'Fee Transaksi',
+        cost_fee: 'Cost Fee',
+        pendapatan: 'Pendapatan',
+      };
+
+      const headerKeys = [
+        'payment_method',
+        'total_transaksi',
+        'nilai_transaksi',
+        'fee_transaksi',
+        'cost_fee',
+        'pendapatan',
+      ];
 
       const sections = Object.keys(summary) as (keyof IVendorSummaryResponse)[];
 
       for (const section of sections) {
-        ws.addRow([section.toUpperCase()]);
-        ws.getCell(`A${ws.lastRow!.number}`).font = { bold: true };
-        ws.addRow([]);
+        // ===== JUDUL VENDOR / SEKSI =====
+        const sectionRow = ws.addRow([section.toUpperCase()]);
+        const secRowNum = sectionRow.number;
+        ws.mergeCells(`A${secRowNum}:F${secRowNum}`);
 
-        // FIX HEADER — tetap muncul meski data kosong
-        const defaultHeader = [
-          'payment_method',
-          'total_transaksi',
-          'nilai_transaksi',
-          'fee_transaksi',
-          'cost_fee',
-          'pendapatan',
-        ];
+        const secCell = ws.getCell(`A${secRowNum}`);
+        secCell.font = { bold: true, size: 11, color: { argb: 'FF0057B7' } };
+        secCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-        const header =
-          summary[section].length > 0
-            ? Object.keys(summary[section][0])
-            : defaultHeader;
-
-        const hrow = ws.addRow(header);
+        // ===== HEADER TABEL =====
+        const displayHeaders = headerKeys.map(
+          (k) => headerDisplayNames[k] || k
+        );
+        const hrow = ws.addRow(displayHeaders);
+        hrow.height = 24;
 
         hrow.eachCell((c) => {
-          c.font = { bold: true };
-          c.alignment = { horizontal: 'center' };
-          c.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+          c.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          c.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF0057B7' },
           };
+          c.alignment = { horizontal: 'center', vertical: 'middle' };
+          applyStandardBorder(c);
         });
 
-        // DATA ROWS
-        summary[section].forEach((row) => {
-          const vals = header.map((k) => (row as any)[k]);
-          const r = ws.addRow(vals);
+        const dataStartRow = hrow.number + 1;
+        const sectionData = summary[section] || [];
 
-          r.eachCell((c, idx) => {
-            const key = header[idx - 1];
-            const isNum = key !== 'payment_method';
+        // ===== DATA ROWS =====
+        if (sectionData.length > 0) {
+          sectionData.forEach((rowItem: any, idx: number) => {
+            const rowVals = headerKeys.map((k) =>
+              k === 'payment_method'
+                ? rowItem[k] || '-'
+                : Number(rowItem[k] || 0)
+            );
 
-            c.alignment = { horizontal: isNum ? 'right' : 'left' };
-            c.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' },
-            };
+            const r = ws.addRow(rowVals);
 
-            if (isNum) {
-              c.value = new Intl.NumberFormat('id-ID').format(Number(c.value));
+            // Zebra Striping
+            if (idx % 2 === 1) {
+              r.eachCell((c) => {
+                c.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFF8FBFF' },
+                };
+              });
             }
+
+            r.eachCell((c, colIdx) => {
+              const key = headerKeys[colIdx - 1];
+
+              if (key === 'payment_method') {
+                c.alignment = { horizontal: 'left', vertical: 'middle' };
+              } else if (key === 'total_transaksi') {
+                c.alignment = { horizontal: 'right', vertical: 'middle' };
+                c.numFmt = integerFormat;
+              } else {
+                c.alignment = { horizontal: 'right', vertical: 'middle' };
+                c.numFmt = currencyFormat;
+              }
+
+              applyStandardBorder(c);
+            });
           });
-        });
-
-        // JIKA DATA KOSONG → maintain satu row kosong
-        if (summary[section].length === 0) {
-          const emptyVals = header.map((h) =>
-            h === 'payment_method' ? '-' : 0
-          );
-
+        } else {
+          // JIKA DATA KOSONG
+          const emptyVals = ['-', 0, 0, 0, 0, 0];
           const r = ws.addRow(emptyVals);
-          r.eachCell((c, idx) => {
-            const key = header[idx - 1];
-            const isNum = key !== 'payment_method';
 
-            c.alignment = { horizontal: isNum ? 'right' : 'left' };
-            c.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' },
-            };
+          r.eachCell((c, colIdx) => {
+            const key = headerKeys[colIdx - 1];
 
-            if (isNum) c.value = '0';
+            if (key === 'payment_method') {
+              c.alignment = { horizontal: 'center', vertical: 'middle' };
+            } else if (key === 'total_transaksi') {
+              c.alignment = { horizontal: 'right', vertical: 'middle' };
+              c.numFmt = integerFormat;
+            } else {
+              c.alignment = { horizontal: 'right', vertical: 'middle' };
+              c.numFmt = currencyFormat;
+            }
+
+            applyStandardBorder(c);
           });
         }
 
-        // TOTAL ROW
-        const totalValues = header.map((k) => {
+        const dataEndRow =
+          sectionData.length > 0
+            ? dataStartRow + sectionData.length - 1
+            : dataStartRow;
+
+        // ===== TOTAL ROW =====
+        const totalRowVals = headerKeys.map((k, colIdx) => {
           if (k === 'payment_method') return 'TOTAL';
-          return summary[section].reduce(
-            (acc, cur: any) => acc + Number(cur[k] || 0),
-            0
-          );
+          const colLetter = String.fromCharCode(65 + colIdx); // A, B, C, D, E, F
+          return {
+            formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
+          };
         });
 
-        const totalRow = ws.addRow(totalValues);
+        const totalRow = ws.addRow(totalRowVals);
+        totalRow.height = 22;
 
-        totalRow.eachCell((c, idx) => {
-          const key = header[idx - 1];
-          const isNum = key !== 'payment_method';
+        totalRow.eachCell((c, colIdx) => {
+          const key = headerKeys[colIdx - 1];
 
           c.font = { bold: true };
-          c.alignment = { horizontal: isNum ? 'right' : 'left' };
-          c.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+          c.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFF59D' }, // Kuning Highlight
           };
 
-          if (isNum) {
-            c.value = new Intl.NumberFormat('id-ID').format(Number(c.value));
+          if (key === 'payment_method') {
+            c.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else if (key === 'total_transaksi') {
+            c.alignment = { horizontal: 'right', vertical: 'middle' };
+            c.numFmt = integerFormat;
+          } else {
+            c.alignment = { horizontal: 'right', vertical: 'middle' };
+            c.numFmt = currencyFormat;
+          }
+
+          applyStandardBorder(c);
+        });
+
+        ws.addRow([]); // Pemisah antar vendor
+      }
+
+      // ===== AUTO COLUMN WIDTH =====
+      ws.columns.forEach((col: any) => {
+        let maxLen = 15;
+
+        col.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 7) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLen = Math.max(maxLen, val.length);
           }
         });
 
-        // EMPTY BORDERED ROW
-        const empty = ws.addRow([]);
-        empty.eachCell((c) => {
-          c.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-        });
-      }
-
-      // Auto column width
-      ws.columns.forEach((col: any) => {
-        let max = 0;
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
-          max = Math.max(max, val.length);
-        });
-        col.width = Math.min(max + 2, 50);
+        col.width = Math.min(maxLen + 4, 35);
       });
 
+      // ===== SAVE FILE =====
       const buffer = await wb.xlsx.writeBuffer();
       saveAs(
         new Blob([buffer]),
         `vendor_3rd_party_summary_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
+    } catch (err) {
+      console.error('Export failed:', err);
     } finally {
       setIsModalLoading(false);
     }

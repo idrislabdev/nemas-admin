@@ -53,34 +53,60 @@ const HistoryUserTable = () => {
       align: 'center',
       render: (_, __, index) => index + params.offset + 1,
     },
-    { title: 'Nama', dataIndex: 'name', key: 'name', width: 150 },
-    { title: 'Username', dataIndex: 'user_name', key: 'user_name', width: 150 },
-    { title: 'Email', dataIndex: 'email', key: 'email', width: 150 },
+    {
+      title: 'Nama',
+      dataIndex: 'name',
+      key: 'name',
+      width: 150,
+      align: 'left',
+      render: (v) => v || '-',
+    },
+    {
+      title: 'Username',
+      dataIndex: 'user_name',
+      key: 'user_name',
+      width: 150,
+      align: 'left',
+      render: (v) => v || '-',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      width: 180,
+      align: 'left',
+      render: (v) => v || '-',
+    },
     {
       title: 'Alamat',
       dataIndex: 'address',
       key: 'address',
-      width: 200,
-      render: (_, record) =>
-        record.address?.address ? record.address.address : '-',
+      width: 220,
+      align: 'left',
+      render: (_, record) => record.address?.address || '-',
     },
     {
       title: 'Phone Number',
       dataIndex: 'phone_number',
       key: 'phone_number',
       width: 150,
+      align: 'left',
+      render: (v) => v || '-',
     },
     {
       title: 'Create By',
       dataIndex: 'create_user_name',
       key: 'create_user_name',
       width: 150,
+      align: 'left',
+      render: (v) => v || '-',
     },
     {
       title: 'Create Time',
       dataIndex: 'create_time',
       key: 'create_time',
       width: 180,
+      align: 'center',
       render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
     },
     {
@@ -88,12 +114,15 @@ const HistoryUserTable = () => {
       dataIndex: 'upd_user_name',
       key: 'upd_user_name',
       width: 150,
+      align: 'left',
+      render: (v) => v || '-',
     },
     {
       title: '',
       key: 'action',
       fixed: 'right',
       width: 80,
+      align: 'center',
       render: (_, record) => (
         <div className="flex items-center gap-[5px] justify-center">
           <Link
@@ -111,22 +140,26 @@ const HistoryUserTable = () => {
   // Fetch Data
   // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+    }
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+  const onChangePage = (val: number) => {
+    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
-      limit: 10,
+      limit: 15,
       search: value,
-    });
+    }));
   };
 
   // ========================
@@ -136,12 +169,17 @@ const HistoryUserTable = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
 
       const exportParams = {
         ...params,
         offset: 0,
-        limit: 100,
+        limit: 1000, // Menyesuaikan agar dapat mengambil semua baris data
       };
 
       const resp = await axiosInstance.get(url, { params: exportParams });
@@ -152,113 +190,133 @@ const HistoryUserTable = () => {
         return;
       }
 
-      const dataToExport = rows.map(
-        (item: IPenggunaAplikasi, index: number) => ({
-          No: index + 1,
-          Nama: item.name,
-          Username: item.user_name,
-          Email: item.email,
-          Alamat: item.address?.address ?? '-',
-          'Phone Number': item.phone_number,
-          'Create By': item.create_user_name,
-          'Create Time': item.create_time
-            ? moment(item.create_time).format('DD MMM YYYY HH:mm')
-            : '-',
-          'Update By': item.upd_user_name,
-        })
-      );
-
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = (user as IUser)?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Data Pengguna Toko');
 
-      const totalColumns = Object.keys(dataToExport[0]).length;
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
-
-      // ===== TITLE =====
-      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
-      title.value = 'DATA PENGGUNA TOKO';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left', vertical: 'middle' };
-
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
-
-      // ===== HEADER =====
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
-
-      headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
-        };
-
+      // Helper Border Standar
+      const applyStandardBorder = (cell: ExcelJS.Cell) => {
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
+      };
 
+      // Configuration Header
+      const headersConfig = [
+        { key: 'no', label: 'No', align: 'center' },
+        { key: 'name', label: 'Nama', align: 'left' },
+        { key: 'user_name', label: 'Username', align: 'left' },
+        { key: 'email', label: 'Email', align: 'left' },
+        { key: 'address', label: 'Alamat', align: 'left' },
+        { key: 'phone_number', label: 'Phone Number', align: 'left' },
+        { key: 'create_user_name', label: 'Create By', align: 'left' },
+        { key: 'create_time', label: 'Create Time', align: 'center' },
+        { key: 'upd_user_name', label: 'Update By', align: 'left' },
+      ];
+
+      const totalColumns = headersConfig.length;
+
+      // ===== TITLE & METADATA (Row 1 - 4) =====
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'DATA PENGGUNA TOKO';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
+
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value = `: ${moment().format(
+        'DD MMMM YYYY HH:mm:ss'
+      )}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
+
+      ['A3', 'A4', 'A5'].forEach((key) => {
+        worksheet.getCell(key).font = { bold: true };
+      });
+
+      worksheet.addRow([]); // Blank Row (Row 6)
+
+      // ===== HEADER TABEL (Row 7) =====
+      const headerRow = worksheet.addRow(headersConfig.map((h) => h.label));
+      headerRow.height = 24;
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FF0057B7' }, // Biru Utama
         };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        applyStandardBorder(cell);
       });
 
-      // ===== DATA ROW =====
-      dataToExport.forEach((row: any) => {
-        const rowValues = header.map((key) => row[key]);
+      // ===== DATA ROWS =====
+      rows.forEach((item: IPenggunaAplikasi, index: number) => {
+        const rowValues = [
+          index + 1,
+          item.name || '-',
+          item.user_name || '-',
+          item.email || '-',
+          item.address?.address || '-',
+          item.phone_number || '-',
+          item.create_user_name || '-',
+          item.create_time
+            ? moment(item.create_time).format('DD MMM YYYY HH:mm')
+            : '-',
+          item.upd_user_name || '-',
+        ];
+
         const newRow = worksheet.addRow(rowValues);
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((c) => {
+            c.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
 
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+        newRow.eachCell((cell, colIdx) => {
+          const config = headersConfig[colIdx - 1];
+
+          cell.alignment = {
+            horizontal: (config.align as any) || 'left',
+            vertical: 'middle',
           };
+
+          applyStandardBorder(cell);
         });
       });
 
       // ===== AUTO COLUMN WIDTH =====
       worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
+        let maxLength = 12;
 
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
+        col.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 7) {
             const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
+            maxLength = Math.max(maxLength, val.length);
+          }
+        });
 
-          col.width = maxLength + 2;
-        }
+        col.width = Math.min(maxLength + 4, 35);
       });
 
       // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
 
       // ===== SAVE FILE =====
       const buffer = await workbook.xlsx.writeBuffer();
@@ -292,7 +350,7 @@ const HistoryUserTable = () => {
             placeholder="cari data"
             onChange={debounce(
               (event) => handleFilter(event.target.value),
-              1000
+              800
             )}
           />
         </div>
@@ -310,7 +368,8 @@ const HistoryUserTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
@@ -329,6 +388,7 @@ const HistoryUserTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import ModalLoading from '@/@core/components/modal/modal-loading';
@@ -77,145 +79,301 @@ const LaporanLabaRugi = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
 
       const [revResp, costResp] = await Promise.all([
         axiosInstance.get(revenueUrl, { params }),
         axiosInstance.get(costUrl, { params }),
       ]);
 
-      const revenue: IRevenue = revResp.data;
-      const cost: ICost = costResp.data;
+      const revenue: IRevenue = revResp.data || {};
+      const cost: ICost = costResp.data || {};
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = (user as IUser)?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Laba Rugi');
 
-      const applyBorder = (row: ExcelJS.Row) => {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
-        });
+      // Number Format Native Excel
+      const currencyFormat = '"Rp"#,##0.00;("Rp"#,##0.00);"-"';
+
+      // Helper untuk style border & alignment dasar
+      const applyStandardBorder = (cell: ExcelJS.Cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
       };
 
-      // ===== TITLE =====
+      // =============================
+      // TITLE & METADATA (Row 1 - 5)
+      // =============================
       worksheet.mergeCells('A1:C1');
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN LABA RUGI';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left' };
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN LABA RUGI';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells('A2:C2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells('A3:C3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== PERIODE =====
-      worksheet.mergeCells('A4:C4');
-      worksheet.getCell('A4').value =
-        `Periode: ${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
-          params.end_date
-        ).format('DD-MM-YYYY')}`;
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
 
-      worksheet.addRow([]);
+      worksheet.getCell('A5').value = 'Periode';
+      worksheet.getCell('B5').value = `: ${periodeText}`;
 
-      // ===== SECTION PENDAPATAN =====
-      const pendapatanTitle = worksheet.addRow(['PENDAPATAN']);
-      pendapatanTitle.font = { bold: true };
-      applyBorder(pendapatanTitle);
-
-      const header1 = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
-      header1.font = { bold: true };
-      applyBorder(header1);
-
-      const revenueRows = [
-        ['Selisih Beli Emas', revenue.selisih_beli_emas],
-        ['Selisih Jual Emas', revenue.selisih_jual_emas],
-        ['Biaya Admin', revenue.biaya_admin],
-        ['Biaya Transfer', revenue.biaya_transfer],
-        ['Biaya Bulanan', revenue.biaya_bulanan],
-      ];
-
-      revenueRows.forEach(([label, value], index) => {
-        const row = worksheet.addRow([
-          index + 1,
-          label,
-          formatTwoDecimal(Number(value)),
-        ]);
-        applyBorder(row);
+      ['A3', 'A4', 'A5'].forEach((cellKey) => {
+        worksheet.getCell(cellKey).font = { bold: true };
       });
 
-      const totalPendapatan =
-        revenue.selisih_beli_emas +
-        revenue.selisih_jual_emas +
-        revenue.biaya_admin +
-        revenue.biaya_transfer +
-        revenue.biaya_bulanan;
+      worksheet.addRow([]); // Baris kosong (Row 6)
 
-      const totalPendapatanRow = worksheet.addRow([
+      // =============================
+      // SECTION 1: PENDAPATAN
+      // =============================
+      worksheet.mergeCells('A7:C7');
+      const secPendapatan = worksheet.getCell('A7');
+      secPendapatan.value = 'PENDAPATAN';
+      secPendapatan.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      secPendapatan.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF0057B7' },
+      };
+      secPendapatan.alignment = { horizontal: 'left', vertical: 'middle' };
+      ['A7', 'B7', 'C7'].forEach((k) =>
+        applyStandardBorder(worksheet.getCell(k))
+      );
+
+      // Header Table Pendapatan (Row 8)
+      const header1Row = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
+      header1Row.height = 22;
+      header1Row.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        applyStandardBorder(cell);
+      });
+
+      const revenueItems = [
+        ['Selisih Beli Emas', Number(revenue.selisih_beli_emas || 0)],
+        ['Selisih Jual Emas', Number(revenue.selisih_jual_emas || 0)],
+        ['Biaya Admin', Number(revenue.biaya_admin || 0)],
+        ['Biaya Transfer', Number(revenue.biaya_transfer || 0)],
+        ['Biaya Bulanan', Number(revenue.biaya_bulanan || 0)],
+      ];
+
+      const revStartRow = 9;
+      revenueItems.forEach(([label, val], idx) => {
+        const row = worksheet.addRow([idx + 1, label, val]);
+
+        // Zebra Striping
+        if (idx % 2 === 1) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+        row.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+        row.getCell(3).numFmt = currencyFormat;
+
+        row.eachCell((cell) => applyStandardBorder(cell));
+      });
+      const revEndRow = revStartRow + revenueItems.length - 1;
+
+      // Total Pendapatan Row
+      const totRevRow = worksheet.addRow([
         '',
         'TOTAL PENDAPATAN',
-        formatTwoDecimal(totalPendapatan),
+        { formula: `SUM(C${revStartRow}:C${revEndRow})` },
       ]);
-      totalPendapatanRow.font = { bold: true };
-      applyBorder(totalPendapatanRow);
+      totRevRow.height = 22;
+      const totRevRowNum = totRevRow.number;
 
-      worksheet.addRow([]);
+      totRevRow.getCell(2).font = { bold: true };
+      totRevRow.getCell(2).alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
-      // ===== SECTION BIAYA =====
-      const biayaTitle = worksheet.addRow(['BIAYA']);
-      biayaTitle.font = { bold: true };
-      applyBorder(biayaTitle);
+      const totRevCell = totRevRow.getCell(3);
+      totRevCell.font = { bold: true };
+      totRevCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      totRevCell.numFmt = currencyFormat;
 
-      const header2 = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
-      header2.font = { bold: true };
-      applyBorder(header2);
-
-      const costRows = [
-        ['Fee Toko', cost.fee_toko],
-        ['Fee Third Party', cost.fee_third_party],
-      ];
-
-      costRows.forEach(([label, value], index) => {
-        const row = worksheet.addRow([
-          index + 1,
-          label,
-          formatTwoDecimal(Number(value)),
-        ]);
-        applyBorder(row);
+      totRevRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE6F0FA' }, // Soft Blue Highlight
+        };
+        applyStandardBorder(cell);
       });
 
-      const totalBiaya = cost.fee_toko + cost.fee_third_party;
+      worksheet.addRow([]); // Blank Row
 
-      const totalBiayaRow = worksheet.addRow([
+      // =============================
+      // SECTION 2: BIAYA
+      // =============================
+      const secBiayaRow = worksheet.addRow(['BIAYA', '', '']);
+      const secBiayaRowNum = secBiayaRow.number;
+      worksheet.mergeCells(`A${secBiayaRowNum}:C${secBiayaRowNum}`);
+
+      const secBiaya = worksheet.getCell(`A${secBiayaRowNum}`);
+      secBiaya.value = 'BIAYA';
+      secBiaya.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      secBiaya.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF0057B7' },
+      };
+      secBiaya.alignment = { horizontal: 'left', vertical: 'middle' };
+      [
+        `A${secBiayaRowNum}`,
+        `B${secBiayaRowNum}`,
+        `C${secBiayaRowNum}`,
+      ].forEach((k) => applyStandardBorder(worksheet.getCell(k)));
+
+      // Header Table Biaya
+      const header2Row = worksheet.addRow(['No', 'Keterangan', 'Jumlah (Rp)']);
+      header2Row.height = 22;
+      header2Row.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        applyStandardBorder(cell);
+      });
+
+      const costItems = [
+        ['Fee Toko', Number(cost.fee_toko || 0)],
+        ['Fee Third Party', Number(cost.fee_third_party || 0)],
+      ];
+
+      const costStartRow = header2Row.number + 1;
+      costItems.forEach(([label, val], idx) => {
+        const row = worksheet.addRow([idx + 1, label, val]);
+
+        if (idx % 2 === 1) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+        row.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+        row.getCell(3).numFmt = currencyFormat;
+
+        row.eachCell((cell) => applyStandardBorder(cell));
+      });
+      const costEndRow = costStartRow + costItems.length - 1;
+
+      // Total Biaya Row
+      const totCostRow = worksheet.addRow([
         '',
         'TOTAL BIAYA',
-        formatTwoDecimal(totalBiaya),
+        { formula: `SUM(C${costStartRow}:C${costEndRow})` },
       ]);
-      totalBiayaRow.font = { bold: true };
-      applyBorder(totalBiayaRow);
+      totCostRow.height = 22;
+      const totCostRowNum = totCostRow.number;
 
-      worksheet.addRow([]);
+      totCostRow.getCell(2).font = { bold: true };
+      totCostRow.getCell(2).alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
-      // ===== LABA RUGI =====
+      const totCostCell = totCostRow.getCell(3);
+      totCostCell.font = { bold: true };
+      totCostCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      totCostCell.numFmt = currencyFormat;
+
+      totCostRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE6F0FA' },
+        };
+        applyStandardBorder(cell);
+      });
+
+      worksheet.addRow([]); // Blank Row
+
+      // =============================
+      // SECTION 3: LABA RUGI NETTO
+      // =============================
       const labaRugiRow = worksheet.addRow([
         '',
         'TOTAL LABA RUGI',
-        formatTwoDecimal(totalPendapatan - totalBiaya),
+        { formula: `C${totRevRowNum}-C${totCostRowNum}` },
       ]);
-      labaRugiRow.font = { bold: true };
-      applyBorder(labaRugiRow);
+      labaRugiRow.height = 24;
 
-      worksheet.columns = [{ width: 10 }, { width: 35 }, { width: 25 }];
+      labaRugiRow.getCell(2).font = { bold: true, size: 11 };
+      labaRugiRow.getCell(2).alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+      };
 
+      const labaRugiCell = labaRugiRow.getCell(3);
+      labaRugiCell.font = { bold: true, size: 11 };
+      labaRugiCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      labaRugiCell.numFmt = currencyFormat;
+
+      labaRugiRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' }, // Kuning Highlight
+        };
+        applyStandardBorder(cell);
+      });
+
+      // Set Column Widths
+      worksheet.columns = [
+        { width: 10 }, // No
+        { width: 38 }, // Keterangan
+        { width: 28 }, // Jumlah (Rp)
+      ];
+
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
       const fileName = `laporan_laba_rugi_${dayjs().format(

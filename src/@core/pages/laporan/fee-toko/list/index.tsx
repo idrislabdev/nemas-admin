@@ -71,34 +71,68 @@ const SellerCommissionListPage = () => {
   }, [debouncedSearch]);
 
   const columns: ColumnsType<ISellerCommission> = [
-    { title: 'No Transaksi', dataIndex: 'transaction_number', width: 160 },
+    {
+      title: 'No Transaksi',
+      dataIndex: 'transaction_number',
+      width: 160,
+      align: 'left',
+    },
     {
       title: 'Tanggal Transaksi',
       dataIndex: 'transaction_datetime',
       width: 180,
-      render: (v) => moment(v).format('DD MMMM YYYY HH:mm'),
+      align: 'center',
+      render: (v) => (v ? dayjs(v).format('DD MMM YYYY HH:mm') : '-'),
     },
-    { title: 'Member No', dataIndex: 'member_number', width: 120 },
-    { title: 'Nama Toko', dataIndex: 'nama_toko', width: 180 },
-    { title: 'User', dataIndex: 'user_name', width: 150 },
-    { title: 'Email', dataIndex: 'user_email', width: 200 },
-    { title: 'Kode Unik', dataIndex: 'unique_code', width: 120 },
+    {
+      title: 'Member No',
+      dataIndex: 'member_number',
+      width: 130,
+      align: 'left',
+    },
+    {
+      title: 'Nama Toko',
+      dataIndex: 'nama_toko',
+      width: 180,
+      align: 'left',
+    },
+    {
+      title: 'User',
+      dataIndex: 'user_name',
+      width: 150,
+      align: 'left',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'user_email',
+      width: 200,
+      align: 'left',
+    },
+    {
+      title: 'Kode Unik',
+      dataIndex: 'unique_code',
+      width: 120,
+      align: 'center',
+    },
     {
       title: 'Berat (Gram)',
       dataIndex: 'weight',
       width: 140,
+      align: 'right',
       render: (v) => `${formatDecimal(Number(v || 0))} Gram`,
     },
     {
       title: 'Total Harga',
       dataIndex: 'total_price',
       width: 160,
+      align: 'right',
       render: (v) => `Rp${formatDecimal(Number(v || 0))}`,
     },
     {
       title: 'Fee Toko',
       dataIndex: 'commission_amount',
       width: 160,
+      align: 'right',
       fixed: 'right',
       render: (v) => `Rp${formatDecimal(Number(v || 0))}`,
     },
@@ -154,116 +188,173 @@ const SellerCommissionListPage = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
 
       const rows = await fetchAllData();
-      if (!rows.length) return;
-
-      const data = rows.map((r: ISellerCommission) => ({
-        'No Transaksi': r.transaction_number,
-        'Tanggal Transaksi': moment(r.transaction_datetime).format(
-          'DD MMMM YYYY HH:mm'
-        ),
-        'Member No': r.member_number,
-        'Nama Toko': r.nama_toko,
-        User: r.user_name,
-        Email: r.user_email,
-        'Kode Unik': r.unique_code,
-        'Berat (Gram)': Number(r.weight || 0),
-        'Total Harga (Rp)': Number(r.total_price || 0),
-        'Fee Toko (Rp)': Number(r.commission_amount || 0),
-      }));
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const workbook = new ExcelJS.Workbook();
-      const ws = workbook.addWorksheet('Seller Commission');
+      workbook.creator = (user as IUser)?.name || 'System';
+      workbook.created = new Date();
 
-      const applyBorder = (
-        cell: ExcelJS.Cell,
-        type: 'thin' | 'medium' = 'thin'
-      ) => {
-        cell.border = {
-          top: { style: type },
-          left: { style: type },
-          bottom: { style: type },
-          right: { style: type },
-        };
-      };
+      const worksheet = workbook.addWorksheet('Detail Fee Toko');
+      const totalColumns = 10;
 
-      // ===== TITLE =====
-      ws.mergeCells('A1:J1');
-      ws.getCell('A1').value = 'LAPORAN DETAIL FEE TOKO';
-      ws.getCell('A1').font = { bold: true, size: 14 };
-      ws.getCell('A1').alignment = { horizontal: 'left', vertical: 'middle' };
+      // =============================
+      // TITLE & METADATA (Row 1 - 6)
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN DETAIL FEE TOKO';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== DIBUAT OLEH =====
-      ws.mergeCells('A2:J2');
-      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      ws.getCell('A2').alignment = { horizontal: 'left' };
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
 
-      // ===== TANGGAL EXPORT =====
-      ws.mergeCells('A3:J3');
-      ws.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      ws.getCell('A3').alignment = { horizontal: 'left' };
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== TOTAL DATA =====
-      ws.mergeCells('A4:J4');
-      ws.getCell('A4').value = `Total Data : ${rows.length}`;
-      ws.getCell('A4').alignment = { horizontal: 'left' };
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      // ===== PERIODE =====
-      const periode =
-        params.start_date && params.end_date
-          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
               params.end_date
-            ).format('DD-MM-YYYY')}`
+            ).format('DD MMMM YYYY')}`
           : '-';
-      ws.mergeCells('A5:J5');
-      ws.getCell('A5').value = `Periode: ${periode}`;
 
-      ws.getCell('A5').alignment = { horizontal: 'left' };
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      ws.addRow([]);
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      // ===== HEADER =====
-      const headers = Object.keys(data[0]);
-      const headerRow = ws.addRow(headers);
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = [
+        'No Transaksi',
+        'Tanggal Transaksi',
+        'Member No',
+        'Nama Toko',
+        'User',
+        'Email',
+        'Kode Unik',
+        'Berat (Gram)',
+        'Total Harga',
+        'Fee Toko',
+      ];
+
+      const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        applyBorder(cell);
-
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
+          fgColor: { argb: 'FF0057B7' }, // Biru Utama
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      // ===== DATA ROWS =====
-      data.forEach((row) => {
-        const r = ws.addRow(headers.map((h) => row[h as keyof typeof row]));
+      // Native Excel Formats
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
 
-        r.eachCell((cell, col) => {
-          const header = headers[col - 1];
-          const isNumeric =
-            header.includes('(Rp)') || header.includes('(Gram)');
+      // =============================
+      // DATA ROWS (Row 9+)
+      // =============================
+      rows.forEach((item: ISellerCommission, index: number) => {
+        const rowValues = [
+          item.transaction_number || '-',
+          item.transaction_datetime
+            ? dayjs(item.transaction_datetime).format('DD MMM YYYY HH:mm')
+            : '-',
+          item.member_number || '-',
+          item.nama_toko || '-',
+          item.user_name || '-',
+          item.user_email || '-',
+          item.unique_code || '-',
+          Number(item.weight || 0),
+          Number(item.total_price || 0),
+          Number(item.commission_amount || 0),
+        ];
 
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
+        const newRow = worksheet.addRow(rowValues);
+
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 2: // Tanggal Transaksi
+            case 7: // Kode Unik
+              horizontal = 'center';
+              break;
+
+            case 8: // Berat
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 9: // Total Harga
+            case 10: // Fee Toko
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
           };
-
-          applyBorder(cell);
         });
       });
 
-      // ===== TOTAL =====
-      const totalFee = data.reduce((s, r) => s + Number(r['Fee Toko (Rp)']), 0);
+      // =============================
+      // TOTAL ROW
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
-      const totalRow = ws.addRow([
+      const totalRow = worksheet.addRow([
         'TOTAL',
         '',
         '',
@@ -271,49 +362,76 @@ const SellerCommissionListPage = () => {
         '',
         '',
         '',
-        '',
-        '',
-        new Intl.NumberFormat('id-ID').format(totalFee),
+        { formula: `SUM(H${startRow}:H${endRow})` }, // Total Berat
+        { formula: `SUM(I${startRow}:I${endRow})` }, // Total Harga
+        { formula: `SUM(J${startRow}:J${endRow})` }, // Total Fee Toko
       ]);
 
-      totalRow.eachCell((cell, col) => {
-        cell.font = { bold: true };
-        applyBorder(cell, 'medium');
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:G${totalRowNumber}`);
 
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (colNumber >= 8 && colNumber <= 10) {
+          horizontal = 'right';
+        }
+
+        // Format NumFmt pada Total
+        if (colNumber === 8) cell.numFmt = weightFormat;
+        if (colNumber === 9 || colNumber === 10) cell.numFmt = currencyFormat;
+
+        cell.font = { bold: true };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: { argb: 'FFFFF59D' }, // Kuning Highlight
         };
-
-        if (col === 10) {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-        }
+        cell.alignment = { horizontal, vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
       });
 
-      // ===== AUTO WIDTH =====
-      ws.columns.forEach((c) => {
-        if (!c) return;
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-        let max = 10;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
 
-        c.eachCell?.({ includeEmpty: true }, (cell) => {
-          const len = cell.value ? cell.value.toString().length : 0;
-          max = Math.max(max, len);
+        // Kalkulasi lebar hanya berdasarkan isi data & header tabel (Baris 8 ke bawah)
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        c.width = Math.min(max + 2, 40);
+        column.width = Math.min(maxLength + 4, 35);
       });
 
-      // ===== FREEZE HEADER =====
-      ws.views = [{ state: 'frozen', ySplit: 7 }];
-
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
-      saveAs(
-        new Blob([buffer]),
-        `laporan_fee_toko_detail_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
-      );
+      const fileName = `laporan_fee_toko_detail_${dayjs().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+
+      saveAs(new Blob([buffer]), fileName);
+    } catch (err) {
+      console.error('Export failed:', err);
     } finally {
       setIsModalLoading(false);
     }
