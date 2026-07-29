@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Table, message } from 'antd';
 import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
@@ -9,11 +9,10 @@ import { formatDecimal } from '@/@core/utils/general';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
-import moment from 'moment';
-import 'moment/locale/id';
+import 'dayjs/locale/id';
 import { IUser } from '@/@core/@types/interface';
 
-moment.locale('id');
+dayjs.locale('id');
 const { RangePicker } = DatePicker;
 
 /* ================= INTERFACE ================= */
@@ -38,24 +37,16 @@ export interface IGoldRedeemReport {
   delivery_status: string;
 }
 
-/* ================= EXPORT TYPES ================= */
-type ExportRow = {
-  'Tanggal Order': string;
-  'No Order': string;
-  Nama: string;
-  'Jenis Emas': string;
-  Brand: string;
-  'Kode Sertifikat': string;
-  'Berat (gr)': number;
-  'Harga Emas (Rp)': number;
-  'Harga Sertifikat (Rp)': number;
-  'Total Order (Rp)': number;
-  'Metode Pembayaran': string;
-  'No Pembayaran': string;
-  'Status Pembayaran': string;
-  Kurir: string;
-  'No Resi': string;
-  'Status Pengiriman': string;
+/* ================= HELPER EXCEL ================= */
+const getExcelColumnLabel = (colIndex: number): string => {
+  let label = '';
+  let index = colIndex;
+  while (index > 0) {
+    const remainder = (index - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    index = Math.floor((index - 1) / 26);
+  }
+  return label;
 };
 
 const TarikEmasListTable = () => {
@@ -90,8 +81,8 @@ const TarikEmasListTable = () => {
   const fetchData = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(url, { params });
-      setDataTable(resp.data.results);
-      setTotal(resp.data.count);
+      setDataTable(resp.data?.results || []);
+      setTotal(resp.data?.count || 0);
     } catch (err) {
       console.error('Fetch failed:', err);
     }
@@ -104,11 +95,14 @@ const TarikEmasListTable = () => {
   /* ================= SEARCH DEBOUNCE ================= */
   useEffect(() => {
     const t = setTimeout(() => {
-      setParams((prev) => ({
-        ...prev,
-        search: searchText,
-        offset: 0,
-      }));
+      setParams((prev) => {
+        if (prev.search === searchText) return prev;
+        return {
+          ...prev,
+          search: searchText,
+          offset: 0,
+        };
+      });
     }, 500);
     return () => clearTimeout(t);
   }, [searchText]);
@@ -160,137 +154,174 @@ const TarikEmasListTable = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      // Parse user safety check
+      let user: IUser | null = null;
+      try {
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      } catch (e) {
+        console.warn('Failed to parse user from localStorage', e);
+      }
 
       const resp = await axiosInstance.get(url, {
         params: { ...params, offset: 0, limit: 1000 },
       });
 
-      const rows = resp.data.results as IGoldRedeemReport[];
-      if (!rows.length) return;
+      const rows = (resp.data?.results || []) as IGoldRedeemReport[];
+      if (!rows.length) {
+        message.warning('Tidak ada data untuk diexport');
+        return;
+      }
 
       /* ================= MAP DATA ================= */
-
-      const dataToExport: ExportRow[] = rows.map((r) => ({
-        'Tanggal Order': moment(r.order_timestamp).format('DD MMMM YYYY HH:mm'),
-        'No Order': r.order_number,
-        Nama: r.name,
-        'Jenis Emas': r.gold_type,
-        Brand: r.gold_brand,
-        'Kode Sertifikat': r.cert_code,
-        'Berat (gr)': r.weight ?? 0,
-        'Harga Emas (Rp)': r.gold_price ?? 0,
-        'Harga Sertifikat (Rp)': r.cert_price ?? 0,
-        'Total Order (Rp)': r.order_price ?? 0,
-        'Metode Pembayaran': r.order_payment_method_name,
-        'No Pembayaran': r.order_payment_number,
-        'Status Pembayaran': r.order_gold_payment_status,
-        Kurir: r.tracking_courier_name,
-        'No Resi': r.tracking_number,
-        'Status Pengiriman': r.delivery_status,
+      const dataToExport = rows.map((r) => ({
+        'Tanggal Order':
+          r.order_timestamp && dayjs(r.order_timestamp).isValid()
+            ? dayjs(r.order_timestamp).format('DD MMMM YYYY HH:mm')
+            : '-',
+        'No Order': r.order_number || '-',
+        Nama: r.name || '-',
+        'Jenis Emas': r.gold_type || '-',
+        Brand: r.gold_brand || '-',
+        'Kode Sertifikat': r.cert_code || '-',
+        'Berat (gr)': Number(r.weight) || 0,
+        'Harga Emas (Rp)': Number(r.gold_price) || 0,
+        'Harga Sertifikat (Rp)': Number(r.cert_price) || 0,
+        'Total Order (Rp)': Number(r.order_price) || 0,
+        'Metode Pembayaran': r.order_payment_method_name || '-',
+        'No Pembayaran': r.order_payment_number || '-',
+        'Status Pembayaran': r.order_gold_payment_status || '-',
+        Kurir: r.tracking_courier_name || '-',
+        'No Resi': r.tracking_number || '-',
+        'Status Pengiriman': r.delivery_status || '-',
       }));
 
-      /* ================= EXCEL ================= */
+      type ExportRow = (typeof dataToExport)[number];
 
+      /* ================= EXCEL WORKBOOK ================= */
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Tarik Emas Detail');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+      const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
-      /* ================= TITLE ================= */
+      /* ================= TITLE & METADATA ================= */
+      const formattedStartDate =
+        params.start_date && dayjs(params.start_date).isValid()
+          ? dayjs(params.start_date).format('DD MMMM YYYY')
+          : '-';
+      const formattedEndDate =
+        params.end_date && dayjs(params.end_date).isValid()
+          ? dayjs(params.end_date).format('DD MMMM YYYY')
+          : '-';
 
-      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
+      const metadata = [
+        { cell: 'A1', val: 'LAPORAN TARIK EMAS DETAIL', bold: true, size: 14 },
+        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A3',
+          val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
+        },
+        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A5',
+          val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
+        },
+      ];
 
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN TARIK EMAS DETAIL';
-      title.font = { bold: true, size: 14 };
-      title.alignment = { horizontal: 'left' };
+      metadata.forEach((m, idx) => {
+        const rowNum = idx + 1;
+        worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+        const c = worksheet.getCell(m.cell);
+        c.value = m.val;
+        c.font = {
+          name: 'Calibri',
+          bold: !!m.bold,
+          size: m.size || 11,
+          color: { argb: 'FF1E293B' },
+        };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
+      });
 
-      /* ================= DIBUAT OLEH ================= */
-
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-
-      /* ================= TANGGAL EXPORT ================= */
-
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-      /* ================= TOTAL DATA ================= */
-
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      /* ================= PERIODE ================= */
-
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD MMMM YYYY'
-      )}`;
-      worksheet.getCell('A5').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
+      worksheet.addRow([]); // Row 6 blank
 
       /* ================= HEADER ================= */
-
       const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
       const headerRow = worksheet.addRow(headerKeys);
+      const headerRowIndex = 7;
+      headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+          size: 11,
         };
-
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+          wrapText: true,
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'medium', color: { argb: 'FF004397' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
+          fgColor: { argb: 'FF0057B7' },
         };
       });
 
-      /* ================= DATA ROW ================= */
+      /* ================= DATA ROWS ================= */
+      const dataStartRow = 8;
 
-      dataToExport.forEach((row) => {
+      dataToExport.forEach((row, idx) => {
         const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+        newRow.height = 20;
 
-        newRow.eachCell((cell, col) => {
-          const header = headerKeys[col - 1] as string;
+        const isEven = idx % 2 === 1;
+        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
+
+        newRow.eachCell((cell, colIndex) => {
+          const header = headerKeys[colIndex - 1];
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
+          cell.font = {
+            name: 'Calibri',
+            size: 10,
+            color: { argb: 'FF334155' },
+          };
           cell.alignment = {
             horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
           };
 
           if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+            cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
           }
 
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor },
+          };
+
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           };
         });
       });
 
-      /* ================= TOTAL ================= */
+      const dataEndRow = dataStartRow + dataToExport.length - 1;
 
+      /* ================= TOTAL ROW (EXCEL FORMULA) ================= */
       type NumericExportKey =
         | 'Berat (gr)'
         | 'Harga Emas (Rp)'
@@ -304,69 +335,91 @@ const TarikEmasListTable = () => {
         'Total Order (Rp)',
       ];
 
-      const totals: Record<NumericExportKey, number> = {
-        'Berat (gr)': 0,
-        'Harga Emas (Rp)': 0,
-        'Harga Sertifikat (Rp)': 0,
-        'Total Order (Rp)': 0,
-      };
-
-      totalFields.forEach((field) => {
-        totals[field] = dataToExport.reduce(
-          (sum, row) => sum + Number(row[field]),
-          0
-        );
+      const totalRowValues = headerKeys.map((key, colIdx) => {
+        if (key === 'Tanggal Order') return 'TOTAL';
+        if (totalFields.includes(key as NumericExportKey)) {
+          const colLetter = getExcelColumnLabel(colIdx + 1);
+          return {
+            formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
+          };
+        }
+        return '';
       });
 
-      const totalRow = worksheet.addRow(
-        headerKeys.map((key) => {
-          if (key === 'Tanggal Order') return 'TOTAL';
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.height = 22;
 
-          if (totalFields.includes(key as NumericExportKey)) {
-            return new Intl.NumberFormat('id-ID').format(
-              totals[key as NumericExportKey]
-            );
-          }
+      totalRow.eachCell((cell, colIndex) => {
+        const header = headerKeys[colIndex - 1];
+        const isNumeric = totalFields.includes(header as NumericExportKey);
 
-          return '';
-        })
-      );
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FF1E293B' },
+          size: 11,
+        };
+        cell.alignment = {
+          horizontal: isNumeric ? 'right' : 'left',
+          vertical: 'middle',
+        };
 
-      totalRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        if (isNumeric) {
+          cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+        }
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: { argb: 'FFFFF59D' },
+        };
+
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          bottom: { style: 'double', color: { argb: 'FF475569' } },
+          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
         };
       });
 
+      /* ================= AUTOFILTER & FREEZE PANE ================= */
+      worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+      worksheet.views = [
+        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+      ];
+
       /* ================= AUTO WIDTH ================= */
-
       worksheet.columns.forEach((col) => {
-        let max = 0;
+        let maxLen = 0;
+        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+          // Abaikan metadata header (Row 1-5) agar kolom tidak melebar melebihi batas isi tabel
+          if (rowNumber < headerRowIndex) return;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          max = Math.max(max, cell.value?.toString().length || 0);
+          let strVal = '';
+          if (
+            cell.value &&
+            typeof cell.value === 'object' &&
+            'formula' in cell.value
+          ) {
+            strVal = '123,456,789.00'; // Estimasi fallback panjang string untuk formula SUM
+          } else if (cell.value != null) {
+            strVal = cell.value.toString();
+          }
+
+          maxLen = Math.max(maxLen, strVal.length);
         });
-
-        col.width = Math.min(max + 2, 40);
+        col.width = Math.max(maxLen + 4, 14);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      /* ================= SAVE ================= */
-
+      /* ================= SAVE FILE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
-
       saveAs(
         new Blob([buffer]),
         `laporan_tarik_emas_detail_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
-      console.error(err);
+      console.error('Export failed:', err);
+      message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
     }
@@ -378,8 +431,8 @@ const TarikEmasListTable = () => {
       {
         title: 'Tanggal Order',
         dataIndex: 'order_timestamp',
-        render: (v) => moment(v).format('DD MMM YYYY HH:mm'),
-        width: 200,
+        render: (v) => (v ? dayjs(v).format('DD MMM YYYY HH:mm') : '-'),
+        width: 180,
       },
       { title: 'No Order', dataIndex: 'order_number' },
       { title: 'Nama', dataIndex: 'name' },
@@ -389,21 +442,25 @@ const TarikEmasListTable = () => {
       {
         title: 'Berat (gr)',
         dataIndex: 'weight',
+        align: 'right',
         render: formatDecimal,
       },
       {
         title: 'Harga Emas',
         dataIndex: 'gold_price',
+        align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
       {
         title: 'Harga Sertifikat',
         dataIndex: 'cert_price',
+        align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
       {
         title: 'Total Order',
         dataIndex: 'order_price',
+        align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
       { title: 'Metode Bayar', dataIndex: 'order_payment_method_name' },
@@ -429,14 +486,18 @@ const TarikEmasListTable = () => {
             placeholder="Cari data..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="border rounded px-3 h-[40px]"
+            className="border rounded px-3 h-[40px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <button className="btn btn-primary" onClick={exportData}>
+        <button
+          className="btn btn-primary flex items-center gap-2"
+          onClick={exportData}
+        >
           <FileDownload02 />
           Export Excel
         </button>
       </div>
+
       <div className="border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <div className="overflow-x-auto">
           <Table
@@ -448,7 +509,7 @@ const TarikEmasListTable = () => {
             size="small"
           />
 
-          <div className="flex justify-end mt-3">
+          <div className="flex justify-end p-3">
             <Pagination
               total={total}
               pageSize={params.limit}
@@ -458,6 +519,7 @@ const TarikEmasListTable = () => {
           </div>
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { DatePicker, Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Table, message } from 'antd';
 import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
@@ -9,11 +9,10 @@ import { formatDecimal } from '@/@core/utils/general';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
-import moment from 'moment';
-import 'moment/locale/id';
+import 'dayjs/locale/id';
 import { IUser } from '@/@core/@types/interface';
 
-moment.locale('id');
+dayjs.locale('id');
 const { RangePicker } = DatePicker;
 
 /* ================= INTERFACE ================= */
@@ -58,6 +57,18 @@ type ExportSummaryRow = {
   'Status Pengiriman': string;
 };
 
+/* ================= HELPER EXCEL ================= */
+const getExcelColumnLabel = (colIndex: number): string => {
+  let label = '';
+  let index = colIndex;
+  while (index > 0) {
+    const remainder = (index - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    index = Math.floor((index - 1) / 26);
+  }
+  return label;
+};
+
 const TarikEmasSummaryTable = () => {
   const url = '/reports/gold-redeem/summary';
 
@@ -90,8 +101,8 @@ const TarikEmasSummaryTable = () => {
   const fetchData = useCallback(async () => {
     try {
       const resp = await axiosInstance.get(url, { params });
-      setDataTable(resp.data.results);
-      setTotal(resp.data.count);
+      setDataTable(resp.data?.results || []);
+      setTotal(resp.data?.count || 0);
     } catch (err) {
       console.error('Fetch failed:', err);
     }
@@ -101,14 +112,17 @@ const TarikEmasSummaryTable = () => {
     fetchData();
   }, [fetchData]);
 
-  /* ================= SEARCH ================= */
+  /* ================= SEARCH DEBOUNCE ================= */
   useEffect(() => {
     const t = setTimeout(() => {
-      setParams((prev) => ({
-        ...prev,
-        search: searchText,
-        offset: 0,
-      }));
+      setParams((prev) => {
+        if (prev.search === searchText) return prev;
+        return {
+          ...prev,
+          search: searchText,
+          offset: 0,
+        };
+      });
     }, 500);
     return () => clearTimeout(t);
   }, [searchText]);
@@ -166,120 +180,150 @@ const TarikEmasSummaryTable = () => {
         params: { ...params, offset: 0, limit: 1000 },
       });
 
-      const rows = resp.data.results as IGoldRedeemSummary[];
-      if (!rows.length) return;
+      const rows = (resp.data?.results || []) as IGoldRedeemSummary[];
+      if (!rows || rows.length === 0) {
+        message.warning('Tidak ada data untuk diexport.');
+        return;
+      }
 
+      /* 1. MAPPING DATA EXPORT */
       const dataToExport: ExportSummaryRow[] = rows.map((r) => ({
-        'Tanggal Order': moment(r.order_timestamp).format('DD MMMM YYYY HH:mm'),
-        'No Order': r.order_number,
-        Nama: r.name,
-        Qty: r.qty ?? 0,
-        'Berat (gr)': r.weight ?? 0,
-        'Harga Emas (Rp)': r.gold_price ?? 0,
-        'Harga Sertifikat (Rp)': r.cert_price ?? 0,
-        'Admin (Rp)': r.order_admin_amount ?? 0,
-        'Asuransi (Rp)': r.order_tracking_insurance ?? 0,
-        'Total Order (Rp)': r.order_amount ?? 0,
-        'Metode Pembayaran': r.order_payment_method_name,
-        'No Pembayaran': r.order_payment_number,
-        'Status Pembayaran': r.order_gold_payment_status,
-        Kurir: r.tracking_courier_name,
-        'No Resi': r.tracking_number,
-        'Status Pengiriman': r.delivery_status,
+        'Tanggal Order': r.order_timestamp
+          ? dayjs(r.order_timestamp).format('DD MMMM YYYY HH:mm')
+          : '-',
+        'No Order': r.order_number || '-',
+        Nama: r.name || '-',
+        Qty: Number(r.qty || 0),
+        'Berat (gr)': Number(r.weight || 0),
+        'Harga Emas (Rp)': Number(r.gold_price || 0),
+        'Harga Sertifikat (Rp)': Number(r.cert_price || 0),
+        'Admin (Rp)': Number(r.order_admin_amount || 0),
+        'Asuransi (Rp)': Number(r.order_tracking_insurance || 0),
+        'Total Order (Rp)': Number(r.order_amount || 0),
+        'Metode Pembayaran': r.order_payment_method_name || '-',
+        'No Pembayaran': r.order_payment_number || '-',
+        'Status Pembayaran': r.order_gold_payment_status || '-',
+        Kurir: r.tracking_courier_name || '-',
+        'No Resi': r.tracking_number || '-',
+        'Status Pengiriman': r.delivery_status || '-',
       }));
 
+      /* 2. INSIALISASI WORKBOOK & WORKSHEET */
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Tarik Emas Summary');
-
-      const totalColumns = Object.keys(dataToExport[0]).length;
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
-
-      /* ================= TITLE ================= */
-
-      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
-      title.value = 'LAPORAN TARIK EMAS SUMMARY';
-      title.font = { bold: true, size: 14 };
-      title.alignment = { horizontal: 'left' };
-
-      /* ================= DIBUAT OLEH ================= */
-
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-
-      /* ================= TANGGAL EXPORT ================= */
-
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-      /* ================= TOTAL DATA ================= */
-
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      /* ================= PERIODE ================= */
-
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD MMMM YYYY'
-      )}`;
-      worksheet.getCell('A5').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
-
-      /* ================= HEADER ================= */
-
       const headerKeys = Object.keys(
         dataToExport[0]
       ) as (keyof ExportSummaryRow)[];
+      const totalColumns = headerKeys.length;
 
+      // =============================
+      // TITLE & METADATA (SAMA PERSIS WITH BUY REPORT)
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN TARIK EMAS SUMMARY';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
+
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
+
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
+
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
+
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
+
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
       const headerRow = worksheet.addRow(headerKeys);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
-        };
       });
 
-      /* ================= DATA ================= */
+      // Native Excel Formats
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
+      const qtyFormat = '#,##0';
 
-      dataToExport.forEach((row) => {
-        const r = worksheet.addRow(headerKeys.map((k) => row[k]));
+      // =============================
+      // DATA ROWS
+      // =============================
+      dataToExport.forEach((row, index) => {
+        const newRow = worksheet.addRow(headerKeys.map((k) => row[k]));
 
-        r.eachCell((cell, col) => {
-          const header = headerKeys[col - 1] as string;
-          const isNumeric =
-            header.includes('(Rp)') ||
-            header.includes('(gr)') ||
-            header === 'Qty';
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
 
-          cell.alignment = {
-            horizontal: isNumeric ? 'right' : 'left',
-          };
+        newRow.eachCell((cell, colNumber) => {
+          const header = headerKeys[colNumber - 1];
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-          if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+          if (
+            header === 'Tanggal Order' ||
+            header === 'Status Pembayaran' ||
+            header === 'Status Pengiriman' ||
+            header === 'Kurir' ||
+            header === 'No Resi'
+          ) {
+            horizontal = 'center';
+          } else if (header === 'Qty') {
+            horizontal = 'right';
+            cell.numFmt = qtyFormat;
+          } else if (header === 'Berat (gr)') {
+            horizontal = 'right';
+            cell.numFmt = weightFormat;
+          } else if (header.includes('(Rp)')) {
+            horizontal = 'right';
+            cell.numFmt = currencyFormat;
+          } else {
+            horizontal = 'left';
           }
 
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -289,7 +333,11 @@ const TarikEmasSummaryTable = () => {
         });
       });
 
-      /* ================= TOTAL ================= */
+      // =============================
+      // TOTAL ROW (EXCEL FORMULA & ACCORDING STYLING)
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
 
       type NumericKey =
         | 'Qty'
@@ -310,62 +358,86 @@ const TarikEmasSummaryTable = () => {
         'Total Order (Rp)',
       ];
 
-      const totals = {} as Record<NumericKey, number>;
-
-      totalFields.forEach((f) => {
-        totals[f] = dataToExport.reduce((sum, row) => sum + Number(row[f]), 0);
-      });
-
       const totalRow = worksheet.addRow(
-        headerKeys.map((key) => {
+        headerKeys.map((key, colIdx) => {
           if (key === 'Tanggal Order') return 'TOTAL';
-
           if (totalFields.includes(key as NumericKey)) {
-            return new Intl.NumberFormat('id-ID').format(
-              totals[key as NumericKey]
-            );
+            const colLetter = getExcelColumnLabel(colIdx + 1);
+            return {
+              formula: `SUM(${colLetter}${startRow}:${colLetter}${endRow})`,
+            };
           }
-
           return '';
         })
       );
 
-      totalRow.eachCell((cell) => {
-        cell.font = { bold: true };
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:C${totalRowNumber}`); // Merge Tanggal, No Order, Nama
 
+      totalRow.eachCell((cell, colNumber) => {
+        const header = headerKeys[colNumber - 1];
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (totalFields.includes(header as NumericKey)) {
+          horizontal = 'right';
+        }
+
+        // Format NumFmt pada Total
+        if (header === 'Qty') cell.numFmt = qtyFormat;
+        if (header === 'Berat (gr)') cell.numFmt = weightFormat;
+        if (header.includes('(Rp)')) cell.numFmt = currencyFormat;
+
+        cell.font = { bold: true };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFF9E79F' },
+          fgColor: { argb: 'FFFFF59D' },
+        };
+        cell.alignment = { horizontal, vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      /* ================= AUTO WIDTH ================= */
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-      worksheet.columns.forEach((col) => {
-        let max = 0;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = headerKeys[colIdx]?.length || 10;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          max = Math.max(max, cell.value?.toString().length || 0);
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        col.width = Math.min(max + 2, 40);
+        column.width = Math.min(maxLength + 4, 35);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      /* ================= SAVE ================= */
-
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
-      saveAs(
-        new Blob([buffer]),
-        `laporan_tarik_emas_summary_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
-      );
+      const fileName = `laporan_tarik_emas_summary_${dayjs().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+
+      saveAs(new Blob([buffer]), fileName);
     } catch (err) {
-      console.error(err);
+      console.error('Export failed:', err);
+      message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
     }
@@ -377,20 +449,22 @@ const TarikEmasSummaryTable = () => {
       {
         title: 'Tanggal Order',
         dataIndex: 'order_timestamp',
-        render: (v) => moment(v).format('DD MMM YYYY HH:mm'),
+        render: (v) => (v ? dayjs(v).format('DD MMM YYYY HH:mm') : '-'),
         width: 180,
       },
       { title: 'No Order', dataIndex: 'order_number' },
       { title: 'Nama', dataIndex: 'name' },
-      { title: 'Qty', dataIndex: 'qty' },
+      { title: 'Qty', dataIndex: 'qty', align: 'right' },
       {
         title: 'Berat (gr)',
         dataIndex: 'weight',
+        align: 'right',
         render: formatDecimal,
       },
       {
         title: 'Total Order',
         dataIndex: 'order_amount',
+        align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
       { title: 'Metode Bayar', dataIndex: 'order_payment_method_name' },
@@ -416,10 +490,13 @@ const TarikEmasSummaryTable = () => {
             placeholder="Cari data..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="border rounded px-3 h-[40px]"
+            className="border rounded px-3 h-[40px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <button className="btn btn-primary" onClick={exportSummary}>
+        <button
+          className="btn btn-primary flex items-center gap-2"
+          onClick={exportSummary}
+        >
           <FileDownload02 />
           Export Excel
         </button>
@@ -435,7 +512,7 @@ const TarikEmasSummaryTable = () => {
           size="small"
         />
 
-        <div className="flex justify-end mt-3">
+        <div className="flex justify-end p-3">
           <Pagination
             total={total}
             pageSize={params.limit}

@@ -5,7 +5,7 @@ import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
-import { formatDecimal, formatRupiah } from '@/@core/utils/general';
+import { formatDecimal } from '@/@core/utils/general';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
@@ -141,46 +141,57 @@ const GoldBuySummaryUserTable = () => {
 
       const rows = resp.data.results as IGoldBuySummaryUser[];
 
-      if (!rows || rows.length === 0) return;
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = user?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Summary Pembelian Emas');
 
-      // ===== TITLE =====
-      worksheet.mergeCells('A1:H1');
-      worksheet.getCell('A1').value = 'LAPORAN SUMMARY PEMBELIAN EMAS PER USER';
-      worksheet.getCell('A1').alignment = { horizontal: 'left' };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      const totalColumns = 8;
 
-      // ===== DIBUAT OLEH =====
-      worksheet.mergeCells('A2:H2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      // =============================
+      // TITLE & METADATA
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN SUMMARY PEMBELIAN EMAS PER USER';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== TANGGAL EXPORT =====
-      worksheet.mergeCells('A3:H3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${user?.name || '-'}`;
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells('A4:H4');
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
-      // ===== PERIODE =====
-      worksheet.mergeCells('A5:H5');
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      const periode =
+      const periodeText =
         params?.start_date && params?.end_date
-          ? `${dayjs(params.start_date).format('DD-MM-YYYY')} s/d ${dayjs(
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
               params.end_date
-            ).format('DD-MM-YYYY')}`
+            ).format('DD MMMM YYYY')}`
           : '-';
 
-      worksheet.getCell('A5').value = `Periode : ${periode}`;
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.addRow([]);
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      // ===== HEADER =====
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
       const header = [
         'Nama User',
         'Nomor Member',
@@ -193,57 +204,96 @@ const GoldBuySummaryUserTable = () => {
       ];
 
       const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
+        };
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      // ===== DATA =====
-      let totalPembelian = 0;
-      let totalEmas = 0;
-      let totalKomisi = 0;
+      // Native Excel Number Formatting
+      const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+      const weightFormat = '#,##0.00" Gram"';
+      const integerFormat = '#,##0';
 
-      rows.forEach((item) => {
-        totalPembelian += item.total_pembelian || 0;
-        totalEmas += item.total_emas_dibeli || 0;
-        totalKomisi += item.total_komisi || 0;
-
-        const row = worksheet.addRow([
-          item.user_name,
-          item.user_member_number,
-          item.user_seller_unique_code,
-          item.jumlah_transaksi,
-          formatRupiah(item.total_pembelian),
-          item.total_emas_dibeli?.toLocaleString('id-ID', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }),
-          formatRupiah(item.total_komisi),
+      // =============================
+      // DATA ROWS
+      // =============================
+      rows.forEach((item, index) => {
+        const rowValues = [
+          item.user_name || '-',
+          item.user_member_number || '-',
+          item.user_seller_unique_code || '-',
+          Number(item.jumlah_transaksi || 0),
+          Number(item.total_pembelian || 0),
+          Number(item.total_emas_dibeli || 0),
+          Number(item.total_komisi || 0),
           item.transaksi_terakhir
             ? moment(item.transaksi_terakhir).format('DD MMM YYYY HH:mm')
             : '-',
-        ]);
+        ];
 
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: [4, 5, 6, 7].includes(colNumber) ? 'right' : 'left',
-          };
+        const newRow = worksheet.addRow(rowValues);
 
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          switch (colNumber) {
+            case 3: // Kode Seller
+              horizontal = 'center';
+              break;
+
+            case 4: // Jumlah Transaksi
+              horizontal = 'right';
+              cell.numFmt = integerFormat;
+              break;
+
+            case 5: // Total Pembelian (Rp)
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            case 6: // Total Emas Dibeli (gram)
+              horizontal = 'right';
+              cell.numFmt = weightFormat;
+              break;
+
+            case 7: // Total Komisi (Rp)
+              horizontal = 'right';
+              cell.numFmt = currencyFormat;
+              break;
+
+            case 8: // Transaksi Terakhir
+              horizontal = 'center';
+              break;
+
+            default:
+              horizontal = 'left';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -253,62 +303,81 @@ const GoldBuySummaryUserTable = () => {
         });
       });
 
-      // ===== TOTAL =====
+      // =============================
+      // TOTAL ROW
+      // =============================
+      const startRow = 9;
+      const endRow = 8 + rows.length;
+
       const totalRow = worksheet.addRow([
         'TOTAL',
         '',
         '',
-        '',
-        formatRupiah(totalPembelian),
-        totalEmas.toLocaleString('id-ID', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
-        formatRupiah(totalKomisi),
+        { formula: `SUM(D${startRow}:D${endRow})` },
+        { formula: `SUM(E${startRow}:E${endRow})` },
+        { formula: `SUM(F${startRow}:F${endRow})` },
+        { formula: `SUM(G${startRow}:G${endRow})` },
         '',
       ]);
 
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const totalRowNumber = totalRow.number;
+      worksheet.mergeCells(`A${totalRowNumber}:C${totalRowNumber}`);
+
+      totalRow.eachCell((cell, colNumber) => {
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (colNumber === 1) horizontal = 'center';
+        else if (colNumber >= 4 && colNumber <= 7) horizontal = 'right';
+
+        // NumFmt untuk total
+        if (colNumber === 4) cell.numFmt = integerFormat;
+        if (colNumber === 5 || colNumber === 7) cell.numFmt = currencyFormat;
+        if (colNumber === 6) cell.numFmt = weightFormat;
+
         cell.font = { bold: true };
-
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: [5, 6, 7].includes(colNumber) ? 'right' : 'left',
-        };
-
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' },
+          fgColor: { argb: 'FFFFF59D' },
         };
-
+        cell.alignment = { horizontal, vertical: 'middle' };
         cell.border = {
-          top: { style: 'medium' },
+          top: { style: 'thin' },
           left: { style: 'thin' },
-          bottom: { style: 'medium' },
+          bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
       });
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 0;
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLength) maxLength = val.length;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
+
+        // Hanya menghitung dari baris Header (Baris 8) ke bawah
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        col.width = Math.min(Math.max(maxLength + 2, 12), 40);
+        column.width = Math.min(maxLength + 4, 35);
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      // ===== SAVE FILE =====
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
-      const fileName = `laporan_summary_user_${dayjs().format(
+      const fileName = `laporan_summary_pembelian_user_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
 
@@ -327,48 +396,58 @@ const GoldBuySummaryUserTable = () => {
         dataIndex: 'user_name',
         key: 'user_name',
         sorter: true,
+        render: (val) => val || '-',
       },
       {
         title: 'Nomor Member',
         dataIndex: 'user_member_number',
         key: 'user_member_number',
         sorter: true,
+        render: (val) => val || '-',
       },
       {
         title: 'Kode Seller',
         dataIndex: 'user_seller_unique_code',
         key: 'user_seller_unique_code',
+        align: 'center',
+        render: (val) => val || '-',
       },
       {
         title: 'Jumlah Transaksi',
         dataIndex: 'jumlah_transaksi',
         key: 'jumlah_transaksi',
+        align: 'right',
         sorter: true,
+        render: (val) => (val ? formatDecimal(val) : '0'),
       },
       {
         title: 'Total Pembelian',
         dataIndex: 'total_pembelian',
         key: 'total_pembelian',
+        align: 'right',
         sorter: true,
-        render: (val) => `Rp${formatDecimal(val)}`,
+        render: (val) => (val ? `Rp ${formatDecimal(val)}` : 'Rp 0'),
       },
       {
         title: 'Total Emas Dibeli (gram)',
         dataIndex: 'total_emas_dibeli',
         key: 'total_emas_dibeli',
+        align: 'right',
         sorter: true,
-        render: (val) => formatDecimal(val),
+        render: (val) => (val ? formatDecimal(val) : '0'),
       },
       {
         title: 'Total Komisi',
         dataIndex: 'total_komisi',
         key: 'total_komisi',
-        render: (val) => `Rp${formatDecimal(val)}`,
+        align: 'right',
+        render: (val) => (val ? `Rp ${formatDecimal(val)}` : 'Rp 0'),
       },
       {
         title: 'Transaksi Terakhir',
         dataIndex: 'transaksi_terakhir',
         key: 'transaksi_terakhir',
+        align: 'center',
         sorter: true,
         render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
       },
@@ -404,7 +483,7 @@ const GoldBuySummaryUserTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { DatePicker, Pagination, Select, Table } from 'antd';
+import { DatePicker, Pagination, Select, Table, message } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { FileDownload02 } from '@untitled-ui/icons-react';
 import axiosInstance from '@/@core/utils/axios';
@@ -11,7 +11,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
-import debounce from 'debounce';
+import debounce from 'lodash/debounce';
 import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
@@ -44,6 +44,18 @@ export interface ITransferMemberList {
   transfer_member_amount: number;
   transfer_member_amount_received: number;
 }
+
+// Helper untuk konversi index angka ke huruf kolom Excel (e.g., 1 -> A, 27 -> AA)
+const getExcelColumnLabel = (colIndex: number): string => {
+  let temp = 0;
+  let letter = '';
+  while (colIndex > 0) {
+    temp = (colIndex - 1) % 26;
+    letter = String.fromCharCode(65 + temp) + letter;
+    colIndex = (colIndex - temp - 1) / 26;
+  }
+  return letter;
+};
 
 const TransferMemberListTable = () => {
   const url = `/reports/transfer-member/list`;
@@ -98,7 +110,7 @@ const TransferMemberListTable = () => {
     } catch (err) {
       console.error(err);
     }
-  }, [params]);
+  }, [params, url]);
 
   useEffect(() => {
     fetchData();
@@ -154,32 +166,17 @@ const TransferMemberListTable = () => {
   };
 
   /* ================= EXPORT EXCEL ================= */
-  type ExportRow = {
-    Tanggal: string;
-    Tujuan: string;
-
-    'Pengirim - Member No': string;
-    'Pengirim - Role': string;
-    'Pengirim - Nama': string;
-
-    'Penerima - Member No': string;
-    'Penerima - Role': string;
-    'Penerima - Nama': string;
-
-    'Berat Transfer (gr)': number;
-    'Admin Weight (gr)': number;
-    'Berat Diterima (gr)': number;
-
-    'Nominal Transfer (Rp)': number;
-    'Nominal Diterima (Rp)': number;
-
-    Catatan: string;
-  };
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | null = null;
+      try {
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      } catch (e) {
+        console.warn('Failed to parse user from localStorage', e);
+      }
 
       const resp = await axiosInstance.get(url, {
         params: {
@@ -189,15 +186,19 @@ const TransferMemberListTable = () => {
         },
       });
 
-      const rows = resp.data.results as ITransferMemberList[];
-      if (!rows || rows.length === 0) return;
+      const rows = (resp.data?.results || []) as ITransferMemberList[];
+      if (!rows.length) {
+        message.warning('Tidak ada data untuk diexport');
+        return;
+      }
 
       /* ================= MAP DATA ================= */
-
-      const dataToExport: ExportRow[] = rows.map((r) => ({
-        Tanggal: moment(r.transfer_member_datetime).format(
-          'DD MMMM YYYY HH:mm'
-        ),
+      const dataToExport = rows.map((r) => ({
+        Tanggal:
+          r.transfer_member_datetime &&
+          dayjs(r.transfer_member_datetime).isValid()
+            ? dayjs(r.transfer_member_datetime).format('DD MMMM YYYY HH:mm')
+            : '-',
         Tujuan: r.purpose || '-',
 
         'Pengirim - Member No': r.user_from_member_number || '-',
@@ -208,67 +209,67 @@ const TransferMemberListTable = () => {
         'Penerima - Role': r.user_to_role_name || '-',
         'Penerima - Nama': r.user_to_user_name || '-',
 
-        'Berat Transfer (gr)': Number(r.transfer_member_gold_weight || 0),
-        'Admin Weight (gr)': Number(r.transfer_member_admin_weight || 0),
-        'Berat Diterima (gr)': Number(r.transfer_member_transfered_weight || 0),
+        'Berat Transfer (gr)': Number(r.transfer_member_gold_weight) || 0,
+        'Admin Weight (gr)': Number(r.transfer_member_admin_weight) || 0,
+        'Berat Diterima (gr)': Number(r.transfer_member_transfered_weight) || 0,
 
-        'Nominal Transfer (Rp)': Number(r.transfer_member_amount || 0),
-        'Nominal Diterima (Rp)': Number(r.transfer_member_amount_received || 0),
+        'Nominal Transfer (Rp)': Number(r.transfer_member_amount) || 0,
+        'Nominal Diterima (Rp)': Number(r.transfer_member_amount_received) || 0,
 
         Catatan: r.note || '-',
       }));
 
+      type ExportRow = (typeof dataToExport)[number];
+
+      /* ================= EXCEL WORKBOOK ================= */
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Transfer Member');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+      const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
-      /* ================= TITLE ================= */
+      /* ================= METADATA HEADER ================= */
+      const formattedStartDate =
+        params.start_date && dayjs(params.start_date).isValid()
+          ? dayjs(params.start_date).format('DD MMMM YYYY')
+          : '-';
+      const formattedEndDate =
+        params.end_date && dayjs(params.end_date).isValid()
+          ? dayjs(params.end_date).format('DD MMMM YYYY')
+          : '-';
 
-      worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      const title = worksheet.getCell('A1');
+      const metadata = [
+        { cell: 'A1', val: 'LAPORAN TRANSFER MEMBER', bold: true, size: 14 },
+        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A3',
+          val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
+        },
+        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A5',
+          val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
+        },
+      ];
 
-      title.value = 'LAPORAN TRANSFER MEMBER';
-      title.font = { size: 14, bold: true };
-      title.alignment = { horizontal: 'left' };
+      metadata.forEach((m, idx) => {
+        const rowNum = idx + 1;
+        worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+        const c = worksheet.getCell(m.cell);
+        c.value = m.val;
+        c.font = {
+          name: 'Calibri',
+          bold: !!m.bold,
+          size: m.size || 11,
+          color: { argb: 'FF1E293B' },
+        };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
+      });
 
-      /* ================= DIBUAT OLEH ================= */
+      worksheet.addRow([]); // Blank Row
 
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
-
-      /* ================= TANGGAL EXPORT ================= */
-
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-      /* ================= TOTAL DATA ================= */
-
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      /* ================= PERIODE ================= */
-
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = `Periode: ${dayjs(
-        params.start_date
-      ).format('DD MMMM YYYY')} s/d ${dayjs(params.end_date).format(
-        'DD MMMM YYYY'
-      )}`;
-      worksheet.getCell('A5').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
-
-      /* ================= FILTER ================= */
-
+      /* ================= ACTIVE FILTERS INFO ================= */
       const activeFilters: string[] = [];
-
       if (params.purpose) activeFilters.push(`Tujuan: ${params.purpose}`);
       if (params.user_from_role_name)
         activeFilters.push(`Role Pengirim: ${params.user_from_role_name}`);
@@ -280,76 +281,108 @@ const TransferMemberListTable = () => {
         activeFilters.push(`Nama Penerima: ${params.user_to_user_name}`);
 
       if (activeFilters.length > 0) {
-        const filterTitleRow = worksheet.addRow(['Filter:']);
-        filterTitleRow.font = { bold: true };
+        const filterTitleRow = worksheet.addRow(['Filter Aktif:']);
+        filterTitleRow.font = { name: 'Calibri', bold: true, size: 10 };
         worksheet.mergeCells(
           `A${filterTitleRow.number}:${lastColumnLetter}${filterTitleRow.number}`
         );
 
         activeFilters.forEach((text) => {
-          const row = worksheet.addRow([`- ${text}`]);
+          const filterRow = worksheet.addRow([`- ${text}`]);
+          filterRow.font = { name: 'Calibri', size: 10, italic: true };
           worksheet.mergeCells(
-            `A${row.number}:${lastColumnLetter}${row.number}`
+            `A${filterRow.number}:${lastColumnLetter}${filterRow.number}`
           );
         });
 
-        worksheet.addRow([]);
+        worksheet.addRow([]); // Blank Row
       }
 
-      /* ================= HEADER ================= */
-
+      /* ================= TABLE HEADER ================= */
       const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
       const headerRow = worksheet.addRow(headerKeys);
+      const headerRowIndex = headerRow.number;
+      headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+          size: 11,
         };
-
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+          wrapText: true,
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'medium', color: { argb: 'FF004397' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
+          fgColor: { argb: 'FF0057B7' },
         };
       });
 
-      /* ================= DATA ================= */
+      /* ================= DATA ROWS ================= */
+      const dataStartRow = headerRowIndex + 1;
 
-      dataToExport.forEach((row) => {
-        const values = headerKeys.map((key) => row[key]);
-        const newRow = worksheet.addRow(values);
+      dataToExport.forEach((row, idx) => {
+        const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+        newRow.height = 20;
 
-        newRow.eachCell((cell, colNumber) => {
-          const header = headerKeys[colNumber - 1];
+        const isEven = idx % 2 === 1;
+        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
+
+        newRow.eachCell((cell, colIndex) => {
+          const header = headerKeys[colIndex - 1];
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: isNumeric ? 'right' : 'left',
+          cell.font = {
+            name: 'Calibri',
+            size: 10,
+            color: { argb: 'FF334155' },
           };
-
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
           };
 
           if (isNumeric && typeof cell.value === 'number') {
-            cell.value = new Intl.NumberFormat('id-ID').format(cell.value);
+            cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
           }
+
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor },
+          };
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
         });
       });
 
-      /* ================= TOTAL ================= */
+      const dataEndRow = dataStartRow + dataToExport.length - 1;
 
-      const totalFields: (keyof ExportRow)[] = [
+      /* ================= TOTAL ROW (EXCEL FORMULA) ================= */
+      type NumericExportKey =
+        | 'Berat Transfer (gr)'
+        | 'Admin Weight (gr)'
+        | 'Berat Diterima (gr)'
+        | 'Nominal Transfer (Rp)'
+        | 'Nominal Diterima (Rp)';
+
+      const totalFields: NumericExportKey[] = [
         'Berat Transfer (gr)',
         'Admin Weight (gr)',
         'Berat Diterima (gr)',
@@ -357,67 +390,99 @@ const TransferMemberListTable = () => {
         'Nominal Diterima (Rp)',
       ];
 
-      const totals: Record<string, number> = {};
-
-      totalFields.forEach((f) => {
-        totals[f] = dataToExport.reduce((sum, r) => sum + Number(r[f] || 0), 0);
+      const totalRowValues = headerKeys.map((key, colIdx) => {
+        if (key === 'Tanggal') return 'TOTAL';
+        if (totalFields.includes(key as NumericExportKey)) {
+          const colLetter = getExcelColumnLabel(colIdx + 1);
+          return {
+            formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
+          };
+        }
+        return '';
       });
 
-      const totalRow = worksheet.addRow(
-        headerKeys.map((key) =>
-          key === 'Tanggal'
-            ? 'TOTAL'
-            : totalFields.includes(key)
-              ? new Intl.NumberFormat('id-ID').format(totals[key])
-              : ''
-        )
-      );
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.height = 22;
 
-      totalRow.eachCell((cell) => {
-        cell.font = { bold: true };
+      totalRow.eachCell((cell, colIndex) => {
+        const header = headerKeys[colIndex - 1];
+        const isNumeric = totalFields.includes(header as NumericExportKey);
+
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FF1E293B' },
+          size: 11,
+        };
+        cell.alignment = {
+          horizontal: isNumeric ? 'right' : 'left',
+          vertical: 'middle',
+        };
+
+        if (isNumeric) {
+          cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+        }
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' },
+        };
 
         cell.border = {
-          top: { style: 'medium' },
-          bottom: { style: 'medium' },
+          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          bottom: { style: 'double', color: { argb: 'FF475569' } },
+          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
         };
       });
 
+      /* ================= AUTOFILTER & FREEZE PANE ================= */
+      worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+      worksheet.views = [
+        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+      ];
+
       /* ================= AUTO WIDTH ================= */
-
       worksheet.columns.forEach((col) => {
-        let max = 0;
+        let maxLen = 0;
+        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+          // Abaikan baris metadata/filter di atas header agar kolom tidak melar berlebihan
+          if (rowNumber < headerRowIndex) return;
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          max = Math.max(max, String(cell.value || '').length);
+          let strVal = '';
+          if (
+            cell.value &&
+            typeof cell.value === 'object' &&
+            'formula' in cell.value
+          ) {
+            strVal = '123,456,789.00'; // Fallback estimasi panjang angka hasil SUM
+          } else if (cell.value != null) {
+            strVal = cell.value.toString();
+          }
+
+          maxLen = Math.max(maxLen, strVal.length);
         });
-
-        col.width = Math.min(max + 2, 40);
+        col.width = Math.max(maxLen + 4, 14);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
-
-      /* ================= SAVE ================= */
-
+      /* ================= SAVE FILE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
-
       saveAs(
         new Blob([buffer]),
         `laporan_transfer_member_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
-      console.error(err);
+      console.error('Export failed:', err);
+      message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
     }
   };
 
-  //handle filter
-
+  /* ================= HANDLERS FILTER ================= */
   const handlePurposeChange = (value: string) => {
     setPurpose(value);
-
     setParams((prev) => ({
       ...prev,
       purpose: value,
@@ -427,7 +492,6 @@ const TransferMemberListTable = () => {
 
   const handleFilterRoleFrom = (value: string) => {
     setFilterRoleFrom(value);
-
     setParams((prev) => ({
       ...prev,
       user_from_role_name: value,
@@ -437,7 +501,6 @@ const TransferMemberListTable = () => {
 
   const handleFilterRoleTo = (value: string) => {
     setFilterRoleTo(value);
-
     setParams((prev) => ({
       ...prev,
       user_to_role_name: value,
@@ -445,21 +508,30 @@ const TransferMemberListTable = () => {
     }));
   };
 
-  const handleFilterUserFrom = (value: string) => {
-    setParams({
-      ...params,
-      offset: 0,
-      user_from_user_name: value,
-    });
-  };
+  // Debounced input handler menggunakan useCallback agar fungsi stabil
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSetUserFrom = useCallback(
+    debounce((value: string) => {
+      setParams((prev) => ({
+        ...prev,
+        user_from_user_name: value,
+        offset: 0,
+      }));
+    }, 800),
+    []
+  );
 
-  const handleFilterUserTo = (value: string) => {
-    setParams({
-      ...params,
-      offset: 0,
-      user_to_user_name: value,
-    });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSetUserTo = useCallback(
+    debounce((value: string) => {
+      setParams((prev) => ({
+        ...prev,
+        user_to_user_name: value,
+        offset: 0,
+      }));
+    }, 800),
+    []
+  );
 
   /* ================= COLUMNS ================= */
   const columns: ColumnsType<ITransferMemberList> = useMemo(
@@ -469,16 +541,14 @@ const TransferMemberListTable = () => {
         dataIndex: 'transfer_member_datetime',
         key: 'transfer_member_datetime',
         sorter: true,
-        render: (v) => moment(v).format('DD MMM YYYY HH:mm'),
+        render: (v) => (v ? moment(v).format('DD MMM YYYY HH:mm') : '-'),
       },
-
       {
         title: 'Tujuan',
         dataIndex: 'purpose',
         key: 'purpose',
         sorter: true,
       },
-
       {
         title: 'Pengirim',
         children: [
@@ -499,7 +569,6 @@ const TransferMemberListTable = () => {
           },
         ],
       },
-
       {
         title: 'Penerima',
         children: [
@@ -520,7 +589,6 @@ const TransferMemberListTable = () => {
           },
         ],
       },
-
       {
         title: 'Berat Transfer (gr)',
         dataIndex: 'transfer_member_gold_weight',
@@ -625,10 +693,7 @@ const TransferMemberListTable = () => {
                 type="text"
                 className="border rounded px-3 w-[220px] h-[40px] !font-normal"
                 placeholder="cari data"
-                onChange={debounce(
-                  (event) => handleFilterUserFrom(event.target.value),
-                  1000
-                )}
+                onChange={(e) => debouncedSetUserFrom(e.target.value)}
               />
             </div>
           </div>
@@ -656,10 +721,7 @@ const TransferMemberListTable = () => {
                 type="text"
                 className="border rounded px-3 w-[220px] h-[40px] !font-normal"
                 placeholder="cari data"
-                onChange={debounce(
-                  (event) => handleFilterUserTo(event.target.value),
-                  1000
-                )}
+                onChange={(e) => debouncedSetUserTo(e.target.value)}
               />
             </div>
           </div>
@@ -681,7 +743,7 @@ const TransferMemberListTable = () => {
             columns={columns}
             dataSource={dataTable}
             size="small"
-            scroll={{ x: 1600, y: 550 }} // 👈 penting
+            scroll={{ x: 1600, y: 550 }}
             pagination={false}
             onChange={handleTableChange}
             rowKey="__row_id"

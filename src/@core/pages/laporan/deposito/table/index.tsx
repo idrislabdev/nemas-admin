@@ -5,7 +5,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatDecimal } from '@/@core/utils/general';
 import { FileDownload02 } from '@untitled-ui/icons-react';
-import { DatePicker, Pagination, Select, Table } from 'antd';
+import { DatePicker, Pagination, Select, Table, message } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -13,9 +13,22 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
+
+// Helper konversi index angka ke huruf kolom Excel (misal: 1 -> A, 27 -> AA)
+const getExcelColumnLabel = (colIndex: number): string => {
+  let temp = 0;
+  let letter = '';
+  while (colIndex > 0) {
+    temp = (colIndex - 1) % 26;
+    letter = String.fromCharCode(65 + temp) + letter;
+    colIndex = (colIndex - temp - 1) / 26;
+  }
+  return letter;
+};
 
 const GoldInvestmentTable = () => {
   const url = `/reports/gold-investment/list`;
@@ -35,11 +48,11 @@ const GoldInvestmentTable = () => {
     limit: 10,
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
-    search: '', // 🔹 Tambahkan parameter pencarian
+    search: '',
     status: '',
   });
 
-  const [searchText, setSearchText] = useState(''); // 🔹 State input pencarian
+  const [searchText, setSearchText] = useState('');
 
   const columns: ColumnsType<IGoldInvestmentReport> = [
     {
@@ -54,7 +67,9 @@ const GoldInvestmentTable = () => {
       key: 'date_invested',
       width: 150,
       render: (_, record) =>
-        moment(record.date_invested).format('DD MMMM YYYY'),
+        record.date_invested && dayjs(record.date_invested).isValid()
+          ? moment(record.date_invested).format('DD MMMM YYYY')
+          : '-',
     },
     {
       title: 'Tanggal Return',
@@ -62,14 +77,16 @@ const GoldInvestmentTable = () => {
       key: 'date_returned',
       width: 150,
       render: (_, record) =>
-        moment(record.date_returned).format('DD MMMM YYYY'),
+        record.date_returned && dayjs(record.date_returned).isValid()
+          ? moment(record.date_returned).format('DD MMMM YYYY')
+          : '-',
     },
     {
       title: 'Return Investasi',
       dataIndex: 'investment_return',
       key: 'investment_return',
       width: 150,
-      render: (_, record) => record.investment_return?.name,
+      render: (_, record) => record.investment_return?.name || '-',
     },
     {
       title: 'Nama Investor',
@@ -82,6 +99,7 @@ const GoldInvestmentTable = () => {
       dataIndex: 'amount_invested',
       key: 'amount_invested',
       width: 170,
+      align: 'right',
       render: (_, record) =>
         record.amount_invested
           ? `Rp${formatDecimal(parseFloat(record.amount_invested.toString()))}`
@@ -92,6 +110,7 @@ const GoldInvestmentTable = () => {
       dataIndex: 'weight_invested',
       key: 'weight_invested',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.weight_invested
           ? `${formatDecimal(
@@ -104,6 +123,7 @@ const GoldInvestmentTable = () => {
       dataIndex: 'return_amount',
       key: 'return_amount',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.return_amount
           ? `Rp${formatDecimal(parseFloat(record.return_amount.toString()))}`
@@ -114,6 +134,7 @@ const GoldInvestmentTable = () => {
       dataIndex: 'return_weight',
       key: 'return_weight',
       width: 150,
+      align: 'right',
       render: (_, record) =>
         record.return_weight
           ? `${formatDecimal(parseFloat(record.return_weight.toString()))} Gram`
@@ -137,25 +158,31 @@ const GoldInvestmentTable = () => {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data?.results || []);
+      setTotal(resp.data?.count || 0);
+    } catch (err) {
+      console.error('Fetch data failed:', err);
+    }
   }, [params, url]);
 
   const onChangePage = (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
   };
 
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
+    if (!dates || !dates[0] || !dates[1]) return;
+
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
-    });
+    }));
   };
 
   // 🔹 Debounce untuk search input
@@ -174,290 +201,301 @@ const GoldInvestmentTable = () => {
     setParams((prev: any) => ({
       ...prev,
       offset: 0,
-      status: filterStatus === 'all' ? '' : filterStatus,
+      status: !filterStatus || filterStatus === 'all' ? '' : filterStatus,
     }));
   }, [filterStatus]);
 
-  const fetchAllData = async (url: string, params: any) => {
+  const fetchAllData = async (targetUrl: string, currentParams: any) => {
     let allRows: any[] = [];
     const limit = 100;
 
-    const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+    const firstResp = await axiosInstance.get(targetUrl, {
+      params: { ...currentParams, limit, offset: 0 },
     });
 
-    allRows = allRows.concat(firstResp.data.results);
-    const totalCount = firstResp.data.count;
+    const firstResults = firstResp.data?.results || [];
+    allRows = allRows.concat(firstResults);
+
+    const totalCount = firstResp.data?.count || 0;
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+      const resp = await axiosInstance.get(targetUrl, {
+        params: { ...currentParams, limit, offset },
       });
-      allRows = allRows.concat(resp.data.results);
-      await new Promise((r) => setTimeout(r, 200));
+      allRows = allRows.concat(resp.data?.results || []);
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     return allRows;
   };
 
+  /* ================= EXPORT EXCEL ================= */
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | null = null;
+      try {
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      } catch (e) {
+        console.warn('Failed to parse user from localStorage', e);
+      }
 
-      const rows = await fetchAllData(url, params);
+      const rows: IGoldInvestmentReport[] = await fetchAllData(url, params);
 
-      const dataToExport =
-        rows.length > 0
-          ? rows.map((item: IGoldInvestmentReport) => ({
-              'Nomor Transaksi': item.transaction_number,
-              'Tanggal Transaksi': moment(item.date_invested).format(
-                'DD MMMM YYYY'
-              ),
-              'Tanggal Return': moment(item.date_returned).format(
-                'DD MMMM YYYY'
-              ),
-              'Return Investasi': item.investment_return?.name || '-',
-              'Nama Investor': item.investor_name,
-              'Nominal Investasi': parseFloat(
-                item.amount_invested?.toString() || '0'
-              ),
-              'Berat Investasi': parseFloat(
-                item.weight_invested?.toString() || '0'
-              ),
-              'Nominal Return': parseFloat(
-                item.return_amount?.toString() || '0'
-              ),
-              'Berat Return': parseFloat(item.return_weight?.toString() || '0'),
-              'Status Return': item.is_returned ? 'Sudah' : 'Belum',
-              'Status Transaksi': item.status,
-            }))
-          : [
-              {
-                'Nomor Transaksi': '',
-                'Tanggal Transaksi': '',
-                'Tanggal Return': '',
-                'Return Investasi': '',
-                'Nama Investor': '',
-                'Nominal Investasi': '',
-                'Berat Investasi': '',
-                'Nominal Return': '',
-                'Berat Return': '',
-                'Status Return': '',
-                'Status Transaksi': '',
-              },
-            ];
+      if (!rows.length) {
+        message.warning('Tidak ada data untuk diexport');
+        return;
+      }
+
+      const dataToExport = rows.map((item: IGoldInvestmentReport) => ({
+        'Nomor Transaksi': item.transaction_number || '-',
+        'Tanggal Transaksi':
+          item.date_invested && dayjs(item.date_invested).isValid()
+            ? moment(item.date_invested).format('DD MMMM YYYY')
+            : '-',
+        'Tanggal Return':
+          item.date_returned && dayjs(item.date_returned).isValid()
+            ? moment(item.date_returned).format('DD MMMM YYYY')
+            : '-',
+        'Return Investasi': item.investment_return?.name || '-',
+        'Nama Investor': item.investor_name || '-',
+        'Nominal Investasi': parseFloat(
+          item.amount_invested?.toString() || '0'
+        ),
+        'Berat Investasi': parseFloat(item.weight_invested?.toString() || '0'),
+        'Nominal Return': parseFloat(item.return_amount?.toString() || '0'),
+        'Berat Return': parseFloat(item.return_weight?.toString() || '0'),
+        'Status Return': item.is_returned ? 'Sudah' : 'Belum',
+        'Status Transaksi': item.status || '-',
+      }));
+
+      type ExportRow = (typeof dataToExport)[number];
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Laporan Investasi Emas');
 
-      // ======================
-      // JUDUL
-      // ======================
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
-      worksheet.mergeCells('A1:K1');
-      worksheet.getCell('A1').value = 'LAPORAN INVESTASI EMAS';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      /* ================= TITLE & METADATA ================= */
+      const formattedStartDate =
+        params.start_date && dayjs(params.start_date).isValid()
+          ? dayjs(params.start_date).format('DD MMMM YYYY')
+          : '-';
+      const formattedEndDate =
+        params.end_date && dayjs(params.end_date).isValid()
+          ? dayjs(params.end_date).format('DD MMMM YYYY')
+          : '-';
 
-      // ======================
-      // DIBUAT OLEH
-      // ======================
+      const metadata = [
+        { cell: 'A1', val: 'LAPORAN INVESTASI EMAS', bold: true, size: 14 },
+        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A3',
+          val: `Tanggal Export : ${moment().format('DD MMMM YYYY HH:mm')}`,
+        },
+        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A5',
+          val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
+        },
+        {
+          cell: 'A6',
+          val: `Status: ${params.status ? params.status : 'Semua'}`,
+        },
+      ];
 
-      worksheet.mergeCells('A2:K2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = { horizontal: 'left' };
+      metadata.forEach((m, idx) => {
+        const rowNum = idx + 1;
+        worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+        const c = worksheet.getCell(m.cell);
+        c.value = m.val;
+        c.font = {
+          name: 'Calibri',
+          bold: !!m.bold,
+          size: m.size || 11,
+          color: { argb: 'FF1E293B' },
+        };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
+      });
 
-      // ======================
-      // TANGGAL EXPORT
-      // ======================
+      worksheet.addRow([]); // Row 7 Blank
 
-      worksheet.mergeCells('A3:K3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-      // ======================
-      // TOTAL DATA
-      // ======================
-
-      worksheet.mergeCells('A4:K4');
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-      // ======================
-      // PERIODE
-      // ======================
-
-      if (params.start_date && params.end_date) {
-        worksheet.mergeCells('A5:K5');
-        worksheet.getCell('A5').value = `Periode: ${dayjs(
-          params.start_date
-        ).format('DD-MM-YYYY')} s/d ${dayjs(params.end_date).format(
-          'DD-MM-YYYY'
-        )}`;
-        worksheet.getCell('A5').alignment = { horizontal: 'left' };
-      }
-
-      // ======================
-      // STATUS FILTER
-      // ======================
-
-      worksheet.mergeCells('A6:K6');
-      worksheet.getCell('A6').value = `Status: ${
-        params.status ? params.status : 'Semua'
-      }`;
-      worksheet.getCell('A6').alignment = { horizontal: 'left' };
-
-      worksheet.addRow([]);
-
-      // ======================
-      // HEADER TABLE
-      // ======================
-
-      const header = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(header);
+      /* ================= HEADER TABLE ================= */
+      const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+      const headerRow = worksheet.addRow(headerKeys);
+      const headerRowIndex = 8;
+      headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+          size: 11,
+        };
         cell.alignment = {
           horizontal: 'center',
           vertical: 'middle',
+          wrapText: true,
         };
-
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'medium', color: { argb: 'FF004397' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
         };
-
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FF0057B7' },
         };
       });
 
-      // ======================
-      // DATA ROWS
-      // ======================
+      /* ================= DATA ROWS ================= */
+      const dataStartRow = 9;
 
-      dataToExport.forEach((row) => {
-        const rowValues = header.map((key) => {
-          const val = row[key as keyof typeof row];
+      dataToExport.forEach((row, idx) => {
+        const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+        newRow.height = 20;
 
-          if (typeof val === 'number') {
-            if (key.toLowerCase().includes('nominal'))
-              return `Rp${formatDecimal(val)}`;
+        const isEven = idx % 2 === 1;
+        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
 
-            if (key.toLowerCase().includes('berat'))
-              return `${formatDecimal(val)} Gram`;
+        newRow.eachCell((cell, colIndex) => {
+          const header = headerKeys[colIndex - 1];
+          const isNominal = header.toLowerCase().includes('nominal');
+          const isBerat = header.toLowerCase().includes('berat');
+          const isNumeric = isNominal || isBerat;
+
+          cell.font = {
+            name: 'Calibri',
+            size: 10,
+            color: { argb: 'FF334155' },
+          };
+          cell.alignment = {
+            horizontal: isNumeric ? 'right' : 'left',
+            vertical: 'middle',
+          };
+
+          if (isNumeric && typeof cell.value === 'number') {
+            cell.numFmt = isBerat ? '#,##0.00' : '#,##0';
           }
 
-          return val ?? '-';
-        });
-
-        const newRow = worksheet.addRow(rowValues);
-
-        newRow.eachCell((cell, colNumber) => {
-          const headerName = header[colNumber - 1];
-
-          if (
-            headerName.toLowerCase().includes('nominal') ||
-            headerName.toLowerCase().includes('berat')
-          ) {
-            cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          } else {
-            cell.alignment = { vertical: 'middle' };
-          }
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor },
+          };
 
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           };
         });
       });
 
-      // ======================
-      // TOTAL
-      // ======================
+      const dataEndRow = dataStartRow + dataToExport.length - 1;
 
-      const totalNominalInvestasi = rows.reduce(
-        (acc, cur) => acc + parseFloat(cur.amount_invested?.toString() || '0'),
-        0
-      );
+      /* ================= TOTAL ROW (EXCEL FORMULA SUM) ================= */
+      type NumericKey =
+        | 'Nominal Investasi'
+        | 'Berat Investasi'
+        | 'Nominal Return'
+        | 'Berat Return';
 
-      const totalBeratInvestasi = rows.reduce(
-        (acc, cur) => acc + parseFloat(cur.weight_invested?.toString() || '0'),
-        0
-      );
+      const totalFields: NumericKey[] = [
+        'Nominal Investasi',
+        'Berat Investasi',
+        'Nominal Return',
+        'Berat Return',
+      ];
 
-      const totalNominalReturn = rows.reduce(
-        (acc, cur) => acc + parseFloat(cur.return_amount?.toString() || '0'),
-        0
-      );
+      const totalRowValues = headerKeys.map((key, colIdx) => {
+        if (key === 'Nomor Transaksi') return 'TOTAL';
+        if (totalFields.includes(key as NumericKey)) {
+          const colLetter = getExcelColumnLabel(colIdx + 1);
+          return {
+            formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
+          };
+        }
+        return '';
+      });
 
-      const totalBeratReturn = rows.reduce(
-        (acc, cur) => acc + parseFloat(cur.return_weight?.toString() || '0'),
-        0
-      );
+      const totalRow = worksheet.addRow(totalRowValues);
+      totalRow.height = 22;
 
-      const totalRow = worksheet.addRow([
-        'TOTAL',
-        '',
-        '',
-        '',
-        '',
-        `Rp${formatDecimal(totalNominalInvestasi)}`,
-        `${formatDecimal(totalBeratInvestasi)} Gram`,
-        `Rp${formatDecimal(totalNominalReturn)}`,
-        `${formatDecimal(totalBeratReturn)} Gram`,
-        '',
-        '',
-      ]);
+      totalRow.eachCell((cell, colIndex) => {
+        const header = headerKeys[colIndex - 1];
+        const isNumeric = totalFields.includes(header as NumericKey);
+        const isBerat = header.toLowerCase().includes('berat');
 
-      totalRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FF1E293B' },
+          size: 11,
+        };
+        cell.alignment = {
+          horizontal: isNumeric ? 'right' : 'left',
+          vertical: 'middle',
+        };
+
+        if (isNumeric) {
+          cell.numFmt = isBerat ? '#,##0.00' : '#,##0';
+        }
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFF59D' },
+        };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          bottom: { style: 'double', color: { argb: 'FF475569' } },
+          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
         };
       });
 
-      // ======================
-      // AUTO WIDTH
-      // ======================
+      /* ================= AUTOFILTER & FREEZE PANE ================= */
+      worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+      worksheet.views = [
+        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+      ];
 
+      /* ================= AUTO WIDTH ================= */
       worksheet.columns.forEach((col) => {
-        if (!col) return;
+        let maxLen = 0;
+        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+          // Abaikan metadata header (Row 1-6) agar kolom tidak melebar tak beraturan
+          if (rowNumber < headerRowIndex) return;
 
-        let maxLength = 0;
+          let strVal = '';
+          if (
+            cell.value &&
+            typeof cell.value === 'object' &&
+            'formula' in cell.value
+          ) {
+            strVal = '123,456,789.00'; // Fallback estimasi formula SUM
+          } else if (cell.value != null) {
+            strVal = cell.value.toString();
+          }
 
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+          maxLen = Math.max(maxLen, strVal.length);
         });
-
-        col.width = Math.min(maxLength + 2, 40);
+        col.width = Math.max(maxLen + 4, 15);
       });
 
+      /* ================= SAVE FILE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
-
       const fileName = `laporan_investasi_emas_${dayjs().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
@@ -465,6 +503,7 @@ const GoldInvestmentTable = () => {
       saveAs(new Blob([buffer]), fileName);
     } catch (err) {
       console.error('Export failed:', err);
+      message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
     }
@@ -492,18 +531,18 @@ const GoldInvestmentTable = () => {
             placeholder="Cari data..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-normal text-neutral-700 w-[220px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm font-normal text-neutral-700 w-[220px] focus:outline-none focus:ring-1 focus:ring-blue-500 h-[40px]"
           />
 
           <Select
             allowClear
             size="large"
-            className="w-[180px]"
+            className="w-[180px] h-[40px]"
             placeholder="Status"
             value={filterStatus}
             onChange={setFilterStatus}
             options={[
-              { value: null, label: 'SEMUA' },
+              { value: 'all', label: 'SEMUA' },
               { value: 'CANCELLED', label: 'CANCELLED' },
               { value: 'COMPLETE', label: 'COMPLETE' },
               { value: 'DONE', label: 'DONE' },
@@ -523,7 +562,7 @@ const GoldInvestmentTable = () => {
       </div>
 
       {/* 🔹 Tabel dan pagination */}
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <Table
           columns={columns}
           dataSource={dataTable}
@@ -531,7 +570,7 @@ const GoldInvestmentTable = () => {
           scroll={{ x: 'max-content', y: 550 }}
           pagination={false}
           className="table-basic"
-          rowKey="transaction_id"
+          rowKey={(record) => record.transaction_number || record.date_invested}
         />
         <div className="flex justify-end p-[12px]">
           <Pagination
