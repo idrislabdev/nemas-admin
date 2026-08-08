@@ -12,6 +12,9 @@ import ModalAddCertificate from './modal-add';
 
 const GoldCertDetailTable = (props: {
   goldId: string;
+  goldBrand: string;
+  goldCertBrand: string;
+  goldType: string;
   goldWeight: string;
   certificateId: string;
 }) => {
@@ -186,6 +189,9 @@ const GoldCertDetailTable = (props: {
           setIsModalOpen={setIsModalOpen}
           paramsId={paramsId}
           goldId={goldId}
+          goldBrand={props.goldBrand}
+          goldCertBrand={props.goldCertBrand}
+          goldType={props.goldType}
           goldWeight={goldWeight}
           certificateId={certificateId}
           onConfirm={() => onConfirmUpdateCert()}

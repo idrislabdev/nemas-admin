@@ -10,14 +10,7 @@ import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import Link from 'next/link';
-import {
-  Edit05,
-  FileDownload02,
-  Plus,
-  SearchSm,
-  Trash01,
-} from '@untitled-ui/icons-react';
+import { FileDownload02, SearchSm } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import moment from 'moment';
@@ -32,7 +25,7 @@ const GoldPricePageTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
-  const [selectedId, setSelectedId] = useState(0);
+  const [selectedId] = useState(0);
 
   const [params, setParams] = useState({
     format: 'json',
@@ -96,48 +89,12 @@ const GoldPricePageTable = () => {
         `Rp ${formatterNumber(record.gold_price_buy || 0)}`,
     },
     {
-      title: 'Create By',
-      dataIndex: 'create_user_name',
-      key: 'create_user_name',
-      width: 180,
-    },
-    {
-      title: 'Create Time',
-      dataIndex: 'create_time',
-      key: 'create_time',
+      title: 'Update Time',
+      dataIndex: 'upd_time',
+      key: 'upd_time',
       width: 170,
       align: 'center',
-      render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
-    },
-    {
-      title: 'Update By',
-      dataIndex: 'upd_user_name',
-      key: 'upd_user_name',
-      width: 180,
-    },
-    {
-      title: '',
-      key: 'action',
-      fixed: 'right',
-      width: 100,
-      align: 'center',
-      render: (_, record) => (
-        <div className="flex items-center justify-center gap-[5px]">
-          <Link
-            href={`/master/gold/price/${record.gold_price_id}`}
-            className="btn-action"
-          >
-            <Edit05 />
-          </Link>
-
-          <a
-            className="btn-action"
-            onClick={() => deleteData(record.gold_price_id)}
-          >
-            <Trash01 />
-          </a>
-        </div>
-      ),
+      render: (val) => (val ? moment(val).format('DD MMMM YYYY HH:mm') : '-'),
     },
   ];
 
@@ -158,13 +115,6 @@ const GoldPricePageTable = () => {
       limit: 10,
       gold_price_source__icontains: value,
     });
-  };
-
-  const deleteData = (id: number | undefined) => {
-    if (id) {
-      setSelectedId(id);
-      setOpenModalConfirm(true);
-    }
   };
 
   const confirmDelete = async () => {
@@ -511,13 +461,6 @@ const GoldPricePageTable = () => {
             <FileDownload02 />
             Export Excel
           </button>
-          <Link
-            href={`/master/gold/price/form`}
-            className="btn btn-outline-neutral"
-          >
-            <Plus />
-            Add data
-          </Link>
         </div>
       </div>
       <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">

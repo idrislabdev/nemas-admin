@@ -1,7 +1,6 @@
 'use client';
 
 import { IGold, IGoldCert } from '@/@core/@types/interface';
-// import axiosInstance from '@/@core/utils/axios';
 import React, { useCallback, useEffect, useState } from 'react';
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
@@ -13,6 +12,7 @@ import Link from 'next/link';
 import GoldCertDetailTable from '../cert-detail';
 import { useRouter } from 'next/navigation';
 import { UndoOutlineIcon } from '@/@core/my-icons';
+
 const GoldPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
   const url = `/core/gold`;
@@ -20,8 +20,9 @@ const GoldPageForm = (props: { paramsId: string }) => {
   const [goldWeight, setGoldWeight] = useState('0');
   const [type, setType] = useState('Bar');
   const [brand, setBrand] = useState('MARVA GOLD');
+  const [certBrand, setCertBrand] = useState('');
   const [certificateNumber, setCertficateNumber] = useState('');
-  const [productCost, setProductCost] = useState('');
+  const [productCost, setProductCost] = useState('0');
   const [required, setRequired] = useState<IGold>({} as IGold);
   const [api, contextHolder] = notification.useNotification();
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -40,11 +41,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
   const [image4, setImage4] = useState<File | null>(null);
   const [image5, setImage5] = useState<File | null>(null);
 
-  // const axiosInstance = axios.create({
-  //     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  //     timeout: 200000
-  // })
-
   const onCancel = () => {
     if (paramsId == 'form') {
       clearForm();
@@ -54,21 +50,41 @@ const GoldPageForm = (props: { paramsId: string }) => {
   };
 
   const onSave = async () => {
-    // const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const parsedWeight = parseFloat(
+      goldWeight.toString().replace('.', '').replace(',', '.')
+    );
+    const parsedCost = parseFloat(
+      productCost.toString().replace('.', '').replace(',', '.')
+    );
+
+    // Validasi agar berat emas dan harga produk tidak boleh 0 atau minus (-)
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      api.warning({
+        message: 'Validasi Gagal',
+        description: 'Berat emas tidak boleh 0 atau bernilai minus (-)',
+        placement: 'bottomRight',
+      });
+      return;
+    }
+
+    if (isNaN(parsedCost) || parsedCost < 0) {
+      api.warning({
+        message: 'Validasi Gagal',
+        description: 'Harga produk tidak boleh bernilai minus (-)',
+        placement: 'bottomRight',
+      });
+      return;
+    }
+
     const body = {
-      gold_weight: parseFloat(
-        goldWeight.toString().replace('.', '').replace(',', '.')
-      ),
+      gold_weight: parsedWeight,
       type: type,
       brand: brand,
-      product_cost: parseFloat(
-        productCost.toString().replace('.', '').replace(',', '.')
-      ),
+      product_cost: parsedCost,
       certificate_number: certificateNumber,
-      // create_user: user.name,
-      // upd_user: user.name,
       certificate_id: certificateId,
     };
+
     setIsModalLoading(true);
     setRequired({});
     let tempGoldId = '';
@@ -118,6 +134,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
     setGoldWeight(data.gold_weight.toString().replace('.', ','));
     setType(data.type);
     setBrand(data.brand);
+    setCertBrand(data.certificate.brand);
     setProductCost(data.product_cost.toString().replace('.', ','));
     setGoldImage1(data.gold_image_1);
     setGoldImage2(data.gold_image_2);
@@ -188,9 +205,10 @@ const GoldPageForm = (props: { paramsId: string }) => {
   }, [fetchDataCerts]);
 
   const clearForm = () => {
-    setGoldWeight('');
-    setType('');
-    setBrand('');
+    setGoldWeight('0');
+    setType('Bar');
+    setBrand('MARVA GOLD');
+    setProductCost('0');
     setCertficateNumber('');
   };
 
@@ -284,6 +302,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
                 decimalsLimit={2}
                 decimalSeparator=","
                 groupSeparator="."
+                allowNegativeValue={false}
                 onValueChange={(value) => setGoldWeight(value ? value : '0')}
                 className={`base ${required.gold_weight ? 'error' : ''}`}
               />
@@ -340,6 +359,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
               decimalsLimit={2}
               decimalSeparator=","
               groupSeparator="."
+              allowNegativeValue={false}
               onValueChange={(value) => setProductCost(value ? value : '0')}
               className={`base ${required.product_cost ? 'error' : ''}`}
             />
@@ -382,6 +402,9 @@ const GoldPageForm = (props: { paramsId: string }) => {
         <GoldCertDetailTable
           goldId={paramsId}
           goldWeight={goldWeight}
+          goldBrand={brand}
+          goldCertBrand={certBrand}
+          goldType={type}
           certificateId={certificateId.toString()}
         />
       )}

@@ -1,7 +1,6 @@
 'use client';
 
 import { IGoldStockMovement } from '@/@core/@types/interface';
-// import axiosInstance from '@/@core/utils/axios';
 import React, { useState } from 'react';
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
@@ -10,6 +9,7 @@ import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
 import { UndoOutlineIcon } from '@/@core/my-icons';
+
 const GoldStockMovementPageForm = () => {
   const url = `/gold-transaction/gold-stock/movement`;
   const [weight, setWeight] = useState('0');
@@ -26,11 +26,26 @@ const GoldStockMovementPageForm = () => {
   };
 
   const onSave = async () => {
+    const parsedWeight = parseFloat(
+      weight.toString().replace('.', '').replace(',', '.')
+    );
+
+    // Validasi tambahan untuk memastikan tidak lolos
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      api.warning({
+        message: 'Validasi Gagal',
+        description: 'Berat emas tidak boleh 0 atau bernilai minus (-)',
+        placement: 'bottomRight',
+      });
+      return;
+    }
+
     const body = {
-      weight: parseFloat(weight.toString().replace('.', '').replace(',', '.')),
+      weight: parsedWeight,
       movement_type: transactionType,
       note: note,
     };
+
     setIsModalLoading(true);
     setRequired({} as IGoldStockMovement);
     try {
@@ -54,8 +69,8 @@ const GoldStockMovementPageForm = () => {
   };
 
   const clearForm = () => {
-    setWeight('');
-    setTransactionType('');
+    setWeight('0');
+    setTransactionType('IN');
     setNote('');
   };
 
@@ -89,6 +104,7 @@ const GoldStockMovementPageForm = () => {
                 decimalsLimit={2}
                 decimalSeparator=","
                 groupSeparator="."
+                allowNegativeValue={false}
                 onValueChange={(value) => setWeight(value ? value : '0')}
                 className={`base ${required.weight ? 'error' : ''}`}
               />
@@ -105,7 +121,7 @@ const GoldStockMovementPageForm = () => {
             </label>
             <select
               className={`base ${required.transaction_type ? 'error' : ''}`}
-              defaultValue={transactionType}
+              value={transactionType}
               onChange={(e) => setTransactionType(e.target.value)}
             >
               <option value={'IN'}>IN</option>

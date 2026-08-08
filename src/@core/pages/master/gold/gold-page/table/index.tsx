@@ -173,7 +173,7 @@ const GoldPageTable = () => {
   };
 
   const confirmDelete = async () => {
-    await axiosInstance.delete(`/core/gold/${selectedId}`);
+    await axiosInstance.delete(`/core/gold/${selectedId}/`);
     setOpenModalConfirm(false);
     setParams({ ...params, offset: 0, limit: 10, search: '' });
     api.info({
@@ -243,7 +243,7 @@ const GoldPageTable = () => {
         Harga: item.gold_price_summary_roundup
           ? parseInt(item.gold_price_summary_roundup)
           : 0,
-        Stok: item.stock ?? 0,
+        'Stok (Pcs)': item.stock ?? 0,
         'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY HH:mm')

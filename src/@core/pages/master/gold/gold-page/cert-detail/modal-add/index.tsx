@@ -8,6 +8,9 @@ const ModalAddCertificate = (props: {
   isModalOpen: boolean;
   setIsModalOpen: Dispatch<SetStateAction<boolean>>;
   goldId: string;
+  goldBrand: string;
+  goldCertBrand: string;
+  goldType: string;
   goldWeight: string;
   certificateId: string;
   paramsId: string;
@@ -33,6 +36,9 @@ const ModalAddCertificate = (props: {
   const onSave = async () => {
     // const user = JSON.parse(localStorage.getItem("user") || "{}")
     const body = {
+      gold_brand: props.goldBrand,
+      gold_cert_brand: props.goldCertBrand,
+      gold_type: props.goldType,
       gold: goldId,
       gold_cert: certificateId,
       gold_cert_code: goldCertCode,
@@ -100,7 +106,7 @@ const ModalAddCertificate = (props: {
           <div className="flex flex-col gap-[12px]">
             <div className="flex flex-col gap-[4px]">
               <label>
-                Kode Sertifikat{' '}
+                Kode{' '}
                 {required.gold_cert_code && (
                   <span className="text-red-500 text-[10px]/[14px] italic">
                     ({required.gold_cert_code?.toString()})
@@ -131,7 +137,7 @@ const ModalAddCertificate = (props: {
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-[4px]">
+            {/* <div className="flex flex-col gap-[4px]">
               <label>
                 Include Stock{' '}
                 {required.include_stock && (
@@ -149,7 +155,7 @@ const ModalAddCertificate = (props: {
                 <option value={`Ya`}>Ya</option>
                 <option value={`Tidak`}>Tidak</option>
               </select>
-            </div>
+            </div> */}
           </div>
         </Modal.Body>
         <Modal.Footer>
