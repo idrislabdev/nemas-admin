@@ -22,8 +22,7 @@ const AddressCityPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
-    city_name__icontains: '',
+    search: '',
   });
   const columns: ColumnsType<IAddressCity> = [
     {
@@ -62,8 +61,7 @@ const AddressCityPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
-      city_name__icontains: value,
+      search: value,
     });
   };
 
@@ -77,8 +75,7 @@ const AddressCityPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 1000, // biar lebih aman daripada 50
-        type__icontains: '',
-        city_name__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: param });

@@ -22,8 +22,7 @@ const AddressDistrictPageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
-    district_name__icontains: '',
+    search: '',
   });
 
   const columns: ColumnsType<IAddressDistrict> = [
@@ -63,8 +62,7 @@ const AddressDistrictPageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
-      district_name__icontains: value,
+      search: value,
     });
   };
 
@@ -78,8 +76,7 @@ const AddressDistrictPageTable = () => {
         format: 'json',
         offset: 0,
         limit: 1000,
-        type__icontains: '',
-        district_name__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: param });

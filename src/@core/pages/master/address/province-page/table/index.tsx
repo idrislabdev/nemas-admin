@@ -22,8 +22,7 @@ const AddressProvincePageTable = () => {
     format: 'json',
     offset: 0,
     limit: 10,
-    type__icontains: '',
-    province_name__icontains: '',
+    search: '',
   });
 
   const columns: ColumnsType<IAddressProvince> = [
@@ -58,8 +57,7 @@ const AddressProvincePageTable = () => {
       ...params,
       offset: 0,
       limit: 10,
-      type__icontains: value,
-      province_name__icontains: value,
+      search: value,
     });
   };
 
@@ -73,8 +71,7 @@ const AddressProvincePageTable = () => {
         format: 'json',
         offset: 0,
         limit: 1000,
-        type__icontains: '',
-        province_name__icontains: '',
+        search: '',
       };
 
       const resp = await axiosInstance.get(url, { params: param });
