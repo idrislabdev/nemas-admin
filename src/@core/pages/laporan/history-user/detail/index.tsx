@@ -155,133 +155,198 @@ const HistoryUserDetailTable = (props: { id: string }) => {
         'Tanggal Transaksi': moment(item.transaction_date).format(
           'DD MMMM YYYY'
         ),
-        'No. Referensi': item.ref_number,
-        Email: item.email,
-        'Nominal Transaksi': 'Rp' + formatterNumber(parseInt(item.price)),
-        'Berat Emas': item.weight + ' Gram',
-        Pengirim: item.user_from,
-        Penerima: item.user_to,
-        'Berat Emas (Diterima)': item.transfered_weight,
+        'No. Referensi': item.ref_number || '-',
+        Email: item.email || '-',
+        'Nominal Transaksi': Number(item.price || 0),
+        'Berat Emas': Number(item.weight || 0),
+        Pengirim: item.user_from || '-',
+        Penerima: item.user_to || '-',
+        'Berat Emas (Diterima)': Number(item.transfered_weight || 0),
         ...(isAllChecked
           ? {
-              'Saldo Emas': item.gold_balance,
-              'Saldo Wallet': item.wallet_balance,
+              'Saldo Emas': Number(item.gold_balance || 0),
+              'Saldo Wallet': Number(item.wallet_balance || 0),
             }
           : {}),
       })
     );
 
     const workbook = new ExcelJS.Workbook();
+    workbook.creator = user?.name || 'System';
+    workbook.created = new Date();
+
     const worksheet = workbook.addWorksheet('History Transaksi');
 
     const totalColumns = Object.keys(dataToExport[0]).length;
-    const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+    const lastColLetter = String.fromCharCode(64 + Math.min(totalColumns, 26));
 
-    // ===== TITLE =====
-    worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-    const title = worksheet.getCell('A1');
-    title.value = 'LAPORAN HISTORY TRANSAKSI';
-    title.font = { size: 14, bold: true };
-    title.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    // ===== DIBUAT OLEH =====
-    worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-    worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-    worksheet.getCell('A2').alignment = { horizontal: 'left' };
-
-    // ===== TANGGAL EXPORT =====
-    worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-    worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-      'DD-MM-YYYY HH:mm'
-    )}`;
-    worksheet.getCell('A3').alignment = { horizontal: 'left' };
-
-    // ===== TOTAL DATA =====
-    worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-    worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-    worksheet.getCell('A4').alignment = { horizontal: 'left' };
-
-    // ===== PERIODE =====
-    let periodeText = '';
-
-    if (!params.start_date || !params.end_date) {
-      periodeText = 'Periode : semua periode tanggal';
-    } else {
-      periodeText = `Periode : ${moment(params.start_date).format(
-        'DD MMMM YYYY'
-      )} – ${moment(params.end_date).format('DD MMMM YYYY')}`;
-    }
-
-    worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-    worksheet.getCell('A5').value = periodeText;
-    worksheet.getCell('A5').alignment = { horizontal: 'left' };
-
-    worksheet.addRow([]);
-
-    // ===== HEADER =====
-    const header = Object.keys(dataToExport[0]);
-    const headerRow = worksheet.addRow(header);
-
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true };
-
-      cell.alignment = {
-        horizontal: 'center',
-        vertical: 'middle',
-      };
-
+    // Helper Border Standar
+    const applyStandardBorder = (cell: ExcelJS.Cell) => {
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
         bottom: { style: 'thin' },
         right: { style: 'thin' },
       };
+    };
 
+    // =============================
+    // TITLE (Row 1)
+    // =============================
+    worksheet.mergeCells(`A1:${lastColLetter}1`);
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'LAPORAN HISTORY TRANSAKSI';
+    titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+    titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    // =============================
+    // METADATA (Row 3 - 6) - Merged appropriately
+    // =============================
+    // Dibuat Oleh
+    worksheet.getCell('A3').value = 'Dibuat Oleh';
+    worksheet.mergeCells(`B3:${lastColLetter}3`);
+    const valC3 = worksheet.getCell('B3');
+    valC3.value = `: ${user?.name || '-'}`;
+    worksheet.getCell('A3').font = { bold: true };
+
+    // Tanggal Export
+    worksheet.getCell('A4').value = 'Tanggal Export';
+    worksheet.mergeCells(`B4:${lastColLetter}4`);
+    const valC4 = worksheet.getCell('B4');
+    valC4.value = `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
+    worksheet.getCell('A4').font = { bold: true };
+
+    // Total Data
+    worksheet.getCell('A5').value = 'Total Data';
+    worksheet.mergeCells(`B5:${lastColLetter}5`);
+    const valC5 = worksheet.getCell('B5');
+    valC5.value = `: ${rows.length}`;
+    worksheet.getCell('A5').font = { bold: true };
+
+    // Periode
+    let periodeText = '';
+    if (!params.start_date || !params.end_date) {
+      periodeText = ': Semua Periode Tanggal';
+    } else {
+      periodeText = `: ${moment(params.start_date).format('DD MMMM YYYY')} s/d ${moment(params.end_date).format('DD MMMM YYYY')}`;
+    }
+
+    worksheet.getCell('A6').value = 'Periode';
+    worksheet.mergeCells(`B6:${lastColLetter}6`);
+    const valC6 = worksheet.getCell('B6');
+    valC6.value = periodeText;
+    worksheet.getCell('A6').font = { bold: true };
+
+    worksheet.addRow([]); // Blank Row (Row 7)
+
+    // =============================
+    // HEADER TABEL (Row 8)
+    // =============================
+    const header = Object.keys(dataToExport[0]);
+    const headerRow = worksheet.addRow(header);
+    headerRow.height = 24;
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFEFEFEF' },
+        fgColor: { argb: 'FF0057B7' }, // Biru Utama
       };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      applyStandardBorder(cell);
     });
 
-    // ===== DATA =====
-    dataToExport.forEach((row: any) => {
-      const newRow = worksheet.addRow(header.map((h: any) => row[h]));
+    const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
+    const weightFormat = '#,##0.00" Gram"';
+    const numberFormat = '#,##0';
 
-      newRow.eachCell((cell) => {
-        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    // =============================
+    // DATA ROWS (Row 9+)
+    // =============================
+    dataToExport.forEach((row: any, index: number) => {
+      const rowValues = header.map((h: any) => row[h]);
+      const newRow = worksheet.addRow(rowValues);
 
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
+      // Zebra Striping
+      if (index % 2 === 1) {
+        newRow.eachCell((c) => {
+          c.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF8FBFF' },
+          };
+        });
+      }
+
+      newRow.eachCell((cell, colIndex) => {
+        const headerName = header[colIndex - 1];
+        let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+        if (headerName === 'No' || headerName === 'Tanggal Transaksi') {
+          horizontal = 'center';
+        } else if (
+          headerName === 'Nominal Transaksi' ||
+          headerName === 'Berat Emas' ||
+          headerName === 'Berat Emas (Diterima)' ||
+          headerName === 'Saldo Emas' ||
+          headerName === 'Saldo Wallet'
+        ) {
+          horizontal = 'right';
+          if (headerName === 'Nominal Transaksi') {
+            cell.numFmt = currencyFormat;
+          } else if (headerName.includes('Berat')) {
+            cell.numFmt = weightFormat;
+          } else {
+            cell.numFmt = numberFormat;
+          }
+        }
+
+        cell.alignment = { horizontal, vertical: 'middle' };
+        applyStandardBorder(cell);
       });
     });
 
-    // ===== AUTO WIDTH =====
-    worksheet.columns.forEach((col: any) => {
-      let maxLength = 0;
+    // =============================
+    // AUTO COLUMN WIDTH
+    // =============================
+    worksheet.columns.forEach((col: any, colIdx: number) => {
+      let maxLength = header[colIdx]?.length || 10;
 
-      col.eachCell({ includeEmpty: true }, (cell: any) => {
-        const val = cell.value ? cell.value.toString() : '';
-        maxLength = Math.max(maxLength, val.length);
+      col.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+        if (rowNum >= 8) {
+          const val = cell.value ? cell.value.toString() : '';
+          maxLength = Math.max(maxLength, val.length);
+        }
       });
 
-      col.width = Math.min(Math.max(maxLength + 2, 10), 40);
+      // Perlakuan khusus untuk Kolom A agar muat untuk label metadata ("Tanggal Export", dll)
+      if (colIdx === 0) {
+        col.width = Math.max(maxLength + 4, 22);
+      } else {
+        col.width = Math.min(maxLength + 4, 35);
+      }
     });
 
-    // ===== FREEZE HEADER =====
-    worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+    // =============================
+    // FREEZE HEADER & AUTO FILTER
+    // =============================
+    worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+    worksheet.autoFilter = {
+      from: { row: 8, column: 1 },
+      to: { row: 8, column: totalColumns },
+    };
 
+    // =============================
+    // SAVE FILE
+    // =============================
     const buffer = await workbook.xlsx.writeBuffer();
-
     saveAs(
       new Blob([buffer]),
       `history_transaksi_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
     );
   };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);

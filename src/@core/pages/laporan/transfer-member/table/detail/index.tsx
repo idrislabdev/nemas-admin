@@ -737,7 +737,7 @@ const TransferMemberListTable = () => {
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
+      <div className=" rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <div className="overflow-x-auto">
           <Table
             columns={columns}

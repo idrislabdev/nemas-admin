@@ -15,7 +15,6 @@ import Link from 'next/link';
 import {
   Dotpoints01,
   FileDownload02,
-  Plus,
   SearchSm,
 } from '@untitled-ui/icons-react';
 
@@ -162,6 +161,37 @@ const HistoryUserTable = () => {
     }));
   };
 
+  // ======================
+  // Fetch All Data (Export)
+  // ======================
+  const fetchAllData = async (url: string, params: any) => {
+    let allRows: any[] = [];
+    const limit = 100;
+
+    const firstResp = await axiosInstance.get(url, {
+      params: { ...params, limit, offset: 0 },
+    });
+
+    allRows = allRows.concat(firstResp.data.results || []);
+
+    const totalCount = firstResp.data.count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, limit, offset },
+      });
+
+      allRows = allRows.concat(resp.data.results || []);
+
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    return allRows;
+  };
+
   // ========================
   // Export Excel
   // ========================
@@ -179,11 +209,10 @@ const HistoryUserTable = () => {
       const exportParams = {
         ...params,
         offset: 0,
-        limit: 1000, // Menyesuaikan agar dapat mengambil semua baris data
+        limit: 100,
       };
 
-      const resp = await axiosInstance.get(url, { params: exportParams });
-      const rows = resp.data.results;
+      const rows = await fetchAllData(url, exportParams);
 
       if (!rows || rows.length === 0) {
         console.warn('Tidak ada data untuk diekspor.');
@@ -221,7 +250,9 @@ const HistoryUserTable = () => {
 
       const totalColumns = headersConfig.length;
 
-      // ===== TITLE & METADATA (Row 1 - 4) =====
+      // =============================
+      // TITLE & METADATA (Row 1 - 5)
+      // =============================
       worksheet.mergeCells(1, 1, 1, totalColumns);
       const titleCell = worksheet.getCell('A1');
       titleCell.value = 'DATA PENGGUNA TOKO';
@@ -232,9 +263,8 @@ const HistoryUserTable = () => {
       worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
 
       worksheet.getCell('A4').value = 'Tanggal Export';
-      worksheet.getCell('B4').value = `: ${moment().format(
-        'DD MMMM YYYY HH:mm:ss'
-      )}`;
+      worksheet.getCell('B4').value =
+        `: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}`;
 
       worksheet.getCell('A5').value = 'Total Data';
       worksheet.getCell('B5').value = `: ${rows.length}`;
@@ -245,7 +275,9 @@ const HistoryUserTable = () => {
 
       worksheet.addRow([]); // Blank Row (Row 6)
 
-      // ===== HEADER TABEL (Row 7) =====
+      // =============================
+      // HEADER TABEL (Row 7)
+      // =============================
       const headerRow = worksheet.addRow(headersConfig.map((h) => h.label));
       headerRow.height = 24;
 
@@ -260,7 +292,9 @@ const HistoryUserTable = () => {
         applyStandardBorder(cell);
       });
 
-      // ===== DATA ROWS =====
+      // =============================
+      // DATA ROWS (Row 8+)
+      // =============================
       rows.forEach((item: IPenggunaAplikasi, index: number) => {
         const rowValues = [
           index + 1,
@@ -301,9 +335,14 @@ const HistoryUserTable = () => {
         });
       });
 
-      // ===== AUTO COLUMN WIDTH =====
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 12;
+      // =============================
+      // AUTO COLUMN WIDTH
+      // =============================
+      // =============================
+      // AUTO COLUMN WIDTH
+      // =============================
+      worksheet.columns.forEach((col: any, colIdx: number) => {
+        let maxLength = headersConfig[colIdx]?.label?.length || 10;
 
         col.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
           if (rowNum >= 7) {
@@ -312,13 +351,27 @@ const HistoryUserTable = () => {
           }
         });
 
-        col.width = Math.min(maxLength + 4, 35);
+        // Pengecekan khusus untuk Kolom A agar tidak bentrok dengan label metadata
+        if (colIdx === 0) {
+          // Ambil panjang maksimum antara teks data tabel, header tabel, atau minimal 22 (untuk teks "Tanggal Export")
+          col.width = Math.max(maxLength + 4, 22);
+        } else {
+          col.width = Math.min(maxLength + 4, 35);
+        }
       });
 
-      // ===== FREEZE HEADER =====
+      // =============================
+      // FREEZE HEADER & AUTO FILTER
+      // =============================
       worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      worksheet.autoFilter = {
+        from: { row: 7, column: 1 },
+        to: { row: 7, column: totalColumns },
+      };
 
-      // ===== SAVE FILE =====
+      // =============================
+      // SAVE FILE
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
 
       const fileName = `data_pengguna_toko_${dayjs().format(
@@ -359,17 +412,10 @@ const HistoryUserTable = () => {
             <FileDownload02 />
             Export Excel
           </button>
-          <Link
-            href={`/data/pengguna/toko/form`}
-            className="btn btn-outline-neutral"
-          >
-            <Plus />
-            Add data
-          </Link>
         </div>
       </div>
 
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px] mt-3">
         <Table
           columns={columns}
           dataSource={dataTable}
