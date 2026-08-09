@@ -136,7 +136,7 @@ const SertifikatListPage = () => {
       render: (val) => `Rp${formatDecimal(parseFloat(val || '0'))}`,
     },
     {
-      title: 'Include Stock',
+      title: 'Ada Stock',
       dataIndex: 'include_stock',
       key: 'include_stock',
       width: 140,
@@ -290,7 +290,7 @@ const SertifikatListPage = () => {
         'Harga Sertifikat': `Rp${formatDecimal(
           parseFloat(item.cert_price?.toString() || '0')
         )}`,
-        'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
+        'Ada Stock': item.include_stock ? 'Ya' : 'Tidak',
         'Dibuat Oleh': item.create_user_name || '-',
         'Waktu Dibuat': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY HH:mm')
@@ -447,7 +447,7 @@ const SertifikatListPage = () => {
               horizontal = 'right';
               break;
 
-            case 9: // Include Stock
+            case 9: // Ada Stock
               horizontal = 'center';
               break;
 

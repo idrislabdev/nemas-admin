@@ -87,7 +87,7 @@ const GoldCertDetailPageTable = () => {
         `${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`,
     },
     {
-      title: 'Include Stock',
+      title: 'Ada Stock',
       dataIndex: 'include_stock',
       key: 'include_stock',
       width: 120,
@@ -200,7 +200,6 @@ const GoldCertDetailPageTable = () => {
     if (typeof window === 'undefined') return '-';
 
     try {
-      // Sesuaikan key localStorage sesuai project kamu
       const rawUser =
         localStorage.getItem('user') ||
         localStorage.getItem('auth_user') ||
@@ -253,13 +252,14 @@ const GoldCertDetailPageTable = () => {
         return;
       }
 
+      // Disesuaikan agar sama persis dengan urutan & format kolom pada tabel
       const dataToExport = rows.map((item, index) => ({
         No: index + 1,
-        Emas: item.gold || '-',
+        Emas: item.gold_brand || '-',
         Sertifikat: item.gold_cert || '-',
         'Nomor Sertifikat': item.gold_cert_code || '-',
         'Satuan (gr)': `${formatterNumber(item.gold_weight || 0)} gr`,
-        'Include Stock': item.include_stock ? 'Ya' : 'Tidak',
+        'Ada Stock': item.include_stock ? 'Ya' : 'Tidak',
         'Create By': item.create_user_name || '-',
         'Create Time': item.create_time
           ? moment(item.create_time).format('DD MMM YYYY HH:mm')
@@ -287,7 +287,7 @@ const GoldCertDetailPageTable = () => {
               'Sertifikat',
               'Nomor Sertifikat',
               'Satuan (gr)',
-              'Include Stock',
+              'Ada Stock',
               'Create By',
               'Create Time',
               'Update By',
@@ -299,7 +299,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Title
       // ==========================
-
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
 
       const titleCell = worksheet.getCell('A1');
@@ -322,7 +321,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Export Info
       // ==========================
-
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
@@ -341,7 +339,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Header
       // ==========================
-
       const headerRow = worksheet.addRow(header);
 
       headerRow.height = 24;
@@ -378,7 +375,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Freeze Header
       // ==========================
-
       worksheet.views = [
         {
           state: 'frozen',
@@ -394,7 +390,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Data
       // ==========================
-
       dataToExport.forEach((row: any) => {
         const values = header.map((key) => row[key]);
 
@@ -416,17 +411,14 @@ const GoldCertDetailPageTable = () => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
           switch (colNumber) {
-            case 1:
+            case 1: // No
+            case 6: // Ada Stock
+            case 8: // Create Time
               horizontal = 'center';
               break;
 
-            case 5:
+            case 5: // Satuan (gr)
               horizontal = 'right';
-              break;
-
-            case 6:
-            case 8:
-              horizontal = 'center';
               break;
 
             default:
@@ -450,7 +442,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Auto Width
       // ==========================
-
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
@@ -466,7 +457,6 @@ const GoldCertDetailPageTable = () => {
       // ==========================
       // Export
       // ==========================
-
       const buffer = await workbook.xlsx.writeBuffer();
 
       const fileName = `data_detail_sertifikat_${moment().format(

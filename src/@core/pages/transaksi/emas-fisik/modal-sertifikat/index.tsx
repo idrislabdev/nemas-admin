@@ -66,7 +66,7 @@ const ModalSertifikat = (props: {
       render: (_, record) => `${formatterNumber(record.gold_weight ?? 0)} gr`,
     },
     {
-      title: 'Include Stock',
+      title: 'Ada Stock',
       dataIndex: 'include_stock',
       key: 'include_stock',
       width: 150,

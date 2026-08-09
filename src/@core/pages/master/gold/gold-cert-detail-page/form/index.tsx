@@ -263,7 +263,7 @@ const GoldCertDetailPageForm = (props: { paramsId: string }) => {
         {/* INCLUDE STOCK */}
         <div className="input-area">
           <label>
-            Include Stock{' '}
+            Ada Stock{' '}
             {required.include_stock && (
               <span className="text-red-500 text-[10px]/[14px] italic">
                 ({required.include_stock?.toString()})

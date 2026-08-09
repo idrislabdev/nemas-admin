@@ -141,8 +141,10 @@ const WalletFinancialSummary = () => {
         'Tipe Transaksi': item.type,
         'Total Transaksi': formatDecimal(item.total_transaction || 0),
         'Total Amount': formatRupiah(item.total_amount || 0),
-        'Total Admin': formatRupiah(item.total_admin || 0),
-        'Total Nett': formatRupiah(item.total_nett || 0),
+        'Biaya Admin': formatRupiah(item.total_admin || 0),
+        'Total Nett (Total Amount - Biaya Admin)': formatRupiah(
+          item.total_nett || 0
+        ),
       }));
 
       const totalColumns = Object.keys(dataToExport[0]).length;
@@ -289,7 +291,7 @@ const WalletFinancialSummary = () => {
 
             case 4: // Total Transaksi
             case 5: // Total Amount
-            case 6: // Total Admin
+            case 6: // Biaya Admin
             case 7: // Total Nett
               horizontal = 'right';
               break;
@@ -474,7 +476,7 @@ const WalletFinancialSummary = () => {
         render: (val) => `Rp${formatDecimal(val)}`,
       },
       {
-        title: 'Total Admin',
+        title: 'Biaya Admin',
         dataIndex: 'total_admin',
         key: 'total_admin',
         width: 180,

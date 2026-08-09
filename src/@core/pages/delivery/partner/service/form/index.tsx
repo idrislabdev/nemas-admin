@@ -1,6 +1,6 @@
 'use client';
 
-import { IDeliveryPartner } from '@/@core/@types/interface';
+import { IDeliveryPartnerService } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
 import Link from 'next/link';
@@ -19,10 +19,9 @@ const DeliveryPartnerServicePageForm = (props: {
   const [deliveryPartnerCode, setDeliveryPartnerCode] = useState('');
   const [deliveryPartnerDescription, setDeliveryPartnerDescription] =
     useState('');
-  // const [isActive, setIsActive] = useState(true);
 
-  const [required, setRequired] = useState<IDeliveryPartner>(
-    {} as IDeliveryPartner
+  const [required, setRequired] = useState<IDeliveryPartnerService>(
+    {} as IDeliveryPartnerService
   );
   const [api, contextHolder] = notification.useNotification();
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -64,31 +63,38 @@ const DeliveryPartnerServicePageForm = (props: {
       setIsModalLoading(false);
       const err = error as AxiosError;
       if (err.response && err.response.data) {
-        const data: IDeliveryPartner = err.response.data;
+        const data: IDeliveryPartnerService = err.response.data;
         setRequired(data);
       }
     }
   };
 
   const fetchData = async () => {
-    const resp = await axiosInstance.get(`${url}/${paramsServiceId}`);
-    const { data } = resp;
-    setDeliveryPartnerName(data.delivery_partner_service_name);
-    setDeliveryPartnerCode(data.delivery_partner_service_code);
-    setDeliveryPartnerDescription(data.delivery_partner_service_description);
-    // setIsActive(data.is_active)
+    try {
+      const resp = await axiosInstance.get(`${url}/${paramsServiceId}`);
+      const { data } = resp;
+      setDeliveryPartnerName(data.delivery_partner_service_name || '');
+      setDeliveryPartnerCode(data.delivery_partner_service_code || '');
+      setDeliveryPartnerDescription(
+        data.delivery_partner_service_description || ''
+      );
+    } catch (error) {
+      console.error('Gagal mengambil data:', error);
+    }
   };
 
   const clearForm = () => {
     setDeliveryPartnerName('');
     setDeliveryPartnerCode('');
     setDeliveryPartnerDescription('');
-    // setIsActive(true)
   };
 
   useEffect(() => {
-    if (paramsServiceId != 'form') fetchData();
-  });
+    if (paramsServiceId !== 'form') {
+      fetchData();
+    }
+  }, [paramsServiceId]); // <-- Perbaikan utama: Tambahkan dependency array di sini
+
   return (
     <>
       {contextHolder}
@@ -105,9 +111,9 @@ const DeliveryPartnerServicePageForm = (props: {
           <div className="input-area">
             <label>
               Nama{' '}
-              {required.delivery_partner_name && (
+              {required.delivery_partner_service_name && (
                 <span className="text-red-500 text-[10px]/[14px] italic">
-                  ({required.delivery_partner_name?.toString()})
+                  ({required.delivery_partner_service_name?.toString()})
                 </span>
               )}
             </label>
@@ -115,16 +121,16 @@ const DeliveryPartnerServicePageForm = (props: {
               value={deliveryPartnerName}
               onChange={(e) => setDeliveryPartnerName(e.target.value)}
               className={`base ${
-                required.delivery_partner_name ? 'error' : ''
+                required.delivery_partner_service_name ? 'error' : ''
               }`}
             />
           </div>
           <div className="input-area">
             <label>
               Kode{' '}
-              {required.delivery_partner_code && (
+              {required.delivery_partner_service_code && (
                 <span className="text-red-500 text-[10px]/[14px] italic">
-                  ({required.delivery_partner_code?.toString()})
+                  ({required.delivery_partner_service_code?.toString()})
                 </span>
               )}
             </label>
@@ -132,23 +138,25 @@ const DeliveryPartnerServicePageForm = (props: {
               value={deliveryPartnerCode}
               onChange={(e) => setDeliveryPartnerCode(e.target.value)}
               className={`base ${
-                required.delivery_partner_code ? 'error' : ''
+                required.delivery_partner_service_code ? 'error' : ''
               }`}
             />
           </div>
           <div className="input-area">
             <label>
               Deskripsi{' '}
-              {required.delivery_partner_description && (
+              {required.delivery_partner_service_description && (
                 <span className="text-red-500 text-[10px]/[14px] italic">
-                  ({required.delivery_partner_description?.toString()})
+                  ({required.delivery_partner_service_description?.toString()})
                 </span>
               )}
             </label>
             <textarea
               value={deliveryPartnerDescription}
               onChange={(e) => setDeliveryPartnerDescription(e.target.value)}
-              className="base"
+              className={`base ${
+                required.delivery_partner_service_description ? 'error' : ''
+              }`}
             />
           </div>
         </div>

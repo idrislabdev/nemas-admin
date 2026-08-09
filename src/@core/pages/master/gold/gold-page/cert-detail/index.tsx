@@ -58,7 +58,7 @@ const GoldCertDetailTable = (props: {
         `${formatterNumber(record.gold_weight ? record.gold_weight : 0)} gr`,
     },
     {
-      title: 'Include Stock',
+      title: 'Ada Stock',
       dataIndex: 'include_stock',
       key: 'include_stock',
       width: 150,
@@ -155,7 +155,7 @@ const GoldCertDetailTable = (props: {
           onClick={() => addNewData()}
         >
           <Plus />
-          Tambah Sertifikat
+          Tambah Detail Produk
         </a>
       </div>
       <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">

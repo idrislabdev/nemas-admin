@@ -146,89 +146,144 @@ const DeliveryPartnerPageTable = () => {
     });
   };
 
+  const fetchAllData = async (url: string, params: any) => {
+    let allRows: any[] = [];
+    const limit = 100;
+
+    const firstResp = await axiosInstance.get(url, {
+      params: { ...params, limit, offset: 0 },
+    });
+
+    allRows = allRows.concat(firstResp.data.results || []);
+
+    const totalCount = firstResp.data.count || firstResp.data.results.length;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+      const resp = await axiosInstance.get(url, {
+        params: { ...params, limit, offset },
+      });
+
+      allRows = allRows.concat(resp.data.results || []);
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    return allRows;
+  };
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | Record<string, any> = {};
+      try {
+        user = JSON.parse(localStorage.getItem('user') || '{}');
+      } catch {
+        user = {};
+      }
 
-      const param = {
-        format: 'json',
-        offset: 0,
-        limit: 1000,
-        search: '',
-      };
+      const exportParams: any = { ...params, offset: 0, limit: 1000 };
+      if (!exportParams.search) delete exportParams.search;
 
-      const resp = await axiosInstance.get(url, { params: param });
-      const rows: IDeliveryPartner[] = resp.data.results || [];
+      const rows = await fetchAllData(url, exportParams);
 
-      if (!rows.length) return;
-
-      // ===== MAP DATA =====
-      const dataToExport = rows.map(
-        (item: IDeliveryPartner, index: number) => ({
-          No: index + 1,
-          Nama: item.delivery_partner_name || '',
-          Code: item.delivery_partner_code || '',
-          Deskripsi: item.delivery_partner_description || '',
-        })
-      );
+      if (!rows || rows.length === 0) {
+        console.warn('Tidak ada data untuk diekspor.');
+        return;
+      }
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = (user as IUser)?.name || 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Delivery Partner');
+      const totalColumns = 4;
 
-      const header = Object.keys(dataToExport[0]);
-      const lastColumn = String.fromCharCode(64 + header.length);
+      // =============================
+      // TITLE & METADATA (Row 1 - 6)
+      // =============================
+      worksheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN DELIVERY PARTNER';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      // ===== TITLE =====
-      worksheet.mergeCells(`A1:${lastColumn}1`);
-      worksheet.getCell('A1').value = 'LAPORAN DELIVERY PARTNER';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${(user as IUser)?.name || '-'}`;
 
-      // ===== CREATED BY =====
-      worksheet.mergeCells(`A2:${lastColumn}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A4').value = 'Tanggal Export';
+      worksheet.getCell('B4').value =
+        `: ${moment().format('DD-MM-YYYY HH:mm')}`;
 
-      // ===== EXPORT DATE =====
-      worksheet.mergeCells(`A3:${lastColumn}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD-MM-YYYY HH:mm'
-      )}`;
+      worksheet.getCell('A5').value = 'Total Data';
+      worksheet.getCell('B5').value = `: ${rows.length}`;
 
-      // ===== TOTAL DATA =====
-      worksheet.mergeCells(`A4:${lastColumn}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: -`;
 
-      worksheet.addRow([]);
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      // ===== HEADER =====
+      worksheet.addRow([]); // Baris kosong (Row 7)
+
+      // =============================
+      // HEADER TABEL (Row 8)
+      // =============================
+      const header = ['No', 'Nama', 'Code', 'Deskripsi'];
+
       const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFEFEFEF' },
+          fgColor: { argb: 'FF0057B7' }, // Biru Utama
         };
-
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
-          top: { style: 'medium' },
-          left: { style: 'medium' },
-          bottom: { style: 'medium' },
-          right: { style: 'medium' },
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
         };
       });
 
-      // ===== DATA =====
-      dataToExport.forEach((row: any) => {
-        const newRow = worksheet.addRow(header.map((h: any) => row[h]));
+      // =============================
+      // DATA ROWS (Row 9+)
+      // =============================
+      rows.forEach((item: IDeliveryPartner, index: number) => {
+        const rowValues = [
+          index + 1,
+          item.delivery_partner_name || '-',
+          item.delivery_partner_code || '-',
+          item.delivery_partner_description || '-',
+        ];
 
-        newRow.eachCell((cell) => {
-          cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        const newRow = worksheet.addRow(rowValues);
 
+        // Zebra Striping
+        if (index % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
+
+        newRow.eachCell((cell, colNumber) => {
+          let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
+
+          if (colNumber === 1) {
+            horizontal = 'center';
+          }
+
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -238,19 +293,31 @@ const DeliveryPartnerPageTable = () => {
         });
       });
 
-      // ===== FREEZE HEADER =====
-      worksheet.views = [{ state: 'frozen', ySplit: 6 }];
+      // =============================
+      // FREEZE, FILTER & AUTO WIDTH
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
+      worksheet.autoFilter = {
+        from: { row: 8, column: 1 },
+        to: { row: 8, column: totalColumns },
+      };
 
-      // ===== AUTO WIDTH =====
-      worksheet.columns.forEach((col: any) => {
-        let maxLength = 10;
+      worksheet.columns.forEach((column: any, colIdx: number) => {
+        let maxLength = header[colIdx]?.length || 10;
 
-        col.eachCell({ includeEmpty: true }, (cell: any) => {
-          const val = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, val.length);
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const val = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, val.length);
+          }
         });
 
-        col.width = Math.min(maxLength + 2, 40);
+        // Perlakuan khusus Kolom A agar tidak bentrok dengan label metadata
+        if (colIdx === 0) {
+          column.width = Math.max(maxLength + 4, 20);
+        } else {
+          column.width = Math.min(maxLength + 4, 35);
+        }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -269,6 +336,7 @@ const DeliveryPartnerPageTable = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
   return (
     <>
       {contextHolder}
@@ -301,7 +369,7 @@ const DeliveryPartnerPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

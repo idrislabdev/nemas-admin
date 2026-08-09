@@ -59,6 +59,7 @@ export interface IGoldCert {
 export interface IGoldCertPriceDetail {
   id?: string;
   gold?: number;
+  gold_brand?: string;
   gold_cert?: number;
   gold_cert_code?: string;
   gold_weight?: number;

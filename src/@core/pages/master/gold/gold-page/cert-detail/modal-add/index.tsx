@@ -139,7 +139,7 @@ const ModalAddCertificate = (props: {
             </div>
             {/* <div className="flex flex-col gap-[4px]">
               <label>
-                Include Stock{' '}
+                Ada Stock{' '}
                 {required.include_stock && (
                   <span className="text-red-500 text-[10px]/[14px] italic">
                     ({required.include_stock?.toString()})
