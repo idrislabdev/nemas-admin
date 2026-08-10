@@ -100,7 +100,7 @@ const ModalAddCertificate = (props: {
         onClose={() => setIsModalOpen(false)}
       >
         <Modal.Header>
-          <Modal.Title>Tambah Data Sertifikat</Modal.Title>
+          <Modal.Title>Tambah Detail Produk</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="flex flex-col gap-[12px]">
@@ -164,7 +164,7 @@ const ModalAddCertificate = (props: {
               className="btn btn-outline-secondary"
               onClick={() => setIsModalOpen(false)}
             >
-              Cancel
+              Batal
             </button>
             <button className="btn btn-primary" onClick={() => onSave()}>
               Simpan
