@@ -64,22 +64,25 @@ const AddressPostalCodePageTable = () => {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
+    } catch (err) {
+      console.error('Failed to fetch table data:', err);
+    }
   }, [params, url]);
 
   const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
-      limit: 10,
       search: value,
-    });
+    }));
   };
 
   const exportData = async () => {
@@ -117,84 +120,86 @@ const AddressPostalCodePageTable = () => {
       const lastColumnLetter = 'F';
 
       /* ================= TITLE ================= */
-
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN DATA POSTAL CODE';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN DATA POSTAL CODE';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FF0057B7' } };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       /* ================= DIBUAT OLEH ================= */
-
       worksheet.mergeCells(`A2:${lastColumnLetter}2`);
       worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
+      worksheet.getCell('A2').font = { bold: true };
       worksheet.getCell('A2').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
       /* ================= TANGGAL EXPORT ================= */
-
       worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
+      worksheet.getCell('A3').value =
+        `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`;
+      worksheet.getCell('A3').font = { bold: true };
       worksheet.getCell('A3').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
       /* ================= TOTAL DATA ================= */
-
       worksheet.mergeCells(`A4:${lastColumnLetter}4`);
       worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
+      worksheet.getCell('A4').font = { bold: true };
       worksheet.getCell('A4').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
       /* ================= PERIODE / KETERANGAN ================= */
-
       worksheet.mergeCells(`A5:${lastColumnLetter}5`);
       worksheet.getCell('A5').value = 'Periode : Semua Data';
+      worksheet.getCell('A5').font = { bold: true };
       worksheet.getCell('A5').alignment = {
         horizontal: 'left',
         vertical: 'middle',
       };
 
-      worksheet.addRow([]);
+      worksheet.addRow([]); // Baris kosong
 
       /* ================= HEADER ================= */
-
       const headers = Object.keys(dataToExport[0]);
       const headerRow = worksheet.addRow(headers);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
         };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
       /* ================= DATA ================= */
-
       dataToExport.forEach((row) => {
         const rowValues = headers.map((key) => (row as any)[key]);
         const newRow = worksheet.addRow(rowValues);
+
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
 
         newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
           const isCenter = colNumber === 1 || colNumber === 6; // No & Kode Pos
@@ -214,7 +219,6 @@ const AddressPostalCodePageTable = () => {
       });
 
       /* ================= TOTAL ================= */
-
       const totalRow = worksheet.addRow(['TOTAL', rows.length, '', '', '', '']);
 
       totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -239,7 +243,6 @@ const AddressPostalCodePageTable = () => {
       });
 
       /* ================= AUTO WIDTH ================= */
-
       worksheet.columns.forEach((col) => {
         let maxLength = 10;
 
@@ -248,16 +251,17 @@ const AddressPostalCodePageTable = () => {
           maxLength = Math.max(maxLength, value.length);
         });
 
-        col.width = Math.min(maxLength + 2, 35);
+        col.width = Math.min(maxLength + 3, 40);
       });
 
       /* ================= FREEZE HEADER ================= */
-
-      // Header tabel ada di baris 7
       worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      worksheet.autoFilter = {
+        from: 'A7',
+        to: `${lastColumnLetter}7`,
+      };
 
       /* ================= SAVE ================= */
-
       const buffer = await workbook.xlsx.writeBuffer();
       saveAs(
         new Blob([buffer]),
@@ -276,7 +280,7 @@ const AddressPostalCodePageTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div className="group-input prepend-append">
           <span className="append">
             <SearchSm />
@@ -300,7 +304,7 @@ const AddressPostalCodePageTable = () => {
         </div>
       </div>
 
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

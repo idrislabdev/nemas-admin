@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IAddressCity, IUser } from '@/@core/@types/interface';
+import { IAddressCity } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -11,7 +11,10 @@ import { FileDownload02, SearchSm } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import ModalLoading from '@/@core/components/modal/modal-loading';
-import dayjs from 'dayjs';
+import moment from 'moment';
+import 'moment/locale/id';
+
+moment.locale('id');
 
 const AddressCityPageTable = () => {
   const url = `/core/address/city/`;
@@ -24,6 +27,7 @@ const AddressCityPageTable = () => {
     limit: 10,
     search: '',
   });
+
   const columns: ColumnsType<IAddressCity> = [
     {
       title: 'No',
@@ -32,7 +36,7 @@ const AddressCityPageTable = () => {
       key: 'city_id',
       fixed: 'left',
       align: 'center',
-      render: (_, record, index) => index + params.offset + 1,
+      render: (_, __, index) => index + params.offset + 1,
     },
     {
       title: 'Nama Provinsi',
@@ -47,141 +51,197 @@ const AddressCityPageTable = () => {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
+    } catch (err) {
+      console.error('Failed to fetch table data:', err);
+    }
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+  const onChangePage = (page: number) => {
+    setParams((prev) => ({ ...prev, offset: (page - 1) * prev.limit }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
-      limit: 10,
       search: value,
+    }));
+  };
+
+  const fetchAllData = async (fetchUrl: string, currentParams: any) => {
+    let allRows: any[] = [];
+    const limit = 100;
+
+    const firstResp = await axiosInstance.get(fetchUrl, {
+      params: { ...currentParams, limit, offset: 0 },
     });
+
+    allRows = allRows.concat(firstResp.data.results || []);
+    const totalCount = firstResp.data.count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    for (let i = 1; i < totalPages; i++) {
+      const offset = i * limit;
+      const resp = await axiosInstance.get(fetchUrl, {
+        params: { ...currentParams, limit, offset },
+      });
+      allRows = allRows.concat(resp.data.results || []);
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    return allRows;
+  };
+
+  const getExportedBy = () => {
+    if (typeof window === 'undefined') return '-';
+
+    try {
+      const rawUser =
+        localStorage.getItem('user') ||
+        localStorage.getItem('auth_user') ||
+        localStorage.getItem('profile');
+
+      if (!rawUser) return '-';
+
+      const parsedUser = JSON.parse(rawUser);
+
+      return (
+        parsedUser?.full_name ||
+        parsedUser?.name ||
+        parsedUser?.username ||
+        parsedUser?.email ||
+        '-'
+      );
+    } catch (error) {
+      console.error('Gagal membaca user dari localStorage:', error);
+      return '-';
+    }
   };
 
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
-
-      const param = {
-        format: 'json',
+      const rows = await fetchAllData(url, {
+        ...params,
         offset: 0,
-        limit: 1000, // biar lebih aman daripada 50
-        search: '',
-      };
-
-      const resp = await axiosInstance.get(url, { params: param });
-      const rows: IAddressCity[] = resp.data?.results || [];
+        limit: 1000,
+      });
 
       if (!rows.length) return;
 
       const dataToExport = rows.map((item: IAddressCity, index: number) => ({
         No: index + 1,
-        'Province Name': item.province_name,
-        'City Name': item.city_name,
+        'Nama Provinsi': item.province_name,
+        'Nama Kabupaten / Kota': item.city_name,
       }));
 
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'System';
+      workbook.company = 'System';
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Data City');
 
-      const lastColumnLetter = 'C';
+      const exportedBy = getExportedBy();
+      const exportedAt = moment().format('DD MMMM YYYY HH:mm:ss');
 
-      /* ================= TITLE ================= */
+      const totalColumns =
+        dataToExport.length > 0 ? Object.keys(dataToExport[0]).length : 3;
+      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
+      // =============================
+      // Title
+      // =============================
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell('A1').value = 'LAPORAN DATA CITY';
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LAPORAN DATA KABUPATEN / KOTA';
+      titleCell.font = {
+        size: 16,
+        bold: true,
+        color: { argb: 'FF0057B7' },
       };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-      /* ================= DIBUAT OLEH ================= */
+      // =============================
+      // Export Info & Filter
+      // =============================
+      worksheet.getCell('A3').value = 'Dibuat Oleh';
+      worksheet.getCell('B3').value = `: ${exportedBy}`;
 
-      worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      worksheet.getCell('A4').value = 'Diexport Pada';
+      worksheet.getCell('B4').value = `: ${exportedAt}`;
 
-      /* ================= TANGGAL EXPORT ================= */
+      worksheet.getCell('A5').value = 'Pencarian';
+      worksheet.getCell('B5').value = `: ${params.search || '-'}`;
 
-      worksheet.mergeCells(`A3:${lastColumnLetter}3`);
-      worksheet.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      ['A3', 'A4', 'A5'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
 
-      /* ================= TOTAL DATA ================= */
+      worksheet.addRow([]); // Baris kosong
 
-      worksheet.mergeCells(`A4:${lastColumnLetter}4`);
-      worksheet.getCell('A4').value = `Total Data : ${rows.length}`;
-      worksheet.getCell('A4').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      // =============================
+      // Header
+      // =============================
+      const header = dataToExport.length
+        ? Object.keys(dataToExport[0])
+        : ['No', 'Nama Provinsi', 'Nama Kabupaten / Kota'];
 
-      /* ================= PERIODE / KETERANGAN ================= */
-
-      worksheet.mergeCells(`A5:${lastColumnLetter}5`);
-      worksheet.getCell('A5').value = 'Periode : Semua Data';
-      worksheet.getCell('A5').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-
-      worksheet.addRow([]);
-
-      /* ================= HEADER ================= */
-
-      const headers = Object.keys(dataToExport[0]);
-      const headerRow = worksheet.addRow(headers);
+      const headerRow = worksheet.addRow(header);
+      headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF0057B7' },
         };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
           bottom: { style: 'thin' },
           right: { style: 'thin' },
         };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
-        };
       });
 
-      /* ================= DATA ================= */
+      // =============================
+      // Freeze Header & Filter
+      // =============================
+      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
+      worksheet.autoFilter = {
+        from: 'A7',
+        to: `${lastColumnLetter}7`,
+      };
 
-      dataToExport.forEach((row) => {
-        const rowValues = headers.map((key) => (row as any)[key]);
-        const newRow = worksheet.addRow(rowValues);
+      // =============================
+      // Data
+      // =============================
+      dataToExport.forEach((row: any) => {
+        const values = header.map((key) => row[key]);
+        const newRow = worksheet.addRow(values);
 
-        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          const isNumeric = colNumber === 1; // kolom No
+        if (newRow.number % 2 === 1) {
+          newRow.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FBFF' },
+            };
+          });
+        }
 
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: isNumeric ? 'center' : 'left',
-          };
+        newRow.eachCell((cell, colNumber) => {
+          const horizontal: ExcelJS.Alignment['horizontal'] =
+            colNumber === 1 ? 'center' : 'left';
 
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -191,56 +251,29 @@ const AddressCityPageTable = () => {
         });
       });
 
-      /* ================= TOTAL ================= */
-
-      const totalRow = worksheet.addRow(['TOTAL', rows.length, '']);
-
-      totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        const isNumeric = colNumber === 2;
-
-        cell.font = { bold: true };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFCE29F' },
-        };
-        cell.alignment = {
-          vertical: 'middle',
-          horizontal: isNumeric ? 'center' : 'left',
-        };
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
-      });
-
-      /* ================= AUTO WIDTH ================= */
-
-      worksheet.columns.forEach((col) => {
+      // =============================
+      // Auto Width
+      // =============================
+      worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
-
-        col.eachCell?.({ includeEmpty: true }, (cell) => {
-          const value = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, value.length);
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 7) {
+            const value = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, value.length);
+          }
         });
-
-        col.width = Math.min(maxLength + 2, 35);
+        column.width = Math.min(maxLength + 3, 40);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      // Header tabel ada di baris 7
-      worksheet.views = [{ state: 'frozen', ySplit: 7 }];
-
-      /* ================= SAVE ================= */
-
+      // =============================
+      // Export File
+      // =============================
       const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(
-        new Blob([buffer]),
-        `laporan_data_city_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
-      );
+      const fileName = `laporan_data_city_${moment().format(
+        'YYYYMMDD_HHmmss'
+      )}.xlsx`;
+
+      saveAs(new Blob([buffer]), fileName);
     } catch (error) {
       console.error('Export data city failed:', error);
     } finally {
@@ -254,7 +287,7 @@ const AddressCityPageTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div className="group-input prepend-append">
           <span className="append">
             <SearchSm />
@@ -276,7 +309,8 @@ const AddressCityPageTable = () => {
           </button>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
@@ -295,6 +329,7 @@ const AddressCityPageTable = () => {
           />
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diunduh"
