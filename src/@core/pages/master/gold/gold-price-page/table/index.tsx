@@ -7,17 +7,19 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
 import debounce from 'debounce';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table, notification } from 'antd';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { DatePicker, Pagination, Table, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { FileDownload02, SearchSm } from '@untitled-ui/icons-react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import moment from 'moment';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import 'moment/locale/id';
 
 moment.locale('id');
+
+const { RangePicker } = DatePicker;
 
 const GoldPricePageTable = () => {
   const url = `/core/gold/price/`;
@@ -27,11 +29,17 @@ const GoldPricePageTable = () => {
   const [openModalConfirm, setOpenModalConfirm] = useState(false);
   const [selectedId] = useState(0);
 
+  // 🔹 Default tanggal awal bulan hingga hari ini (Opsional, sesuaikan kebutuhan backend apakah butuh default atau kosong)
+  const defaultStart = useMemo(() => dayjs().startOf('month'), []);
+  const defaultEnd = useMemo(() => dayjs(), []);
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
     limit: 10,
     gold_price_source__icontains: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -99,33 +107,43 @@ const GoldPricePageTable = () => {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
+    } catch (err) {
+      console.error('Failed to fetch table data:', err);
+    }
   }, [params, url]);
 
   const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
-      limit: 10,
       gold_price_source__icontains: value,
-    });
+    }));
+  };
+
+  const onRangeChange = (
+    _dates: null | (Dayjs | null)[],
+    dateStrings: string[]
+  ) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      start_date: dateStrings[0] || '',
+      end_date: dateStrings[1] || '',
+    }));
   };
 
   const confirmDelete = async () => {
     await axiosInstance.delete(`${url}${selectedId}/`);
     setOpenModalConfirm(false);
-    setParams({
-      ...params,
-      offset: 0,
-      limit: 10,
-      gold_price_source__icontains: '',
-    });
+    fetchData();
     api.info({
       message: 'Data Gold Price',
       description: 'Data Gold Price Berhasil Dihapus',
@@ -133,12 +151,12 @@ const GoldPricePageTable = () => {
     });
   };
 
-  const fetchAllData = async (url: string, params: any) => {
+  const fetchAllData = async (fetchUrl: string, currentParams: any) => {
     let allRows: any[] = [];
     const limit = 100;
 
-    const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+    const firstResp = await axiosInstance.get(fetchUrl, {
+      params: { ...currentParams, limit, offset: 0 },
     });
 
     allRows = allRows.concat(firstResp.data.results || []);
@@ -147,11 +165,11 @@ const GoldPricePageTable = () => {
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+      const resp = await axiosInstance.get(fetchUrl, {
+        params: { ...currentParams, limit, offset },
       });
       allRows = allRows.concat(resp.data.results || []);
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     return allRows;
@@ -171,7 +189,6 @@ const GoldPricePageTable = () => {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-
           exportedBy =
             parsedUser?.full_name ||
             parsedUser?.user_name ||
@@ -183,14 +200,7 @@ const GoldPricePageTable = () => {
         }
       }
 
-      const param = {
-        format: 'json',
-        offset: 0,
-        limit: 10,
-        gold_price_source__icontains: params.gold_price_source__icontains,
-      };
-
-      const rows = await fetchAllData(url, param);
+      const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map((item: IGoldPrice, index: number) => ({
         No: index + 1,
@@ -207,7 +217,6 @@ const GoldPricePageTable = () => {
       }));
 
       const workbook = new ExcelJS.Workbook();
-
       workbook.creator = 'NEMAS';
       workbook.company = 'NEMAS';
       workbook.created = new Date();
@@ -234,46 +243,42 @@ const GoldPricePageTable = () => {
       // =====================================
       // Title
       // =====================================
-
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-
       const titleCell = worksheet.getCell('A1');
-
       titleCell.value = 'LAPORAN HARGA EMAS';
-
       titleCell.font = {
         size: 16,
         bold: true,
-        color: {
-          argb: 'FF0057B7',
-        },
+        color: { argb: 'FF0057B7' },
       };
-
-      titleCell.alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       // =====================================
       // Export Information
       // =====================================
-
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
-      worksheet.getCell('B4').value = `: ${moment().format(
-        'DD MMMM YYYY HH:mm:ss'
-      )}`;
+      worksheet.getCell('B4').value =
+        `: ${moment().format('DD MMMM YYYY HH:mm:ss')}`;
 
       worksheet.getCell('A5').value = 'Pencarian';
       worksheet.getCell('B5').value =
         `: ${params.gold_price_source__icontains || '-'}`;
 
-      ['A3', 'A4', 'A5'].forEach((cell) => {
-        worksheet.getCell(cell).font = {
-          bold: true,
-        };
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
+
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
       });
 
       worksheet.addRow([]);
@@ -281,32 +286,17 @@ const GoldPricePageTable = () => {
       // =====================================
       // Header
       // =====================================
-
       const headerRow = worksheet.addRow(header);
-
       headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = {
-          bold: true,
-          color: {
-            argb: 'FFFFFFFF',
-          },
-        };
-
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: {
-            argb: 'FF0057B7',
-          },
+          fgColor: { argb: 'FF0057B7' },
         };
-
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
-        };
-
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -316,39 +306,27 @@ const GoldPricePageTable = () => {
       });
 
       // =====================================
-      // Freeze Header
+      // Freeze Header & Filter
       // =====================================
-
-      worksheet.views = [
-        {
-          state: 'frozen',
-          ySplit: 7,
-        },
-      ];
-
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
       worksheet.autoFilter = {
-        from: 'A7',
-        to: `${lastColumnLetter}7`,
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
       };
 
       // =====================================
       // Data
       // =====================================
-
       dataToExport.forEach((row) => {
         const values = header.map((key) => row[key as keyof typeof row]);
-
         const newRow = worksheet.addRow(values);
 
-        // Zebra row
-        if (newRow.number % 2 === 0) {
+        if (newRow.number % 2 === 1) {
           newRow.eachCell((cell) => {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: {
-                argb: 'FFF8FBFF',
-              },
+              fgColor: { argb: 'FFF8FBFF' },
             };
           });
         }
@@ -360,32 +338,24 @@ const GoldPricePageTable = () => {
             case 1:
               horizontal = 'center';
               break;
-
             case 3:
               horizontal = 'right';
               cell.numFmt = '#,##0.####" gr"';
               break;
-
             case 4:
             case 5:
             case 6:
               horizontal = 'right';
               cell.numFmt = '"Rp" #,##0';
               break;
-
             case 8:
               horizontal = 'center';
               break;
-
             default:
               horizontal = 'left';
           }
 
-          cell.alignment = {
-            horizontal,
-            vertical: 'middle',
-          };
-
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -398,32 +368,27 @@ const GoldPricePageTable = () => {
       // =====================================
       // Auto Width
       // =====================================
-
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
-
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
-
-          maxLength = Math.max(maxLength, value.length);
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const value = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, value.length);
+          }
         });
-
         column.width = Math.min(maxLength + 3, 40);
       });
 
       // =====================================
       // Export
       // =====================================
-
       const buffer = await workbook.xlsx.writeBuffer();
-
       saveAs(
         new Blob([buffer]),
         `laporan_harga_emas_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
       console.error('Export failed:', err);
-
       api.error({
         message: 'Export Excel',
         description: 'Gagal export data harga emas',
@@ -441,20 +406,28 @@ const GoldPricePageTable = () => {
   return (
     <>
       {contextHolder}
-      <div className="flex items-center justify-between">
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[320px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[defaultStart, defaultEnd]}
           />
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="border border-gray-300 rounded-md px-3 py-2 h-[40px] w-[250px] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              placeholder="cari data"
+              onChange={debounce(
+                (event) => handleFilter(event.target.value),
+                1000
+              )}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-[4px]">
           <button className="btn btn-primary" onClick={exportData}>
