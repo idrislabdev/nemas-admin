@@ -7,20 +7,27 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber2 } from '@/@core/utils/general';
 import { FileDownload02, Plus, SearchSm } from '@untitled-ui/icons-react';
-import { Pagination, Table } from 'antd';
+import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import Link from 'next/link';
 import debounce from 'debounce';
 import moment from 'moment';
-import React, { useCallback, useEffect, useState } from 'react';
+import dayjs, { Dayjs } from 'dayjs';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
 
 moment.locale('id');
 
+const { RangePicker } = DatePicker;
+
 const GoldStockMovementPageTable = () => {
   const url = `/gold-transaction/gold-stock/movement/`;
+
+  // 🔹 Default tanggal awal bulan hingga hari ini
+  const defaultStart = useMemo(() => dayjs().startOf('month'), []);
+  const defaultEnd = useMemo(() => dayjs(), []);
 
   const [dataTable, setDataTable] = useState<Array<IGoldStockMovement>>([]);
   const [total, setTotal] = useState(0);
@@ -32,6 +39,8 @@ const GoldStockMovementPageTable = () => {
     limit: 10,
     type__icontains: '',
     search: '',
+    start_date: defaultStart.format('YYYY-MM-DD'),
+    end_date: defaultEnd.format('YYYY-MM-DD'),
   });
 
   const columns: ColumnsType<IGoldStockMovement> = [
@@ -103,44 +112,58 @@ const GoldStockMovementPageTable = () => {
   ];
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results || []);
+      setTotal(resp.data.count || 0);
+    } catch (err) {
+      console.error('Failed to fetch table data:', err);
+    }
   }, [params, url]);
 
   const onChangePage = (page: number) => {
-    setParams({ ...params, offset: (page - 1) * params.limit });
+    setParams((prev) => ({ ...prev, offset: (page - 1) * prev.limit }));
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
-      limit: 10,
       type__icontains: value,
       search: value,
-    });
+    }));
   };
 
-  const fetchAllData = async (url: string, params: any) => {
+  const onRangeChange = (
+    _dates: null | (Dayjs | null)[],
+    dateStrings: string[]
+  ) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      start_date: dateStrings[0] || '',
+      end_date: dateStrings[1] || '',
+    }));
+  };
+
+  const fetchAllData = async (fetchUrl: string, currentParams: any) => {
     let allRows: any[] = [];
     const limit = 100;
 
-    const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+    const firstResp = await axiosInstance.get(fetchUrl, {
+      params: { ...currentParams, limit, offset: 0 },
     });
 
-    allRows = allRows.concat(firstResp.data.results);
-    const totalCount = firstResp.data.count;
+    allRows = allRows.concat(firstResp.data.results || []);
+    const totalCount = firstResp.data.count || 0;
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+      const resp = await axiosInstance.get(fetchUrl, {
+        params: { ...currentParams, limit, offset },
       });
-      allRows = allRows.concat(resp.data.results);
-
+      allRows = allRows.concat(resp.data.results || []);
       await new Promise((r) => setTimeout(r, 200));
     }
 
@@ -151,7 +174,6 @@ const GoldStockMovementPageTable = () => {
     if (typeof window === 'undefined') return '-';
 
     try {
-      // Sesuaikan key localStorage sesuai project kamu
       const rawUser =
         localStorage.getItem('user') ||
         localStorage.getItem('auth_user') ||
@@ -178,15 +200,7 @@ const GoldStockMovementPageTable = () => {
     try {
       setIsModalLoading(true);
 
-      const exportParams = {
-        format: 'json',
-        offset: 0,
-        limit: 10,
-        type__icontains: params.type__icontains,
-        search: params.search,
-      };
-
-      const rows = await fetchAllData(url, exportParams);
+      const rows = await fetchAllData(url, params);
 
       const dataToExport = rows.map(
         (item: IGoldStockMovement, index: number) => ({
@@ -210,7 +224,6 @@ const GoldStockMovementPageTable = () => {
       );
 
       const workbook = new ExcelJS.Workbook();
-
       workbook.creator = 'NEMAS';
       workbook.company = 'NEMAS';
       workbook.created = new Date();
@@ -222,51 +235,52 @@ const GoldStockMovementPageTable = () => {
 
       const totalColumns =
         dataToExport.length > 0 ? Object.keys(dataToExport[0]).length : 8;
-
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
       // =============================
       // Title
       // =============================
-
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-
       const titleCell = worksheet.getCell('A1');
-
       titleCell.value = 'LAPORAN PERGERAKAN STOK EMAS';
-
       titleCell.font = {
         size: 16,
         bold: true,
-        color: {
-          argb: 'FF0057B7',
-        },
+        color: { argb: 'FF0057B7' },
       };
-
-      titleCell.alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       // =============================
-      // Export Info
+      // Export Info & Periode
       // =============================
-
       worksheet.getCell('A3').value = 'Dibuat Oleh';
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
       worksheet.getCell('B4').value = `: ${exportedAt}`;
 
-      worksheet.getCell('A3').font = { bold: true };
-      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').value = 'Pencarian';
+      worksheet.getCell('B5').value = `: ${params.search || '-'}`;
 
-      worksheet.addRow([]);
+      const periodeText =
+        params?.start_date && params?.end_date
+          ? `${dayjs(params.start_date).format('DD MMMM YYYY')} s/d ${dayjs(
+              params.end_date
+            ).format('DD MMMM YYYY')}`
+          : '-';
+
+      worksheet.getCell('A6').value = 'Periode';
+      worksheet.getCell('B6').value = `: ${periodeText}`;
+
+      ['A3', 'A4', 'A5', 'A6'].forEach((cell) => {
+        worksheet.getCell(cell).font = { bold: true };
+      });
+
+      worksheet.addRow([]); // Baris kosong
 
       // =============================
       // Header
       // =============================
-
       const header = dataToExport.length
         ? Object.keys(dataToExport[0])
         : [
@@ -281,30 +295,16 @@ const GoldStockMovementPageTable = () => {
           ];
 
       const headerRow = worksheet.addRow(header);
-
       headerRow.height = 24;
 
       headerRow.eachCell((cell) => {
-        cell.font = {
-          bold: true,
-          color: {
-            argb: 'FFFFFFFF',
-          },
-        };
-
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: {
-            argb: 'FF0057B7',
-          },
+          fgColor: { argb: 'FF0057B7' },
         };
-
-        cell.alignment = {
-          horizontal: 'center',
-          vertical: 'middle',
-        };
-
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
         cell.border = {
           top: { style: 'thin' },
           left: { style: 'thin' },
@@ -314,39 +314,27 @@ const GoldStockMovementPageTable = () => {
       });
 
       // =============================
-      // Freeze Header
+      // Freeze Header & Filter
       // =============================
-
-      worksheet.views = [
-        {
-          state: 'frozen',
-          ySplit: 6,
-        },
-      ];
-
+      worksheet.views = [{ state: 'frozen', ySplit: 8 }];
       worksheet.autoFilter = {
-        from: 'A6',
-        to: `${lastColumnLetter}6`,
+        from: 'A8',
+        to: `${lastColumnLetter}8`,
       };
 
       // =============================
       // Data
       // =============================
-
       dataToExport.forEach((row: any) => {
         const values = header.map((key) => row[key]);
-
         const newRow = worksheet.addRow(values);
 
-        // Zebra row
         if (newRow.number % 2 === 1) {
           newRow.eachCell((cell) => {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: {
-                argb: 'FFF8FBFF',
-              },
+              fgColor: { argb: 'FFF8FBFF' },
             };
           });
         }
@@ -358,26 +346,19 @@ const GoldStockMovementPageTable = () => {
             case 1:
               horizontal = 'center';
               break;
-
             case 3:
             case 4:
             case 5:
               horizontal = 'right';
               break;
-
             case 6:
               horizontal = 'center';
               break;
-
             default:
               horizontal = 'left';
           }
 
-          cell.alignment = {
-            horizontal,
-            vertical: 'middle',
-          };
-
+          cell.alignment = { horizontal, vertical: 'middle' };
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -390,25 +371,21 @@ const GoldStockMovementPageTable = () => {
       // =============================
       // Auto Width
       // =============================
-
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
-
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
-
-          maxLength = Math.max(maxLength, value.length);
+        column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
+          if (rowNum >= 8) {
+            const value = cell.value ? cell.value.toString() : '';
+            maxLength = Math.max(maxLength, value.length);
+          }
         });
-
         column.width = Math.min(maxLength + 3, 40);
       });
 
       // =============================
-      // Export
+      // Export File
       // =============================
-
       const buffer = await workbook.xlsx.writeBuffer();
-
       const fileName = `laporan_pergerakan_stok_emas_${moment().format(
         'YYYYMMDD_HHmmss'
       )}.xlsx`;
@@ -427,21 +404,29 @@ const GoldStockMovementPageTable = () => {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        {/* Search Input */}
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        {/* RangePicker & Search Input */}
+        <div className="flex items-center gap-2">
+          <RangePicker
+            size="small"
+            className="w-[320px] h-[40px]"
+            onChange={onRangeChange}
+            defaultValue={[defaultStart, defaultEnd]}
           />
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="border border-gray-300 rounded-md px-3 py-2 h-[40px] w-[250px] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              placeholder="cari data"
+              onChange={debounce(
+                (event) => handleFilter(event.target.value),
+                1000
+              )}
+            />
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -461,7 +446,7 @@ const GoldStockMovementPageTable = () => {
       </div>
 
       {/* Table */}
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
