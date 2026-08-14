@@ -8,7 +8,7 @@ import axiosInstance from '@/@core/utils/axios';
 
 import debounce from 'debounce';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pagination, Table, notification } from 'antd';
+import { Pagination, Table, Select, notification } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import Link from 'next/link';
 
@@ -26,6 +26,18 @@ import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
 
+/* ================= HELPER EXCEL ================= */
+const getExcelColumnLabel = (colIndex: number): string => {
+  let label = '';
+  let index = colIndex;
+  while (index > 0) {
+    const remainder = (index - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    index = Math.floor((index - 1) / 26);
+  }
+  return label;
+};
+
 const PaymentMethodPageTable = () => {
   const url = `/core/payment/method/`;
 
@@ -40,6 +52,7 @@ const PaymentMethodPageTable = () => {
     offset: 0,
     limit: 10,
     payment_method_name__icontains: '',
+    is_active: '',
   });
 
   const [api, contextHolder] = notification.useNotification();
@@ -71,6 +84,7 @@ const PaymentMethodPageTable = () => {
       title: 'Status',
       dataIndex: 'is_active',
       key: 'is_active',
+      align: 'center',
       render: (_, record) => (record.is_active ? 'Aktif' : 'Tidak Aktif'),
     },
     {
@@ -133,9 +147,13 @@ const PaymentMethodPageTable = () => {
   // Fetch Data
   // ========================
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+    try {
+      const resp = await axiosInstance.get(url, { params });
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (err) {
+      console.error('Fetch failed:', err);
+    }
   }, [params, url]);
 
   const onChangePage = (val: number) => {
@@ -143,11 +161,19 @@ const PaymentMethodPageTable = () => {
   };
 
   const handleFilter = (value: string) => {
-    setParams({
-      ...params,
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
       payment_method_name__icontains: value,
-    });
+    }));
+  };
+
+  const handleStatusFilter = (value: string) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      is_active: value,
+    }));
   };
 
   // ========================
@@ -178,12 +204,12 @@ const PaymentMethodPageTable = () => {
   // ========================
   // Export Excel
   // ========================
-  const fetchAllData = async (url: string, params: any) => {
+  const fetchAllData = async (urlPath: string, currentParams: any) => {
     let allRows: any[] = [];
     const limit = 100;
 
-    const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+    const firstResp = await axiosInstance.get(urlPath, {
+      params: { ...currentParams, limit, offset: 0 },
     });
 
     allRows = allRows.concat(firstResp.data.results);
@@ -192,8 +218,8 @@ const PaymentMethodPageTable = () => {
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
-      const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+      const resp = await axiosInstance.get(urlPath, {
+        params: { ...currentParams, limit, offset },
       });
       allRows = allRows.concat(resp.data.results);
       await new Promise((r) => setTimeout(r, 200));
@@ -206,16 +232,31 @@ const PaymentMethodPageTable = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | null = null;
+      try {
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      } catch (e) {
+        console.warn('Failed to parse user from localStorage', e);
+      }
 
       const exportParams = {
         format: 'json',
         offset: 0,
-        limit: 50,
-        payment_method_name__icontains: '',
+        limit: 100,
+        payment_method_name__icontains: params.payment_method_name__icontains,
+        is_active: params.is_active,
       };
 
       const rows = await fetchAllData(url, exportParams);
+      if (!rows.length) {
+        api.warning({
+          message: 'Export Excel',
+          description: 'Tidak ada data untuk diexport',
+          placement: 'bottomRight',
+        });
+        return;
+      }
 
       const dataToExport = rows.map((item: IPaymentMethod, index: number) => ({
         No: index + 1,
@@ -235,126 +276,136 @@ const PaymentMethodPageTable = () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data Payment Method');
 
-      const thinBorder = {
-        top: { style: 'thin' as const },
-        left: { style: 'thin' as const },
-        bottom: { style: 'thin' as const },
-        right: { style: 'thin' as const },
-      };
+      const totalColumns = Object.keys(dataToExport[0]).length;
+      const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
       // ======================
-      // JUDUL
+      // TITLE & METADATA
       // ======================
-      worksheet.mergeCells('A1:H1');
-      worksheet.getCell('A1').value = 'DATA MASTER PAYMENT METHOD';
-      worksheet.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A1').font = { size: 14, bold: true };
-      worksheet.getCell('A1').border = thinBorder;
-
-      // ======================
-      // HEADER INFO
-      // ======================
-      worksheet.mergeCells('A2:H2');
-      worksheet.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      worksheet.getCell('A2').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A2').border = thinBorder;
-
-      worksheet.mergeCells('A3:H3');
-      worksheet.getCell('A3').value = `Tanggal Export : ${moment().format(
-        'DD MMM YYYY, HH:mm'
-      )}`;
-      worksheet.getCell('A3').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-      worksheet.getCell('A3').border = thinBorder;
-
-      worksheet.addRow([]);
-
-      // ======================
-      // HEADER TABLE (STATIC)
-      // ======================
-      const header = [
-        'No',
-        'Nama',
-        'Deskripsi',
-        'Status',
-        'Create By',
-        'Create Time',
-        'Update By',
-        'Update Time',
+      const metadata = [
+        { cell: 'A1', val: 'DATA MASTER PAYMENT METHOD', bold: true, size: 14 },
+        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A3',
+          val: `Tanggal Export : ${moment().format('DD MMM YYYY, HH:mm')}`,
+        },
+        { cell: 'A4', val: `Total Data : ${rows.length}` },
       ];
 
-      const headerRow = worksheet.addRow(header);
+      metadata.forEach((m, idx) => {
+        const rowNum = idx + 1;
+        worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+        const c = worksheet.getCell(m.cell);
+        c.value = m.val;
+        c.font = {
+          name: 'Calibri',
+          bold: !!m.bold,
+          size: m.size || 11,
+          color: { argb: 'FF1E293B' },
+        };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
+      });
+
+      worksheet.addRow([]); // Row 5 blank
+
+      // ======================
+      // HEADER TABLE
+      // ======================
+      const headerKeys = Object.keys(dataToExport[0]);
+      const headerRow = worksheet.addRow(headerKeys);
+      const headerRowIndex = 6;
+      headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        cell.border = thinBorder;
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+          size: 11,
+        };
+        cell.alignment = {
+          horizontal: 'center',
+          vertical: 'middle',
+          wrapText: true,
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'medium', color: { argb: 'FF004397' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+        };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FF0057B7' },
         };
       });
 
       // ======================
-      // DATA ROW
+      // DATA ROWS
       // ======================
-      if (dataToExport.length > 0) {
-        dataToExport.forEach((row: any) => {
-          const rowValues = header.map(
-            (key) => row[key as keyof typeof row] ?? '-'
-          );
+      dataToExport.forEach((row: any, idx: number) => {
+        const rowValues = headerKeys.map((key) => row[key] ?? '-');
+        const newRow = worksheet.addRow(rowValues);
+        newRow.height = 20;
 
-          const newRow = worksheet.addRow(rowValues);
+        const isEven = idx % 2 === 1;
+        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
 
-          newRow.eachCell((cell) => {
-            cell.alignment = {
-              vertical: 'middle',
-              horizontal: 'left',
-              wrapText: true,
-            };
-            cell.border = thinBorder;
-          });
-        });
-      } else {
-        // Tetap buat 1 row kosong supaya border tabel tetap muncul
-        const emptyRow = worksheet.addRow(['', '', '', '', '', '', '', '']);
+        for (let colIndex = 1; colIndex <= totalColumns; colIndex++) {
+          const cell = newRow.getCell(colIndex);
+          const header = headerKeys[colIndex - 1];
+          const isCenter = header === 'No' || header === 'Status';
 
-        emptyRow.eachCell((cell) => {
-          cell.alignment = {
-            vertical: 'middle',
-            horizontal: 'left',
+          cell.font = {
+            name: 'Calibri',
+            size: 10,
+            color: { argb: 'FF334155' },
           };
-          cell.border = thinBorder;
-        });
-      }
+          cell.alignment = {
+            horizontal: isCenter ? 'center' : 'left',
+            vertical: 'middle',
+          };
+
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor },
+          };
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+        }
+      });
+
+      const dataEndRow = headerRowIndex + dataToExport.length;
+
+      // ======================
+      // AUTOFILTER & FREEZE
+      // ======================
+      worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+      worksheet.views = [
+        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+      ];
 
       // ======================
       // AUTO WIDTH
       // ======================
-      worksheet.columns.forEach((col: any) => {
-        if (col != undefined) {
-          let maxLength = 0;
-
-          col.eachCell({ includeEmpty: true }, (cell: any) => {
-            const val = cell.value ? cell.value.toString() : '';
-            if (val.length > maxLength) maxLength = val.length;
-          });
-
-          col.width = Math.max(maxLength + 2, 15);
-        }
+      worksheet.columns.forEach((col) => {
+        let maxLen = 0;
+        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+          if (rowNumber < headerRowIndex) return;
+          const strVal = cell.value != null ? cell.value.toString() : '';
+          maxLen = Math.max(maxLen, strVal.length);
+        });
+        col.width = Math.max(maxLen + 4, 15);
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
-
       saveAs(
         new Blob([buffer]),
         `data_payment_method_${moment().format('YYYYMMDD_HHmmss')}.xlsx`
@@ -376,19 +427,31 @@ const PaymentMethodPageTable = () => {
   return (
     <>
       {contextHolder}
-      <div className="flex items-center justify-between">
-        <div className="group-input prepend-append">
-          <span className="append">
-            <SearchSm />
-          </span>
-          <input
-            type="text"
-            className="color-1 base"
-            placeholder="cari data"
-            onChange={debounce(
-              (event) => handleFilter(event.target.value),
-              1000
-            )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="group-input prepend-append">
+            <span className="append">
+              <SearchSm />
+            </span>
+            <input
+              type="text"
+              className="border border-gray-300 rounded-md px-3 py-2 h-[40px] w-[250px] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              placeholder="Cari nama metode..."
+              onChange={debounce(
+                (event) => handleFilter(event.target.value),
+                500
+              )}
+            />
+          </div>
+          <Select
+            placeholder="Filter Status"
+            className="w-[150px] h-[40px]"
+            allowClear
+            onChange={handleStatusFilter}
+            options={[
+              { value: 'true', label: 'Aktif' },
+              { value: 'false', label: 'Tidak Aktif' },
+            ]}
           />
         </div>
         <div className="flex items-center gap-[4px]">
@@ -405,7 +468,7 @@ const PaymentMethodPageTable = () => {
           </Link>
         </div>
       </div>
-      <div className="flex flex-col border border-gray-200 rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px] mt-4">
         <Table
           columns={columns}
           dataSource={dataTable}

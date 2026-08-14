@@ -232,10 +232,10 @@ const GoldBuyDigitalDetailTable = () => {
         };
       });
 
-      // Native Excel Formats
+      // Native Excel Formats (4 desimal untuk berat & persentase komisi)
       const currencyFormat = '"Rp"#,##0;("Rp"#,##0);"-"';
-      const weightFormat = '#,##0.00" Gram"';
-      const percentFormat = '0.00"%"';
+      const weightFormat = '#,##0.0000" Gram"';
+      const percentFormat = '0.0000"%"';
 
       // =============================
       // DATA ROWS
@@ -385,7 +385,6 @@ const GoldBuyDigitalDetailTable = () => {
       worksheet.columns.forEach((column: any, colIdx: number) => {
         let maxLength = header[colIdx]?.length || 10;
 
-        // Kalkulasi lebar hanya berdasarkan isi data & header tabel (Baris 8 ke bawah)
         column.eachCell({ includeEmpty: true }, (cell: any, rowNum: number) => {
           if (rowNum >= 8) {
             const val = cell.value ? cell.value.toString() : '';
@@ -413,7 +412,7 @@ const GoldBuyDigitalDetailTable = () => {
     }
   };
 
-  // === KOLOM TABEL ===
+  // === KOLOM TABEL (UI Ant Design) ===
   const columns: ColumnsType<IGoldBuyTransaction> = useMemo(
     () => [
       {
@@ -463,25 +462,41 @@ const GoldBuyDigitalDetailTable = () => {
         key: 'weight',
         align: 'right',
         sorter: true,
-        render: (val) => (val ? formatDecimal(val) : '0'),
+        render: (val) =>
+          val !== undefined && val !== null
+            ? Number(val).toLocaleString('id-ID', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
+              })
+            : '0,0000',
       },
       {
         title: 'Berat Sebelum',
         dataIndex: 'weight_before',
         key: 'weight_before',
         align: 'right',
-        width: 130,
+        width: 140,
         render: (val) =>
-          val !== undefined && val !== null ? formatDecimal(val) : '-',
+          val !== undefined && val !== null
+            ? Number(val).toLocaleString('id-ID', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
+              })
+            : '-',
       },
       {
         title: 'Berat Sesudah',
         dataIndex: 'weight_after',
         key: 'weight_after',
         align: 'right',
-        width: 130,
+        width: 140,
         render: (val) =>
-          val !== undefined && val !== null ? formatDecimal(val) : '-',
+          val !== undefined && val !== null
+            ? Number(val).toLocaleString('id-ID', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
+              })
+            : '-',
       },
       {
         title: 'Harga Emas /gr',
@@ -532,7 +547,13 @@ const GoldBuyDigitalDetailTable = () => {
         dataIndex: 'commission_percentage',
         key: 'commission_percentage',
         align: 'right',
-        render: (val) => `${val || 0}%`,
+        render: (val) =>
+          val !== undefined && val !== null
+            ? `${Number(val).toLocaleString('id-ID', {
+                minimumFractionDigits: 4,
+                maximumFractionDigits: 4,
+              })}%`
+            : '0,0000%',
       },
       {
         title: 'Jumlah Komisi',
@@ -573,7 +594,7 @@ const GoldBuyDigitalDetailTable = () => {
         </button>
       </div>
 
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}

@@ -154,7 +154,6 @@ const TarikEmasListTable = () => {
     try {
       setIsModalLoading(true);
 
-      // Parse user safety check
       let user: IUser | null = null;
       try {
         const storedUser = localStorage.getItem('user');
@@ -280,13 +279,16 @@ const TarikEmasListTable = () => {
       const dataStartRow = 8;
 
       dataToExport.forEach((row, idx) => {
-        const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+        // Menggunakan worksheet.addRow lalu mengisi sel dari 1 sampai totalColumns agar border aman
+        const rowValues = headerKeys.map((key) => row[key]);
+        const newRow = worksheet.addRow(rowValues);
         newRow.height = 20;
 
         const isEven = idx % 2 === 1;
         const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
 
-        newRow.eachCell((cell, colIndex) => {
+        for (let colIndex = 1; colIndex <= totalColumns; colIndex++) {
+          const cell = newRow.getCell(colIndex);
           const header = headerKeys[colIndex - 1];
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
@@ -316,7 +318,7 @@ const TarikEmasListTable = () => {
             bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
             right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           };
-        });
+        }
       });
 
       const dataEndRow = dataStartRow + dataToExport.length - 1;
@@ -349,7 +351,8 @@ const TarikEmasListTable = () => {
       const totalRow = worksheet.addRow(totalRowValues);
       totalRow.height = 22;
 
-      totalRow.eachCell((cell, colIndex) => {
+      for (let colIndex = 1; colIndex <= totalColumns; colIndex++) {
+        const cell = totalRow.getCell(colIndex);
         const header = headerKeys[colIndex - 1];
         const isNumeric = totalFields.includes(header as NumericExportKey);
 
@@ -380,7 +383,7 @@ const TarikEmasListTable = () => {
           bottom: { style: 'double', color: { argb: 'FF475569' } },
           right: { style: 'thin', color: { argb: 'FF94A3B8' } },
         };
-      });
+      }
 
       /* ================= AUTOFILTER & FREEZE PANE ================= */
       worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
@@ -392,7 +395,6 @@ const TarikEmasListTable = () => {
       worksheet.columns.forEach((col) => {
         let maxLen = 0;
         col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
-          // Abaikan metadata header (Row 1-5) agar kolom tidak melebar melebihi batas isi tabel
           if (rowNumber < headerRowIndex) return;
 
           let strVal = '';
@@ -401,7 +403,7 @@ const TarikEmasListTable = () => {
             typeof cell.value === 'object' &&
             'formula' in cell.value
           ) {
-            strVal = '123,456,789.00'; // Estimasi fallback panjang string untuk formula SUM
+            strVal = '123,456,789.00';
           } else if (cell.value != null) {
             strVal = cell.value.toString();
           }
