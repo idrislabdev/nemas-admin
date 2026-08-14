@@ -19,7 +19,7 @@ import {
   Save02,
   X,
 } from '@untitled-ui/icons-react';
-import { DatePicker, notification, Pagination, Table } from 'antd';
+import { DatePicker, notification, Pagination, Select, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
@@ -37,6 +37,18 @@ import ModalReturnPrint from '@/@core/pages/transaksi/return/modal-return';
 
 moment.locale('id');
 const { RangePicker } = DatePicker;
+
+/* ================= HELPER EXCEL ================= */
+const getExcelColumnLabel = (colIndex: number): string => {
+  let label = '';
+  let index = colIndex;
+  while (index > 0) {
+    const remainder = (index - 1) % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    index = Math.floor((index - 1) / 26);
+  }
+  return label;
+};
 
 const DaftarReturnEmasPage = () => {
   const url = `/orders/fix/order/return/list/`;
@@ -77,6 +89,7 @@ const DaftarReturnEmasPage = () => {
     start_date: defaultStart,
     end_date: defaultEnd,
     search: '',
+    return_status: '',
   });
 
   // debounce search
@@ -88,6 +101,14 @@ const DaftarReturnEmasPage = () => {
   useEffect(() => {
     setParams((p) => ({ ...p, offset: 0, search: debouncedSearch }));
   }, [debouncedSearch]);
+
+  const handleStatusFilter = (value: string) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      return_status: value || '',
+    }));
+  };
 
   const columns: ColumnsType<IOrderReturn> = [
     { title: 'No Retur', dataIndex: 'return_number', width: 150 },
@@ -302,10 +323,23 @@ const DaftarReturnEmasPage = () => {
     try {
       setIsModalLoading(true);
 
-      const user: IUser = JSON.parse(localStorage.getItem('user') || '{}');
+      let user: IUser | null = null;
+      try {
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      } catch (e) {
+        console.warn('Failed to parse user from localStorage', e);
+      }
 
       const rows = await fetchAllData();
-      if (!rows.length) return;
+      if (!rows.length) {
+        api.warning({
+          message: 'Export Excel',
+          description: 'Tidak ada data untuk diexport',
+          placement: 'bottomRight',
+        });
+        return;
+      }
 
       const data = rows.map((r) => ({
         'No Retur': r.return_number,
@@ -323,101 +357,97 @@ const DaftarReturnEmasPage = () => {
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Laporan Retur Emas');
 
-      const lastColumnLetter = 'J';
+      const totalColumns = Object.keys(data[0]).length;
+      const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
-      /* ================= TITLE ================= */
-
-      ws.mergeCells(`A1:${lastColumnLetter}1`);
-      ws.getCell('A1').value = 'LAPORAN RETUR EMAS';
-      ws.getCell('A1').font = { bold: true, size: 14 };
-      ws.getCell('A1').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-
-      /* ================= DIBUAT OLEH ================= */
-
-      ws.mergeCells(`A2:${lastColumnLetter}2`);
-      ws.getCell('A2').value = `Dibuat oleh : ${user?.name || '-'}`;
-      ws.getCell('A2').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-
-      /* ================= TANGGAL EXPORT ================= */
-
-      ws.mergeCells(`A3:${lastColumnLetter}3`);
-      ws.getCell('A3').value = `Tanggal Export : ${dayjs().format(
-        'DD MMMM YYYY HH:mm'
-      )}`;
-      ws.getCell('A3').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-
-      /* ================= TOTAL DATA ================= */
-
-      ws.mergeCells(`A4:${lastColumnLetter}4`);
-      ws.getCell('A4').value = `Total Data : ${rows.length}`;
-      ws.getCell('A4').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
-
-      /* ================= PERIODE ================= */
+      /* ================= TITLE & METADATA ================= */
+      const metadata = [
+        { cell: 'A1', val: 'LAPORAN RETUR EMAS', bold: true, size: 14 },
+        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A3',
+          val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
+        },
+        { cell: 'A4', val: `Total Data : ${rows.length}` },
+      ];
 
       let periodeText = 'Semua Periode';
-
       if (params.start_date && params.end_date) {
         periodeText = `${dayjs(params.start_date).format(
           'DD-MM-YYYY'
         )} s/d ${dayjs(params.end_date).format('DD-MM-YYYY')}`;
       }
+      metadata.push({ cell: 'A5', val: `Periode : ${periodeText}` });
 
-      ws.mergeCells(`A5:${lastColumnLetter}5`);
-      ws.getCell('A5').value = `Periode : ${periodeText}`;
-      ws.getCell('A5').alignment = {
-        horizontal: 'left',
-        vertical: 'middle',
-      };
+      metadata.forEach((m, idx) => {
+        const rowNum = idx + 1;
+        ws.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+        const c = ws.getCell(m.cell);
+        c.value = m.val;
+        c.font = {
+          name: 'Calibri',
+          bold: !!m.bold,
+          size: m.size || 11,
+          color: { argb: 'FF1E293B' },
+        };
+        c.alignment = { horizontal: 'left', vertical: 'middle' };
+      });
 
-      ws.addRow([]);
+      ws.addRow([]); // Row 6 blank
 
       /* ================= HEADER ================= */
-
       const headers = Object.keys(data[0]);
       const headerRow = ws.addRow(headers);
+      const headerRowIndex = 7;
+      headerRow.height = 26;
 
       headerRow.eachCell((c) => {
-        c.font = { bold: true };
+        c.font = {
+          name: 'Calibri',
+          bold: true,
+          color: { argb: 'FFFFFFFF' },
+          size: 11,
+        };
         c.alignment = {
           horizontal: 'center',
           vertical: 'middle',
+          wrapText: true,
         };
         c.border = {
-          top: { style: 'thin' },
-          bottom: { style: 'thin' },
-          left: { style: 'thin' },
-          right: { style: 'thin' },
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'medium', color: { argb: 'FF004397' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
         };
         c.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE5E5E5' },
+          fgColor: { argb: 'FF0057B7' },
         };
       });
 
       /* ================= DATA ================= */
-
-      data.forEach((row) => {
+      data.forEach((row, idx) => {
         const values = headers.map((h) => (row as any)[h]);
         const newRow = ws.addRow(values);
+        newRow.height = 20;
 
-        newRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const isEven = idx % 2 === 1;
+        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
+
+        for (let colNumber = 1; colNumber <= totalColumns; colNumber++) {
+          const cell = newRow.getCell(colNumber);
           const isNumeric = [6, 8, 9].includes(colNumber);
+          const isCenter = [3, 4, 10].includes(colNumber);
+
+          cell.font = {
+            name: 'Calibri',
+            size: 10,
+            color: { argb: 'FF334155' },
+          };
 
           cell.alignment = {
-            horizontal: isNumeric ? 'right' : 'left',
+            horizontal: isNumeric ? 'right' : isCenter ? 'center' : 'left',
             vertical: 'middle',
           };
 
@@ -430,17 +460,22 @@ const DaftarReturnEmasPage = () => {
             }
           }
 
-          cell.border = {
-            top: { style: 'thin' },
-            bottom: { style: 'thin' },
-            left: { style: 'thin' },
-            right: { style: 'thin' },
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: rowBgColor },
           };
-        });
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          };
+        }
       });
 
       /* ================= TOTAL ================= */
-
       const totalBeratSertifikat = rows.reduce(
         (acc, cur) => acc + Number(cur.gold_cert_weight || 0),
         0
@@ -469,19 +504,26 @@ const DaftarReturnEmasPage = () => {
         '',
       ]);
 
+      totalRow.height = 22;
+
       totalRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         const isNumeric = [6, 8, 9].includes(colNumber);
 
-        cell.font = { bold: true };
+        cell.font = {
+          name: 'Calibri',
+          bold: true,
+          size: 10,
+          color: { argb: 'FF1E293B' },
+        };
         cell.alignment = {
           horizontal: isNumeric ? 'right' : 'left',
           vertical: 'middle',
         };
         cell.border = {
-          top: { style: 'thin' },
-          bottom: { style: 'thin' },
-          left: { style: 'thin' },
-          right: { style: 'thin' },
+          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
         };
         cell.fill = {
           type: 'pattern',
@@ -490,27 +532,24 @@ const DaftarReturnEmasPage = () => {
         };
       });
 
-      /* ================= AUTO WIDTH ================= */
+      const dataEndRow = headerRowIndex + data.length;
 
+      /* ================= AUTOFILTER & FREEZE ================= */
+      ws.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+      ws.views = [{ state: 'frozen', xSplit: 0, ySplit: headerRowIndex }];
+
+      /* ================= AUTO WIDTH ================= */
       ws.columns.forEach((c) => {
         if (!c) return;
-
         let max = 10;
-
-        c.eachCell?.({ includeEmpty: true }, (cell) => {
+        c.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+          if (rowNumber < headerRowIndex) return;
           max = Math.max(max, cell.value?.toString().length || 0);
         });
-
-        c.width = Math.min(max + 2, 35);
+        c.width = Math.min(max + 4, 35);
       });
 
-      /* ================= FREEZE HEADER ================= */
-
-      // Header tabel ada di baris 7
-      ws.views = [{ state: 'frozen', ySplit: 7 }];
-
       /* ================= EXPORT ================= */
-
       const buffer = await wb.xlsx.writeBuffer();
 
       saveAs(
@@ -537,7 +576,6 @@ const DaftarReturnEmasPage = () => {
     }
 
     setOrderNumber(item.order_number);
-
     setOrderGoldId(item.order_gold_id);
 
     setIsModalItem(false);
@@ -547,8 +585,8 @@ const DaftarReturnEmasPage = () => {
   return (
     <>
       {contextHolder}
-      <div className="flex justify-between items-center gap-3">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <div className="flex flex-wrap gap-2 items-center">
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
@@ -556,10 +594,21 @@ const DaftarReturnEmasPage = () => {
             onChange={onRangeChange}
           />
           <input
-            className="border rounded-md px-3 py-1.5 text-sm w-[200px]"
+            className="border rounded-md px-3 py-1.5 text-sm w-[200px] h-[40px]"
             placeholder="Cari..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select
+            placeholder="Filter Status"
+            className="w-[160px] h-[40px]"
+            allowClear
+            onChange={handleStatusFilter}
+            options={[
+              { value: 'APPROVED', label: 'APPROVED' },
+              { value: 'PROCESS', label: 'PROCESS' },
+              { value: 'REJECTED', label: 'REJECTED' },
+            ]}
           />
         </div>
 
@@ -628,7 +677,6 @@ const DaftarReturnEmasPage = () => {
         setIsModalOpen={setIsModalItem}
         onConfirm={(item) => {
           selectItem(item);
-          // setOpenModalReturn(true);
         }}
       />
       {openModalReturn && (

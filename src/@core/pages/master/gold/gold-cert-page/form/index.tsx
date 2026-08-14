@@ -1,7 +1,7 @@
 'use client';
 import { IGoldCert } from '@/@core/@types/interface';
 import axiosInstance from '@/@core/utils/axios';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { notification } from 'antd';
 import CurrencyInput from 'react-currency-input-field';
 import { AxiosError } from 'axios';
@@ -12,11 +12,24 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   const [required, setRequired] = useState<IGoldCert>({} as IGoldCert);
   const [certCode, setCertCode] = useState('');
   const [certBrand, setCertBrand] = useState('');
+  const [brands, setBrands] = useState<string[]>([]);
   const [goldWeight, setGoldWeight] = useState('');
   const [certPrice, setCertPrice] = useState('');
   const [api, contextHolder] = notification.useNotification();
 
-  const brandOptions = ['ANTAM', 'MARVA GOLD', 'UBS'];
+  const fetchBrands = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get(`/core/gold/brand`);
+      const results = resp.data.results || resp.data;
+      const brandList = results.map((item: { name: string }) => item.name);
+      setBrands(brandList);
+      if (brandList.length > 0 && !certBrand && paramsId === 'form') {
+        setCertBrand(brandList[0]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch brands:', err);
+    }
+  }, [certBrand, paramsId]);
 
   const onCancel = () => {
     if (paramsId == 'form') {
@@ -73,14 +86,16 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
   };
 
   useEffect(() => {
+    fetchBrands();
     if (paramsId != 'form') fetchData();
-  }, []);
+  }, [fetchBrands, paramsId]);
 
   const clearForm = () => {
     setCertCode('');
     setGoldWeight('');
     setCertPrice('');
-    setCertBrand('');
+    if (brands.length > 0) setCertBrand(brands[0]);
+    else setCertBrand('');
   };
 
   return (
@@ -104,7 +119,7 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
           />
         </div>
 
-        {/* Nama Brand (Dropdown) */}
+        {/* Nama Brand (Dropdown dinamis dari API) */}
         <div className="input-area">
           <label>
             Nama Brand{' '}
@@ -119,12 +134,17 @@ const GoldCertPageForm = (props: { paramsId: string }) => {
             onChange={(e) => setCertBrand(e.target.value)}
             className={`base ${required.cert_name ? 'error' : ''}`}
           >
-            <option value="">-- Pilih Brand --</option>
-            {brandOptions.map((brand) => (
-              <option key={brand} value={brand}>
-                {brand}
+            {brands.length === 0 ? (
+              <option value="" disabled>
+                Memuat data brand...
               </option>
-            ))}
+            ) : (
+              brands.map((b, index: number) => (
+                <option value={b} key={index}>
+                  {b}
+                </option>
+              ))
+            )}
           </select>
         </div>
 

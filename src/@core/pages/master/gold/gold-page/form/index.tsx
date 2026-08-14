@@ -17,6 +17,7 @@ import { UndoOutlineIcon } from '@/@core/my-icons';
 
 const GoldPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
+  const isEditMode = paramsId !== 'form';
   const url = `/core/gold`;
   const router = useRouter();
   const [goldWeight, setGoldWeight] = useState('0');
@@ -45,7 +46,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
   const [image5, setImage5] = useState<File | null>(null);
 
   const onCancel = () => {
-    if (paramsId == 'form') {
+    if (!isEditMode) {
       clearForm();
     } else {
       fetchData();
@@ -60,7 +61,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
       productCost.toString().replace('.', '').replace(',', '.')
     );
 
-    // Validasi agar berat emas dan harga produk tidak boleh 0 atau minus (-)
     if (isNaN(parsedWeight) || parsedWeight <= 0) {
       api.warning({
         message: 'Validasi Gagal',
@@ -93,7 +93,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
     let tempGoldId = '';
     try {
       let desc = '';
-      if (paramsId == 'form') {
+      if (!isEditMode) {
         const resp = await axiosInstance.post(`${url}/create`, body);
         const { data } = resp;
         desc = 'Data Gold Telah Disimpan';
@@ -120,7 +120,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
         description: desc,
         placement: 'bottomRight',
       });
-      if (paramsId == 'form') router.replace(`/master/gold/${tempGoldId}`);
+      if (!isEditMode) router.replace(`/master/gold/${tempGoldId}`);
     } catch (error) {
       setIsModalLoading(false);
       const err = error as AxiosError;
@@ -176,12 +176,11 @@ const GoldPageForm = (props: { paramsId: string }) => {
       const results = resp.data.results || [];
       setCerts(results);
 
-      // Reset certificateId jika pilihan saat ini tidak ada di list hasil filter baru
       if (results.length > 0) {
         const exists = results.some(
           (c: IGoldCert) => c.cert_id === certificateId
         );
-        if (!exists) {
+        if (!exists && !isEditMode) {
           setCertificateId(results[0].cert_id);
         }
       } else {
@@ -190,7 +189,17 @@ const GoldPageForm = (props: { paramsId: string }) => {
     } catch (err) {
       console.error('Failed to fetch certificates:', err);
     }
-  }, [brand, certificateId]);
+  }, [brand, certificateId, isEditMode]);
+
+  // Efek untuk mengubah berat emas secara otomatis berdasarkan sertifikat yang dipilih
+  useEffect(() => {
+    if (certificateId && certs.length > 0) {
+      const selectedCert = certs.find((c) => c.cert_id === certificateId);
+      if (selectedCert && selectedCert.gold_weight !== undefined) {
+        setGoldWeight(selectedCert.gold_weight.toString().replace('.', ','));
+      }
+    }
+  }, [certificateId, certs]);
 
   const uploadFile1 = async (id: string) => {
     if (image1 != null) {
@@ -239,10 +248,10 @@ const GoldPageForm = (props: { paramsId: string }) => {
 
   useEffect(() => {
     fetchBrands();
-    if (paramsId != 'form') {
+    if (isEditMode) {
       fetchData();
     }
-  }, [fetchBrands, paramsId]);
+  }, [fetchBrands, isEditMode]);
 
   useEffect(() => {
     if (brand) {
@@ -345,6 +354,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
               className={`base ${required.type ? 'error' : ''}`}
               onChange={(e) => setType(e.target.value)}
               value={type}
+              disabled={isEditMode}
             >
               <option value={'Bar'}>Bar</option>
               <option value={'Min Bar'}>Min Bar</option>
@@ -363,6 +373,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
               className={`base ${required.brand ? 'error' : ''}`}
               onChange={(e) => setBrand(e.target.value)}
               value={brand}
+              disabled={isEditMode}
             >
               {brands.map((b, index: number) => (
                 <option value={b} key={index}>
@@ -383,6 +394,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
             <select
               value={certificateId}
               onChange={(e) => setCertificateId(parseInt(e.target.value))}
+              disabled={isEditMode}
             >
               {certs.length === 0 ? (
                 <option value={0} disabled>
@@ -414,8 +426,9 @@ const GoldPageForm = (props: { paramsId: string }) => {
                 decimalSeparator=","
                 groupSeparator="."
                 allowNegativeValue={false}
+                disabled={true}
                 onValueChange={(value) => setGoldWeight(value ? value : '0')}
-                className={`base ${required.gold_weight ? 'error' : ''}`}
+                className={`base ${required.gold_weight ? 'error' : ''} bg-gray-100 cursor-not-allowed`}
               />
             </div>
           </div>
@@ -452,7 +465,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
         </div>
       </div>
       <hr />
-      {paramsId != 'form' && (
+      {isEditMode && (
         <GoldCertDetailTable
           goldId={paramsId}
           goldWeight={goldWeight}
