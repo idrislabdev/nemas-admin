@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import { IGold, IGoldCert } from '@/@core/@types/interface';
@@ -19,7 +21,8 @@ const GoldPageForm = (props: { paramsId: string }) => {
   const router = useRouter();
   const [goldWeight, setGoldWeight] = useState('0');
   const [type, setType] = useState('Bar');
-  const [brand, setBrand] = useState('MARVA GOLD');
+  const [brand, setBrand] = useState('');
+  const [brands, setBrands] = useState<string[]>([]);
   const [certBrand, setCertBrand] = useState('');
   const [certificateNumber, setCertficateNumber] = useState('');
   const [productCost, setProductCost] = useState('0');
@@ -128,28 +131,66 @@ const GoldPageForm = (props: { paramsId: string }) => {
     }
   };
 
+  const fetchBrands = useCallback(async () => {
+    try {
+      const resp = await axiosInstance.get(`/core/gold/brand`);
+      const results = resp.data.results || resp.data;
+      const brandList = results.map((item: { name: string }) => item.name);
+      setBrands(brandList);
+      if (brandList.length > 0 && !brand) {
+        setBrand(brandList[0]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch brands:', err);
+    }
+  }, [brand]);
+
   const fetchData = async () => {
-    const resp = await axiosInstance.get(`${url}/${paramsId}/`);
-    const { data } = resp;
-    setGoldWeight(data.gold_weight.toString().replace('.', ','));
-    setType(data.type);
-    setBrand(data.brand);
-    setCertBrand(data.certificate.brand);
-    setProductCost(data.product_cost.toString().replace('.', ','));
-    setGoldImage1(data.gold_image_1);
-    setGoldImage2(data.gold_image_2);
-    setGoldImage3(data.gold_image_3);
-    setGoldImage4(data.gold_image_4);
-    setGoldImage5(data.gold_image_5);
-    setCertificateId(data.certificate.cert_id);
-    setCertficateNumber(data.certificate_number);
+    try {
+      const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+      const { data } = resp;
+      setGoldWeight(data.gold_weight.toString().replace('.', ','));
+      setType(data.type);
+      setBrand(data.brand);
+      setCertBrand(data.certificate?.brand || '');
+      setProductCost(data.product_cost.toString().replace('.', ','));
+      setGoldImage1(data.gold_image_1);
+      setGoldImage2(data.gold_image_2);
+      setGoldImage3(data.gold_image_3);
+      setGoldImage4(data.gold_image_4);
+      setGoldImage5(data.gold_image_5);
+      setCertificateId(data.certificate?.cert_id || 0);
+      setCertficateNumber(data.certificate_number);
+    } catch (err) {
+      console.error('Failed to fetch detail gold:', err);
+    }
   };
 
   const fetchDataCerts = useCallback(async () => {
-    const resp = await axiosInstance.get(`/core/gold/cert/?offset=0&limit=100`);
-    const { results } = resp.data;
-    setCerts(results);
-  }, [setCerts]);
+    try {
+      const params: any = { offset: 0, limit: 100 };
+      if (brand) {
+        params.cert_brand__icontains = brand;
+      }
+      const resp = await axiosInstance.get(`/core/gold/cert/`, { params });
+      const results = resp.data.results || [];
+      setCerts(results);
+
+      // Reset certificateId jika pilihan saat ini tidak ada di list hasil filter baru
+      if (results.length > 0) {
+        const exists = results.some(
+          (c: IGoldCert) => c.cert_id === certificateId
+        );
+        if (!exists) {
+          setCertificateId(results[0].cert_id);
+        }
+      } else {
+        setCertificateId(0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch certificates:', err);
+    }
+  }, [brand, certificateId]);
 
   const uploadFile1 = async (id: string) => {
     if (image1 != null) {
@@ -197,17 +238,22 @@ const GoldPageForm = (props: { paramsId: string }) => {
   };
 
   useEffect(() => {
-    if (paramsId != 'form') fetchData();
-  }, []);
+    fetchBrands();
+    if (paramsId != 'form') {
+      fetchData();
+    }
+  }, [fetchBrands, paramsId]);
 
   useEffect(() => {
-    fetchDataCerts();
-  }, [fetchDataCerts]);
+    if (brand) {
+      fetchDataCerts();
+    }
+  }, [brand, fetchDataCerts]);
 
   const clearForm = () => {
     setGoldWeight('0');
     setType('Bar');
-    setBrand('MARVA GOLD');
+    if (brands.length > 0) setBrand(brands[0]);
     setProductCost('0');
     setCertficateNumber('');
   };
@@ -288,29 +334,7 @@ const GoldPageForm = (props: { paramsId: string }) => {
           <hr className="my-[20px]" />
           <div className="input-area">
             <label>
-              Berat Emas (gr){' '}
-              {required.gold_weight && (
-                <span className="text-red-500 text-[10px]/[14px] italic">
-                  ({required.gold_weight?.toString()})
-                </span>
-              )}
-            </label>
-            <div className="group-input prepend">
-              <span className="prepend !top-[5px]">gr</span>
-              <CurrencyInput
-                value={goldWeight}
-                decimalsLimit={2}
-                decimalSeparator=","
-                groupSeparator="."
-                allowNegativeValue={false}
-                onValueChange={(value) => setGoldWeight(value ? value : '0')}
-                className={`base ${required.gold_weight ? 'error' : ''}`}
-              />
-            </div>
-          </div>
-          <div className="input-area">
-            <label>
-              Tipe Emas{' '}
+              Jenis Emas{' '}
               {required.type && (
                 <span className="text-red-500 text-[10px]/[14px] italic">
                   ({required.type?.toString()})
@@ -336,14 +360,64 @@ const GoldPageForm = (props: { paramsId: string }) => {
               )}
             </label>
             <select
-              className={`base ${required.type ? 'error' : ''}`}
+              className={`base ${required.brand ? 'error' : ''}`}
               onChange={(e) => setBrand(e.target.value)}
               value={brand}
             >
-              <option value={'MARVA GOLD'}>MARVA GOLD</option>
-              <option value={'ANTAM'}>ANTAM</option>
-              <option value={'UBS'}>UBS</option>
+              {brands.map((b, index: number) => (
+                <option value={b} key={index}>
+                  {b}
+                </option>
+              ))}
             </select>
+          </div>
+          <div className="flex flex-col gap-[4px]">
+            <label>
+              Sertifikat{' '}
+              {required.certificate_id && (
+                <span className="text-red-500 text-[10px]/[14px] italic">
+                  ({required.certificate_id?.toString()})
+                </span>
+              )}
+            </label>
+            <select
+              value={certificateId}
+              onChange={(e) => setCertificateId(parseInt(e.target.value))}
+            >
+              {certs.length === 0 ? (
+                <option value={0} disabled>
+                  Tidak ada sertifikat untuk merek ini
+                </option>
+              ) : (
+                certs.map((item, index: number) => (
+                  <option value={item.cert_id} key={index}>
+                    {item.cert_code} - {item.cert_name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+          <div className="input-area">
+            <label>
+              Berat Emas (gr){' '}
+              {required.gold_weight && (
+                <span className="text-red-500 text-[10px]/[14px] italic">
+                  ({required.gold_weight?.toString()})
+                </span>
+              )}
+            </label>
+            <div className="group-input prepend">
+              <span className="prepend !top-[5px]">gr</span>
+              <CurrencyInput
+                value={goldWeight}
+                decimalsLimit={2}
+                decimalSeparator=","
+                groupSeparator="."
+                allowNegativeValue={false}
+                onValueChange={(value) => setGoldWeight(value ? value : '0')}
+                className={`base ${required.gold_weight ? 'error' : ''}`}
+              />
+            </div>
           </div>
           <div className="input-area">
             <label>
@@ -363,26 +437,6 @@ const GoldPageForm = (props: { paramsId: string }) => {
               onValueChange={(value) => setProductCost(value ? value : '0')}
               className={`base ${required.product_cost ? 'error' : ''}`}
             />
-          </div>
-          <div className="flex flex-col gap-[4px]">
-            <label>
-              Sertifikat{' '}
-              {required.certificate_id && (
-                <span className="text-red-500 text-[10px]/[14px] italic">
-                  ({required.certificate_id?.toString()})
-                </span>
-              )}
-            </label>
-            <select
-              value={certificateId}
-              onChange={(e) => setCertificateId(parseInt(e.target.value))}
-            >
-              {certs.map((item, index: number) => (
-                <option value={item.cert_id} key={index}>
-                  {item.cert_code} - {item.cert_name}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
         <div className="form-button">
