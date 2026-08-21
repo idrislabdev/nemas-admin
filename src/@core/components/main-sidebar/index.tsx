@@ -13,6 +13,7 @@ import {
   LogOut03,
   Printer,
   Settings01,
+  Shield01,
   Tag01,
   Truck01,
   User01,
@@ -263,6 +264,18 @@ const MainSidebar = () => {
                   <>
                     <li
                       className={`${
+                        pathname.split('/')[1] === 'security-monitoring'
+                          ? 'active'
+                          : ''
+                      }`}
+                    >
+                      <Link href={`/security-monitoring/failed-attempts`}>
+                        <Shield01 />
+                        Security Monitoring
+                      </Link>
+                    </li>
+                    <li
+                      className={`${
                         pathname.split('/')[1] === 'pengaturan' ? 'active' : ''
                       }`}
                     >
@@ -271,6 +284,7 @@ const MainSidebar = () => {
                         Pengaturan
                       </Link>
                     </li>
+
                     <hr />
                   </>
                 )}
