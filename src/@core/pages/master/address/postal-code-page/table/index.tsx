@@ -95,7 +95,7 @@ const AddressPostalCodePageTable = () => {
         format: 'json',
         offset: 0,
         limit: 1000,
-        search: '',
+        search: params.search,
       };
 
       const resp = await axiosInstance.get(url, { params: param });

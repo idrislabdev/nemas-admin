@@ -97,7 +97,7 @@ const GoldPricePageTable = () => {
         `Rp ${formatterNumber(record.gold_price_buy || 0)}`,
     },
     {
-      title: 'Update Time',
+      title: 'Update Terakhir',
       dataIndex: 'upd_time',
       key: 'upd_time',
       width: 170,
@@ -204,16 +204,14 @@ const GoldPricePageTable = () => {
 
       const dataToExport = rows.map((item: IGoldPrice, index: number) => ({
         No: index + 1,
-        'Gold Price Source': item.gold_price_source,
-        'Gold Price Weight': item.gold_price_weight || 0,
-        'Gold Price Base': item.gold_price_base || 0,
-        'Gold Price Sell': item.gold_price_sell || 0,
-        'Gold Price Buy': item.gold_price_buy || 0,
-        'Create By': item.create_user_name || '-',
-        'Create Time': item.create_time
-          ? moment(item.create_time).format('DD MMM YYYY HH:mm')
+        'Asal Harga Emas': item.gold_price_source,
+        'Satuan (GR)': item.gold_price_weight || 0,
+        'Harga Dasar': item.gold_price_base || 0,
+        'Harga Jual': item.gold_price_sell || 0,
+        'Harga Beli': item.gold_price_buy || 0,
+        'Update Terakhir': item.upd_time
+          ? moment(item.upd_time).format('DD MMM YYYY HH:mm')
           : '-',
-        'Update By': item.upd_user_name || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
@@ -228,14 +226,12 @@ const GoldPricePageTable = () => {
           ? Object.keys(dataToExport[0])
           : [
               'No',
-              'Gold Price Source',
-              'Gold Price Weight',
-              'Gold Price Base',
-              'Gold Price Sell',
-              'Gold Price Buy',
-              'Create By',
-              'Create Time',
-              'Update By',
+              'Asal Harga Emas',
+              'Satuan (GR)',
+              'Harga Dasar',
+              'Harga Jual',
+              'harga Beli',
+              'Update Terakhir',
             ];
 
       const lastColumnLetter = worksheet.getColumn(header.length).letter;
