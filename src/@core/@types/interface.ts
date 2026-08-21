@@ -307,6 +307,7 @@ export interface IPenggunaAplikasi {
   income_source: string;
   investment_purpose: string;
   referal_code: string;
+  is_locked: boolean;
   is_active: boolean;
   is_verified: boolean;
   photo_ktp_url: string;

@@ -4,7 +4,7 @@ import { Select } from 'antd';
 import axiosInstance from '@/@core/utils/axios';
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
 
-const Modalstatus = (props: {
+const ModalStatus = (props: {
   isModalOpen: boolean;
   setIsModalOpen: Dispatch<SetStateAction<boolean>>;
   userDetail: IPenggunaAplikasi;
@@ -74,4 +74,4 @@ const Modalstatus = (props: {
   );
 };
 
-export default Modalstatus;
+export default ModalStatus;

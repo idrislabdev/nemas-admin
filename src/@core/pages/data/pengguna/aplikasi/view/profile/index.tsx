@@ -1,4 +1,5 @@
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import ModalLock from '@/@core/components/modal/modal-lock';
 import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
 import { formatterNumber } from '@/@core/utils/general';
@@ -18,6 +19,7 @@ const PengggunaProfile = (props: {
   const { detail, setRefresData } = props;
   const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
   const [isModalStatusOpen, setIsModalStatusOpen] = useState(false);
+  const [isModalLockOpen, setIsModalLockOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -132,6 +134,25 @@ const PengggunaProfile = (props: {
                     <a
                       className="cursor-pointer"
                       onClick={() => setIsModalStatusOpen(true)}
+                    >
+                      <span className="my-icon icon-sm">
+                        <Edit05 />
+                      </span>
+                    </a>
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Status Akun
+                </label>
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :
+                  <span className="flex items-center gap-[4px]">
+                    {detail.is_locked ? 'Terkunci' : 'Tidak Terkunci'}
+                    <a
+                      className="cursor-pointer"
+                      onClick={() => setIsModalLockOpen(true)}
                     >
                       <span className="my-icon icon-sm">
                         <Edit05 />
@@ -480,6 +501,12 @@ const PengggunaProfile = (props: {
       <Modalstatus
         isModalOpen={isModalStatusOpen}
         setIsModalOpen={setIsModalStatusOpen}
+        userDetail={detail}
+        setRefresData={setRefresData}
+      />
+      <ModalLock
+        isModalOpen={isModalLockOpen}
+        setIsModalOpen={setIsModalLockOpen}
         userDetail={detail}
         setRefresData={setRefresData}
       />
