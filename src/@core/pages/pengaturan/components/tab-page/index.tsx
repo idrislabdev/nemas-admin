@@ -21,6 +21,9 @@ const PengaturanTabpage = (props: { activeTab: string }) => {
         <li className={`${activeTab === 'company_config' ? 'active' : ''}`}>
           <Link href={`/pengaturan/company`}>Perusahaan</Link>
         </li>
+        <li className={`${activeTab === 'system_config' ? 'active' : ''}`}>
+          <Link href={`/pengaturan/system-config`}>Konfigurasi Sistem</Link>
+        </li>
       </ul>
     </div>
   );
