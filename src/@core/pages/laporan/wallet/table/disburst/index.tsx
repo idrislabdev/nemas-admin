@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { DatePicker, Pagination, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -11,6 +12,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -39,12 +41,23 @@ const WalletDisburstTable = () => {
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // =============================
+  // Default tanggal
+  // =============================
+
   const startOfMonth = dayjs().startOf('month');
   const today = dayjs();
 
-  // 🔍 Search
+  // =============================
+  // Search
+  // =============================
+
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // =============================
+  // Params
+  // =============================
 
   const [params, setParams] = useState({
     format: 'json',
@@ -53,19 +66,32 @@ const WalletDisburstTable = () => {
     start_date: startOfMonth.format('YYYY-MM-DD'),
     end_date: today.format('YYYY-MM-DD'),
     search: '',
+    disburst_status: '',
   });
 
+  // =============================
   // Debounce pencarian
+  // =============================
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchText);
     }, 500);
+
     return () => clearTimeout(handler);
   }, [searchText]);
 
   useEffect(() => {
-    setParams((prev) => ({ ...prev, offset: 0, search: debouncedSearch }));
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      search: debouncedSearch,
+    }));
   }, [debouncedSearch]);
+
+  // =============================
+  // Columns
+  // =============================
 
   const columns: ColumnsType<IReportWalletDisburst> = [
     {
@@ -163,52 +189,112 @@ const WalletDisburstTable = () => {
     },
   ];
 
+  // =============================
+  // Fetch Data
+  // =============================
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const resp = await axiosInstance.get(url, {
+      params,
+    });
+
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params, url]);
 
+  // =============================
+  // Pagination
+  // =============================
+
   const onChangePage = (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+    setParams((prev) => ({
+      ...prev,
+      offset: (val - 1) * prev.limit,
+    }));
   };
+
+  // =============================
+  // Date Range
+  // =============================
 
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
+    if (!dates || !dates[0] || !dates[1]) {
+      return;
+    }
+
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
-    });
+    }));
   };
+
+  // =============================
+  // Status Filter
+  // =============================
+
+  const onStatusChange = (value: string) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      disburst_status: value,
+    }));
+  };
+
+  // =============================
+  // Fetch All Data
+  // =============================
 
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
+
     const limit = 100;
+
     const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+      params: {
+        ...params,
+        limit,
+        offset: 0,
+      },
     });
+
     allRows = allRows.concat(firstResp.data.results);
+
     const totalCount = firstResp.data.count;
+
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
+
       const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+        params: {
+          ...params,
+          limit,
+          offset,
+        },
       });
+
       allRows = allRows.concat(resp.data.results);
-      await new Promise((r) => setTimeout(r, 150));
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
     }
 
     return allRows;
   };
 
+  // =============================
+  // Get Exported By
+  // =============================
+
   const getExportedBy = () => {
-    if (typeof window === 'undefined') return '-';
+    if (typeof window === 'undefined') {
+      return '-';
+    }
 
     try {
       const rawUser =
@@ -216,7 +302,9 @@ const WalletDisburstTable = () => {
         localStorage.getItem('auth_user') ||
         localStorage.getItem('profile');
 
-      if (!rawUser) return '-';
+      if (!rawUser) {
+        return '-';
+      }
 
       const parsedUser = JSON.parse(rawUser);
 
@@ -229,9 +317,14 @@ const WalletDisburstTable = () => {
       );
     } catch (error) {
       console.error('Gagal membaca user dari localStorage:', error);
+
       return '-';
     }
   };
+
+  // =============================
+  // Export Excel
+  // =============================
 
   const exportData = async () => {
     try {
@@ -240,7 +333,7 @@ const WalletDisburstTable = () => {
       const exportParams = {
         ...params,
         offset: 0,
-        limit: 10,
+        limit: 100,
       };
 
       const rows = await fetchAllData(url, exportParams);
@@ -253,24 +346,36 @@ const WalletDisburstTable = () => {
       const dataToExport = rows.map(
         (item: IReportWalletDisburst, index: number) => ({
           No: index + 1,
+
           'Tanggal Transaksi': moment(item.disburst_timestamp).format(
             'DD MMMM YYYY HH:mm'
           ),
+
           'Nomor Disburst': item.disburst_number,
+
           'Nama User': item.user_name,
+
           'Nomor Member': item.user_member_number,
+
           'Kode Bank': item.disburst_payment_bank_code,
+
           'Nomor Rekening': item.disburst_payment_bank_number,
+
           'Nama Pemilik Rekening':
             item.disburst_payment_bank_account_holder_name,
+
           'Nominal Disburst': `Rp${formatDecimal(
             Number(item.disburst_amount) || 0
           )}`,
+
           'Admin Fee': `Rp${formatDecimal(Number(item.disburst_admin) || 0)}`,
+
           'Total Disburst': `Rp${formatDecimal(
             Number(item.disburst_total_amount) || 0
           )}`,
+
           Status: item.disburst_status,
+
           'Kode Referensi': item.disburst_payment_ref,
         })
       );
@@ -284,9 +389,11 @@ const WalletDisburstTable = () => {
       const worksheet = workbook.addWorksheet('Disburst Wallet');
 
       const exportedBy = getExportedBy();
+
       const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
       // =============================
@@ -317,12 +424,15 @@ const WalletDisburstTable = () => {
       // =============================
 
       worksheet.getCell('A3').value = 'Dibuat Oleh';
+
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
+
       worksheet.getCell('B4').value = `: ${exportedAt}`;
 
       worksheet.getCell('A5').value = 'Total Data';
+
       worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
@@ -334,12 +444,34 @@ const WalletDisburstTable = () => {
       }
 
       worksheet.getCell('A6').value = 'Periode';
+
       worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.getCell('A3').font = { bold: true };
-      worksheet.getCell('A4').font = { bold: true };
-      worksheet.getCell('A5').font = { bold: true };
-      worksheet.getCell('A6').font = { bold: true };
+      const statusText = params.disburst_status || 'Semua Status';
+
+      worksheet.getCell('A7').value = 'Status';
+
+      worksheet.getCell('B7').value = `: ${statusText}`;
+
+      worksheet.getCell('A3').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A4').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A5').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A6').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A7').font = {
+        bold: true,
+      };
 
       worksheet.addRow([]);
 
@@ -375,10 +507,18 @@ const WalletDisburstTable = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -386,16 +526,17 @@ const WalletDisburstTable = () => {
       // Freeze Header
       // =============================
 
+      // Header berada di row 9
       worksheet.views = [
         {
           state: 'frozen',
-          ySplit: 8,
+          ySplit: 9,
         },
       ];
 
       worksheet.autoFilter = {
-        from: 'A8',
-        to: `${lastColumnLetter}8`,
+        from: 'A9',
+        to: `${lastColumnLetter}9`,
       };
 
       // =============================
@@ -424,16 +565,33 @@ const WalletDisburstTable = () => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
           switch (colNumber) {
-            case 1: // No
-            case 6: // Kode Bank
-            case 11: // Status
+            case 1:
+              // No
               horizontal = 'center';
               break;
 
-            case 8: // Nominal
-            case 9: // Admin
-            case 10: // Total
+            case 2:
+              // Tanggal
+              horizontal = 'center';
+              break;
+
+            case 5:
+              // Kode Bank
+              horizontal = 'center';
+              break;
+
+            case 9:
+            case 10:
+            case 11:
+              // Nominal
+              // Admin
+              // Total
               horizontal = 'right';
+              break;
+
+            case 12:
+              // Status
+              horizontal = 'center';
               break;
 
             default:
@@ -446,10 +604,18 @@ const WalletDisburstTable = () => {
           };
 
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: {
+              style: 'thin',
+            },
+            left: {
+              style: 'thin',
+            },
+            bottom: {
+              style: 'thin',
+            },
+            right: {
+              style: 'thin',
+            },
           };
         });
       });
@@ -481,10 +647,10 @@ const WalletDisburstTable = () => {
         '',
         '',
         '',
+        '',
         `Rp${formatDecimal(totalNominal)}`,
         `Rp${formatDecimal(totalAdmin)}`,
         `Rp${formatDecimal(totalDisburst)}`,
-        '',
         '',
         '',
       ]);
@@ -497,13 +663,13 @@ const WalletDisburstTable = () => {
             horizontal = 'center';
             break;
 
-          case 8:
           case 9:
           case 10:
+          case 11:
             horizontal = 'right';
             break;
 
-          case 11:
+          case 12:
             horizontal = 'center';
             break;
 
@@ -529,10 +695,18 @@ const WalletDisburstTable = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -543,10 +717,16 @@ const WalletDisburstTable = () => {
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, value.length);
-        });
+        column.eachCell(
+          {
+            includeEmpty: true,
+          },
+          (cell: any) => {
+            const value = cell.value ? cell.value.toString() : '';
+
+            maxLength = Math.max(maxLength, value.length);
+          }
+        );
 
         column.width = Math.min(maxLength + 3, 40);
       });
@@ -568,20 +748,44 @@ const WalletDisburstTable = () => {
     }
   };
 
+  // =============================
+  // Fetch ketika params berubah
+  // =============================
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   return (
     <>
+      {/* =============================
+          Filter
+          ============================= */}
+
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date Range */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             onChange={onRangeChange}
             value={[dayjs(params.start_date), dayjs(params.end_date)]}
           />
+
+          {/* Status */}
+          <select
+            value={params.disburst_status}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Semua Status</option>
+
+            <option value="COMPLETED">COMPLETED</option>
+
+            <option value="FAILED">FAILED</option>
+          </select>
+
+          {/* Search */}
           <input
             type="text"
             placeholder="Cari data..."
@@ -591,26 +795,36 @@ const WalletDisburstTable = () => {
           />
         </div>
 
+        {/* Export */}
         <button
           className="btn btn-primary"
           onClick={exportData}
           disabled={isModalLoading}
         >
           <FileDownload02 />
+
           {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+      {/* =============================
+          Table
+          ============================= */}
+
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
           size="small"
-          scroll={{ x: 'max-content', y: 550 }}
+          scroll={{
+            x: 'max-content',
+            y: 550,
+          }}
           pagination={false}
           className="table-basic"
           rowKey="disburst_transaction_id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -620,6 +834,10 @@ const WalletDisburstTable = () => {
           />
         </div>
       </div>
+
+      {/* =============================
+          Loading
+          ============================= */}
 
       <ModalLoading
         isModalOpen={isModalLoading}

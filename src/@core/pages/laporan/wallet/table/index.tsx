@@ -13,21 +13,29 @@ import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
 import { IReportWalletTopUP } from '@/@core/@types/interface';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
 const WalletTopupTable = () => {
   const url = `/reports/wallet-topup`;
+
   const [dataTable, setDataTable] = useState<IReportWalletTopUP[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // ✅ Default tanggal
+  // =============================
+  // Default tanggal
+  // =============================
+
   const defaultStart = dayjs().startOf('month');
   const defaultEnd = dayjs();
 
-  // 🧩 State parameter dan search
+  // =============================
+  // State parameter
+  // =============================
+
   const [params, setParams] = useState({
     format: 'json',
     offset: 0,
@@ -35,23 +43,36 @@ const WalletTopupTable = () => {
     start_date: defaultStart.format('YYYY-MM-DD'),
     end_date: defaultEnd.format('YYYY-MM-DD'),
     search: '',
+    topup_status: '',
   });
-  const [searchText, setSearchText] = useState('');
 
-  // 🔁 Debounce search input 500ms
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setParams((prev) => ({ ...prev, offset: 0, search: searchText }));
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [searchText]);
+  const [searchText, setSearchText] = useState('');
 
   const [selectedRange, setSelectedRange] = useState<[Dayjs, Dayjs]>([
     defaultStart,
     defaultEnd,
   ]);
 
-  // 🧱 Kolom tabel
+  // =============================
+  // Debounce search input
+  // =============================
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setParams((prev) => ({
+        ...prev,
+        offset: 0,
+        search: searchText,
+      }));
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [searchText]);
+
+  // =============================
+  // Kolom tabel
+  // =============================
+
   const columns: ColumnsType<IReportWalletTopUP> = [
     {
       title: 'Tanggal',
@@ -134,16 +155,33 @@ const WalletTopupTable = () => {
     },
   ];
 
-  // 🧭 Fetch data dari API
+  // =============================
+  // Fetch data dari API
+  // =============================
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const resp = await axiosInstance.get(url, {
+      params,
+    });
+
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params, url]);
 
+  // =============================
+  // Pagination
+  // =============================
+
   const onChangePage = (val: number) => {
-    setParams((prev) => ({ ...prev, offset: (val - 1) * prev.limit }));
+    setParams((prev) => ({
+      ...prev,
+      offset: (val - 1) * prev.limit,
+    }));
   };
+
+  // =============================
+  // Filter tanggal
+  // =============================
 
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
@@ -151,6 +189,7 @@ const WalletTopupTable = () => {
   ) => {
     if (dates && dates[0] && dates[1]) {
       setSelectedRange([dates[0], dates[1]]);
+
       setParams((prev) => ({
         ...prev,
         offset: 0,
@@ -160,26 +199,62 @@ const WalletTopupTable = () => {
     }
   };
 
-  // 📦 Ekspor ke Excel (tidak diubah)
+  // =============================
+  // Filter status
+  // =============================
+
+  const onStatusChange = (value: string) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      topup_status: value,
+    }));
+  };
+
+  // =============================
+  // Fetch semua data untuk export
+  // =============================
+
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
+
     const limit = 100;
+
     const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+      params: {
+        ...params,
+        limit,
+        offset: 0,
+      },
     });
+
     allRows = allRows.concat(firstResp.data.results);
+
     const totalCount = firstResp.data.count;
     const totalPages = Math.ceil(totalCount / limit);
+
     for (let i = 1; i < totalPages; i++) {
       const offset = i * limit;
+
       const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset },
+        params: {
+          ...params,
+          limit,
+          offset,
+        },
       });
+
       allRows = allRows.concat(resp.data.results);
+
       await new Promise((r) => setTimeout(r, 200));
     }
+
     return allRows;
   };
+
+  // =============================
+  // Get exported by
+  // =============================
 
   const getExportedBy = () => {
     if (typeof window === 'undefined') return '-';
@@ -203,9 +278,14 @@ const WalletTopupTable = () => {
       );
     } catch (error) {
       console.error('Gagal membaca user dari localStorage:', error);
+
       return '-';
     }
   };
+
+  // =============================
+  // Export Excel
+  // =============================
 
   const exportData = async () => {
     try {
@@ -248,6 +328,7 @@ const WalletTopupTable = () => {
       const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
       // =============================
@@ -297,10 +378,36 @@ const WalletTopupTable = () => {
         worksheet.getCell('B6').value = `: ${periodeText}`;
       }
 
-      worksheet.getCell('A3').font = { bold: true };
-      worksheet.getCell('A4').font = { bold: true };
-      worksheet.getCell('A5').font = { bold: true };
-      worksheet.getCell('A6').font = { bold: true };
+      // =============================
+      // Export Status
+      // =============================
+
+      const statusText = params.topup_status
+        ? params.topup_status
+        : 'Semua Status';
+
+      worksheet.getCell('A7').value = 'Status';
+      worksheet.getCell('B7').value = `: ${statusText}`;
+
+      worksheet.getCell('A3').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A4').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A5').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A6').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A7').font = {
+        bold: true,
+      };
 
       worksheet.addRow([]);
 
@@ -336,10 +443,18 @@ const WalletTopupTable = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -355,8 +470,8 @@ const WalletTopupTable = () => {
       ];
 
       worksheet.autoFilter = {
-        from: 'A8',
-        to: `${lastColumnLetter}8`,
+        from: 'A9',
+        to: `${lastColumnLetter}9`,
       };
 
       // =============================
@@ -385,21 +500,21 @@ const WalletTopupTable = () => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
           switch (colNumber) {
-            case 1: // No
+            case 1:
               horizontal = 'center';
               break;
 
-            case 2: // Tanggal
+            case 2:
               horizontal = 'center';
               break;
 
-            case 8: // Nominal
-            case 9: // Admin
-            case 10: // Total
+            case 8:
+            case 9:
+            case 10:
               horizontal = 'right';
               break;
 
-            case 11: // Status
+            case 11:
               horizontal = 'center';
               break;
 
@@ -413,10 +528,18 @@ const WalletTopupTable = () => {
           };
 
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: {
+              style: 'thin',
+            },
+            left: {
+              style: 'thin',
+            },
+            bottom: {
+              style: 'thin',
+            },
+            right: {
+              style: 'thin',
+            },
           };
         });
       });
@@ -494,10 +617,18 @@ const WalletTopupTable = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -508,11 +639,16 @@ const WalletTopupTable = () => {
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
+        column.eachCell(
+          {
+            includeEmpty: true,
+          },
+          (cell: any) => {
+            const value = cell.value ? cell.value.toString() : '';
 
-          maxLength = Math.max(maxLength, value.length);
-        });
+            maxLength = Math.max(maxLength, value.length);
+          }
+        );
 
         column.width = Math.min(maxLength + 3, 40);
       });
@@ -534,21 +670,48 @@ const WalletTopupTable = () => {
     }
   };
 
+  // =============================
+  // Fetch ketika parameter berubah
+  // =============================
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   return (
     <>
-      {/* 🔍 Search + Range + Export */}
+      {/* =============================
+          Search + Range + Status + Export
+          ============================= */}
+
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date Range */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             value={selectedRange}
             onChange={onRangeChange}
           />
+
+          {/* Status Filter */}
+          <select
+            value={params.topup_status}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Semua Status</option>
+
+            <option value="FAIL">FAIL</option>
+
+            <option value="PAID">PAID</option>
+
+            <option value="PENDING">PENDING</option>
+
+            <option value="SUCCESS">SUCCESS</option>
+          </select>
+
+          {/* Search */}
           <input
             type="text"
             placeholder="Cari data..."
@@ -558,6 +721,7 @@ const WalletTopupTable = () => {
           />
         </div>
 
+        {/* Export */}
         <button
           className="btn !h-[40px] btn-primary flex items-center gap-2"
           onClick={exportData}
@@ -567,16 +731,24 @@ const WalletTopupTable = () => {
         </button>
       </div>
 
+      {/* =============================
+          Table
+          ============================= */}
+
       <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={dataTable}
           size="small"
-          scroll={{ x: 'max-content', y: 550 }}
+          scroll={{
+            x: 'max-content',
+            y: 550,
+          }}
           pagination={false}
           className="table-basic"
           rowKey="topup_transaction_id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -586,6 +758,10 @@ const WalletTopupTable = () => {
           />
         </div>
       </div>
+
+      {/* =============================
+          Loading
+          ============================= */}
 
       <ModalLoading
         isModalOpen={isModalLoading}

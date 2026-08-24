@@ -21,6 +21,7 @@ import ModalLoading from '@/@core/components/modal/modal-loading';
 interface IFailedAttempt {
   id: string;
   user: string;
+  user_name: string;
   reason: string;
   create_time: string;
   create_user: string;
@@ -56,7 +57,7 @@ const FailedAttemptPageTable = () => {
       },
       {
         title: 'User',
-        dataIndex: 'user',
+        dataIndex: 'user_name',
         key: 'user',
         width: 280,
         render: (value) => value || '-',
@@ -120,7 +121,7 @@ const FailedAttemptPageTable = () => {
               const keyword = params.search.toLowerCase();
 
               return (
-                item.user?.toLowerCase().includes(keyword) ||
+                item.user_name?.toLowerCase().includes(keyword) ||
                 item.reason?.toLowerCase().includes(keyword) ||
                 item.create_user?.toLowerCase().includes(keyword)
               );
@@ -248,7 +249,7 @@ const FailedAttemptPageTable = () => {
             const keyword = params.search.toLowerCase();
 
             return (
-              item.user?.toLowerCase().includes(keyword) ||
+              item.user_name?.toLowerCase().includes(keyword) ||
               item.reason?.toLowerCase().includes(keyword) ||
               item.create_user?.toLowerCase().includes(keyword)
             );
@@ -263,7 +264,7 @@ const FailedAttemptPageTable = () => {
       const dataToExport = filteredRows.map(
         (item: IFailedAttempt, index: number) => ({
           No: index + 1,
-          User: item.user || '-',
+          User: item.user_name || '-',
           Alasan: item.reason || '-',
           Waktu: item.create_time
             ? dayjs(item.create_time).format('DD-MM-YYYY HH:mm:ss')

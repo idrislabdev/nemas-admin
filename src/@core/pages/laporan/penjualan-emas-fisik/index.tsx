@@ -15,21 +15,29 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
 
 const PenjualanEmasFisikPage = () => {
   const url = `/reports/gold-sales-order/list`;
+
   const [dataTable, setDataTable] = useState<Array<ISalesOrder>>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // 📅 Default tanggal: tanggal 1 bulan aktif - hari ini
   const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
+
   const defaultEnd = dayjs().format('YYYY-MM-DD');
+
+  // =============================
+  // Params
+  // =============================
 
   const [params, setParams] = useState({
     format: 'json',
@@ -38,19 +46,32 @@ const PenjualanEmasFisikPage = () => {
     start_date: defaultStart,
     end_date: defaultEnd,
     search: '',
+    status: '',
   });
 
+  // =============================
   // 🔎 Debounce search
+  // =============================
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
     }, 500);
+
     return () => clearTimeout(handler);
   }, [search]);
 
   useEffect(() => {
-    setParams((prev) => ({ ...prev, offset: 0, search: debouncedSearch }));
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      search: debouncedSearch,
+    }));
   }, [debouncedSearch]);
+
+  // =============================
+  // Columns
+  // =============================
 
   const columns: ColumnsType<ISalesOrder> = [
     {
@@ -105,7 +126,9 @@ const PenjualanEmasFisikPage = () => {
       align: 'right',
       render: (_, record) =>
         record.order_total_price
-          ? `Rp${formatDecimal(parseFloat(record.order_total_price.toString()))}`
+          ? `Rp${formatDecimal(
+              parseFloat(record.order_total_price.toString())
+            )}`
           : '-',
     },
     {
@@ -178,50 +201,110 @@ const PenjualanEmasFisikPage = () => {
     },
   ];
 
+  // =============================
+  // Fetch Data
+  // =============================
+
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, { params });
+    const resp = await axiosInstance.get(url, {
+      params,
+    });
+
     setDataTable(resp.data.results);
     setTotal(resp.data.count);
   }, [params, url]);
 
-  const onChangePage = async (val: number) => {
-    setParams({ ...params, offset: (val - 1) * params.limit });
+  // =============================
+  // Pagination
+  // =============================
+
+  const onChangePage = (val: number) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: (val - 1) * prev.limit,
+    }));
   };
+
+  // =============================
+  // Date Range
+  // =============================
 
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
+    if (!dates || !dates[0] || !dates[1]) {
+      return;
+    }
+
+    setParams((prev) => ({
+      ...prev,
       offset: 0,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
-    });
+    }));
   };
+
+  // =============================
+  // Status Filter
+  // =============================
+
+  const onStatusChange = (value: string) => {
+    setParams((prev) => ({
+      ...prev,
+      offset: 0,
+      status: value,
+    }));
+  };
+
+  // =============================
+  // Fetch All Data
+  // =============================
 
   const fetchAllData = async (url: string, params: any) => {
     let allRows: any[] = [];
+
     const limit = 100;
+
     const firstResp = await axiosInstance.get(url, {
-      params: { ...params, limit, offset: 0 },
+      params: {
+        ...params,
+        limit,
+        offset: 0,
+      },
     });
+
     allRows = allRows.concat(firstResp.data.results);
+
     const totalCount = firstResp.data.count;
+
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
       const resp = await axiosInstance.get(url, {
-        params: { ...params, limit, offset: i * limit },
+        params: {
+          ...params,
+          limit,
+          offset: i * limit,
+        },
       });
+
       allRows = allRows.concat(resp.data.results);
+
       await new Promise((r) => setTimeout(r, 200));
     }
+
     return allRows;
   };
 
+  // =============================
+  // Get Exported By
+  // =============================
+
   const getExportedBy = () => {
-    if (typeof window === 'undefined') return '-';
+    if (typeof window === 'undefined') {
+      return '-';
+    }
 
     try {
       const rawUser =
@@ -229,7 +312,9 @@ const PenjualanEmasFisikPage = () => {
         localStorage.getItem('auth_user') ||
         localStorage.getItem('profile');
 
-      if (!rawUser) return '-';
+      if (!rawUser) {
+        return '-';
+      }
 
       const parsedUser = JSON.parse(rawUser);
 
@@ -242,53 +327,81 @@ const PenjualanEmasFisikPage = () => {
       );
     } catch (error) {
       console.error('Gagal membaca user dari localStorage:', error);
+
       return '-';
     }
   };
+
+  // =============================
+  // Export Excel
+  // =============================
 
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const rows = await fetchAllData(url, params);
+      const exportParams = {
+        ...params,
+        offset: 0,
+        limit: 100,
+      };
+
+      const rows = await fetchAllData(url, exportParams);
 
       if (!rows || rows.length === 0) {
         console.warn('Tidak ada data untuk diekspor.');
+
         return;
       }
 
       const dataToExport = rows.map((item: ISalesOrder, index: number) => ({
         No: index + 1,
+
         'Nomor Order': item.order_number || '-',
+
         'Tanggal Order': moment(item.order_timestamp).format(
           'DD MMMM YYYY HH:mm'
         ),
+
         User: item.user_name || '-',
+
         'Berat Emas': `${formatDecimal(
           Number(item.order_item_weight || 0)
         )} Gram`,
+
         'Nominal Pesanan': `Rp${formatDecimal(Number(item.order_amount || 0))}`,
-        'Total Harga': `Rp${formatDecimal(Number(item.order_total_price || 0))}`,
+
+        'Total Harga': `Rp${formatDecimal(
+          Number(item.order_total_price || 0)
+        )}`,
+
         'Biaya Admin': `Rp${formatDecimal(
           Number(item.order_admin_amount || 0)
         )}`,
+
         'Biaya Asuransi': `Rp${formatDecimal(
           Number(item.order_tracking_insurance_total_round || 0)
         )}`,
+
         'Biaya Pengiriman': `Rp${formatDecimal(
           Number(item.order_tracking_total_amount_round || 0)
         )}`,
+
         'Grand Total': `Rp${formatDecimal(
           Number(item.order_grand_total_price || 0)
         )}`,
+
         'Status Pesanan': item.order_status || '-',
+
         'Status Pembayaran': item.order_gold_payment_status || '-',
       }));
 
       const workbook = new ExcelJS.Workbook();
 
       workbook.creator = 'NEMAS';
+
       workbook.company = 'NEMAS';
+
       workbook.created = new Date();
 
       const worksheet = workbook.addWorksheet('Penjualan Emas Fisik');
@@ -296,6 +409,7 @@ const PenjualanEmasFisikPage = () => {
       const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
       // =============================
@@ -326,12 +440,15 @@ const PenjualanEmasFisikPage = () => {
       // =============================
 
       worksheet.getCell('A3').value = 'Dibuat Oleh';
+
       worksheet.getCell('B3').value = `: ${getExportedBy()}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
+
       worksheet.getCell('B4').value = `: ${exportedAt}`;
 
       worksheet.getCell('A5').value = 'Total Data';
+
       worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
@@ -343,12 +460,38 @@ const PenjualanEmasFisikPage = () => {
       }
 
       worksheet.getCell('A6').value = 'Periode';
+
       worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.getCell('A3').font = { bold: true };
-      worksheet.getCell('A4').font = { bold: true };
-      worksheet.getCell('A5').font = { bold: true };
-      worksheet.getCell('A6').font = { bold: true };
+      // =============================
+      // Status Info
+      // =============================
+
+      const statusText = params.status || 'Semua Status';
+
+      worksheet.getCell('A7').value = 'Status Pesanan';
+
+      worksheet.getCell('B7').value = `: ${statusText}`;
+
+      worksheet.getCell('A3').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A4').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A5').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A6').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A7').font = {
+        bold: true,
+      };
 
       worksheet.addRow([]);
 
@@ -384,10 +527,18 @@ const PenjualanEmasFisikPage = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -395,16 +546,17 @@ const PenjualanEmasFisikPage = () => {
       // Freeze Header
       // =============================
 
+      // Header berada di row 9
       worksheet.views = [
         {
           state: 'frozen',
-          ySplit: 8,
+          ySplit: 9,
         },
       ];
 
       worksheet.autoFilter = {
-        from: 'A8',
-        to: `${lastColumnLetter}8`,
+        from: 'A9',
+        to: `${lastColumnLetter}9`,
       };
 
       // =============================
@@ -416,6 +568,7 @@ const PenjualanEmasFisikPage = () => {
 
         const newRow = worksheet.addRow(values);
 
+        // Zebra Row
         if (newRow.number % 2 === 1) {
           newRow.eachCell((cell) => {
             cell.fill = {
@@ -432,22 +585,25 @@ const PenjualanEmasFisikPage = () => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
           switch (colNumber) {
-            case 1: // No
+            case 1:
+              // No
               horizontal = 'center';
               break;
 
-            case 5: // Berat
-            case 6: // Nominal
-            case 7: // Total Harga
-            case 8: // Admin
-            case 9: // Asuransi
-            case 10: // Pengiriman
-            case 11: // Grand Total
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+              // Numeric
               horizontal = 'right';
               break;
 
-            case 12: // Status Pesanan
-            case 13: // Status Pembayaran
+            case 12:
+            case 13:
+              // Status
               horizontal = 'center';
               break;
 
@@ -461,10 +617,18 @@ const PenjualanEmasFisikPage = () => {
           };
 
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: {
+              style: 'thin',
+            },
+            left: {
+              style: 'thin',
+            },
+            bottom: {
+              style: 'thin',
+            },
+            right: {
+              style: 'thin',
+            },
           };
         });
       });
@@ -570,10 +734,18 @@ const PenjualanEmasFisikPage = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -584,10 +756,16 @@ const PenjualanEmasFisikPage = () => {
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, value.length);
-        });
+        column.eachCell(
+          {
+            includeEmpty: true,
+          },
+          (cell: any) => {
+            const value = cell.value ? cell.value.toString() : '';
+
+            maxLength = Math.max(maxLength, value.length);
+          }
+        );
 
         column.width = Math.min(maxLength + 3, 40);
       });
@@ -609,45 +787,85 @@ const PenjualanEmasFisikPage = () => {
     }
   };
 
+  // =============================
+  // Fetch
+  // =============================
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      {/* =============================
+          Filter
+          ============================= */}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date Range */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             onChange={onRangeChange}
-            defaultValue={[dayjs(defaultStart), dayjs(defaultEnd)]}
+            value={[dayjs(params.start_date), dayjs(params.end_date)]}
           />
+
+          {/* Status */}
+          <select
+            value={params.status}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Semua Status</option>
+
+            <option value="delivered">delivered</option>
+
+            <option value="paid">paid</option>
+
+            <option value="unpaid">unpaid</option>
+          </select>
+
+          {/* Search */}
           <input
             type="text"
             placeholder="Cari..."
-            className="pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px] focus:outline-none focus:ring-1 focus:ring-primary"
+            className="pl-3 pr-2 py-1.5 text-sm border border-gray-300 rounded-md w-[200px] h-[40px] focus:outline-none focus:ring-1 focus:ring-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <button className="btn !h-[40px] btn-primary" onClick={exportData}>
+        {/* Export */}
+        <button
+          className="btn !h-[40px] btn-primary"
+          onClick={exportData}
+          disabled={isModalLoading}
+        >
           <FileDownload02 />
-          Export Excel
+
+          {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px] mt-3">
+      {/* =============================
+          Table
+          ============================= */}
+
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px] mt-3">
         <Table
           columns={columns}
           dataSource={dataTable}
           size="small"
-          scroll={{ x: 'max-content', y: 550 }}
+          scroll={{
+            x: 'max-content',
+            y: 550,
+          }}
           pagination={false}
           className="table-basic"
           rowKey="order_gold_id"
         />
+
         <div className="flex justify-end p-[12px]">
           <Pagination
             onChange={onChangePage}
@@ -657,6 +875,10 @@ const PenjualanEmasFisikPage = () => {
           />
         </div>
       </div>
+
+      {/* =============================
+          Loading
+          ============================= */}
 
       <ModalLoading
         isModalOpen={isModalLoading}

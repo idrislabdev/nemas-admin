@@ -13,9 +13,11 @@ import 'dayjs/locale/id';
 import { IUser } from '@/@core/@types/interface';
 
 dayjs.locale('id');
+
 const { RangePicker } = DatePicker;
 
 /* ================= INTERFACE ================= */
+
 export interface IGoldRedeemReport {
   order_timestamp: string;
   order_number: string;
@@ -38,26 +40,47 @@ export interface IGoldRedeemReport {
 }
 
 /* ================= HELPER EXCEL ================= */
+
 const getExcelColumnLabel = (colIndex: number): string => {
   let label = '';
   let index = colIndex;
+
   while (index > 0) {
     const remainder = (index - 1) % 26;
+
     label = String.fromCharCode(65 + remainder) + label;
+
     index = Math.floor((index - 1) / 26);
   }
+
   return label;
 };
+
+/* ================= COMPONENT ================= */
 
 const TarikEmasListTable = () => {
   const url = '/reports/gold-redeem/list';
 
   const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+
   const today = dayjs().format('YYYY-MM-DD');
 
+  /* ================= STATE ================= */
+
   const [dataTable, setDataTable] = useState<IGoldRedeemReport[]>([]);
+
   const [total, setTotal] = useState(0);
+
   const [isModalLoading, setIsModalLoading] = useState(false);
+
+  const [rangeValue, setRangeValue] = useState<[Dayjs, Dayjs]>([
+    dayjs(startOfMonth),
+    dayjs(today),
+  ]);
+
+  const [searchText, setSearchText] = useState('');
+
+  /* ================= PARAMS ================= */
 
   const [params, setParams] = useState({
     format: 'json',
@@ -68,20 +91,19 @@ const TarikEmasListTable = () => {
     order_by: 'order_price',
     order_direction: 'DESC',
     search: '',
+    order_gold_payment_status: '',
   });
 
-  const [rangeValue, setRangeValue] = useState<[Dayjs, Dayjs]>([
-    dayjs(startOfMonth),
-    dayjs(today),
-  ]);
-
-  const [searchText, setSearchText] = useState('');
-
   /* ================= FETCH ================= */
+
   const fetchData = useCallback(async () => {
     try {
-      const resp = await axiosInstance.get(url, { params });
+      const resp = await axiosInstance.get(url, {
+        params,
+      });
+
       setDataTable(resp.data?.results || []);
+
       setTotal(resp.data?.count || 0);
     } catch (err) {
       console.error('Fetch failed:', err);
@@ -93,10 +115,14 @@ const TarikEmasListTable = () => {
   }, [fetchData]);
 
   /* ================= SEARCH DEBOUNCE ================= */
+
   useEffect(() => {
     const t = setTimeout(() => {
       setParams((prev) => {
-        if (prev.search === searchText) return prev;
+        if (prev.search === searchText) {
+          return prev;
+        }
+
         return {
           ...prev,
           search: searchText,
@@ -104,17 +130,22 @@ const TarikEmasListTable = () => {
         };
       });
     }, 500);
+
     return () => clearTimeout(t);
   }, [searchText]);
 
   /* ================= DATE FILTER ================= */
+
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    if (!dates || !dates[0] || !dates[1]) return;
+    if (!dates || !dates[0] || !dates[1]) {
+      return;
+    }
 
     setRangeValue([dates[0], dates[1]]);
+
     setParams((prev) => ({
       ...prev,
       start_date: dateStrings[0],
@@ -123,7 +154,18 @@ const TarikEmasListTable = () => {
     }));
   };
 
+  /* ================= STATUS FILTER ================= */
+
+  const onPaymentStatusChange = (status: string) => {
+    setParams((prev) => ({
+      ...prev,
+      order_gold_payment_status: status,
+      offset: 0,
+    }));
+  };
+
   /* ================= PAGINATION ================= */
+
   const onChangePage = (page: number) => {
     setParams((prev) => ({
       ...prev,
@@ -132,12 +174,15 @@ const TarikEmasListTable = () => {
   };
 
   /* ================= SORTING ================= */
+
   const handleTableChange = (
     _: TablePaginationConfig,
     __: any,
     sorter: any
   ) => {
-    if (Array.isArray(sorter)) return;
+    if (Array.isArray(sorter)) {
+      return;
+    }
 
     if (sorter.order) {
       setParams((prev) => ({
@@ -150,153 +195,250 @@ const TarikEmasListTable = () => {
   };
 
   /* ================= EXPORT EXCEL ================= */
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
       let user: IUser | null = null;
+
       try {
         const storedUser = localStorage.getItem('user');
+
         user = storedUser ? JSON.parse(storedUser) : null;
       } catch (e) {
         console.warn('Failed to parse user from localStorage', e);
       }
 
       const resp = await axiosInstance.get(url, {
-        params: { ...params, offset: 0, limit: 1000 },
+        params: {
+          ...params,
+          offset: 0,
+          limit: 1000,
+        },
       });
 
       const rows = (resp.data?.results || []) as IGoldRedeemReport[];
+
       if (!rows.length) {
         message.warning('Tidak ada data untuk diexport');
         return;
       }
 
       /* ================= MAP DATA ================= */
+
       const dataToExport = rows.map((r) => ({
         'Tanggal Order':
           r.order_timestamp && dayjs(r.order_timestamp).isValid()
             ? dayjs(r.order_timestamp).format('DD MMMM YYYY HH:mm')
             : '-',
+
         'No Order': r.order_number || '-',
+
         Nama: r.name || '-',
+
         'Jenis Emas': r.gold_type || '-',
+
         Brand: r.gold_brand || '-',
+
         'Kode Sertifikat': r.cert_code || '-',
+
         'Berat (gr)': Number(r.weight) || 0,
+
         'Harga Emas (Rp)': Number(r.gold_price) || 0,
+
         'Harga Sertifikat (Rp)': Number(r.cert_price) || 0,
+
         'Total Order (Rp)': Number(r.order_price) || 0,
+
         'Metode Pembayaran': r.order_payment_method_name || '-',
+
         'No Pembayaran': r.order_payment_number || '-',
+
         'Status Pembayaran': r.order_gold_payment_status || '-',
+
         Kurir: r.tracking_courier_name || '-',
+
         'No Resi': r.tracking_number || '-',
+
         'Status Pengiriman': r.delivery_status || '-',
       }));
 
       type ExportRow = (typeof dataToExport)[number];
 
-      /* ================= EXCEL WORKBOOK ================= */
+      /* ================= WORKBOOK ================= */
+
       const workbook = new ExcelJS.Workbook();
+
+      workbook.creator = user?.name || 'System';
+
+      workbook.created = new Date();
+
       const worksheet = workbook.addWorksheet('Laporan Tarik Emas Detail');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
       /* ================= TITLE & METADATA ================= */
+
       const formattedStartDate =
         params.start_date && dayjs(params.start_date).isValid()
           ? dayjs(params.start_date).format('DD MMMM YYYY')
           : '-';
+
       const formattedEndDate =
         params.end_date && dayjs(params.end_date).isValid()
           ? dayjs(params.end_date).format('DD MMMM YYYY')
           : '-';
 
+      const statusText = params.order_gold_payment_status || 'Semua Status';
+
       const metadata = [
-        { cell: 'A1', val: 'LAPORAN TARIK EMAS DETAIL', bold: true, size: 14 },
-        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A1',
+          val: 'LAPORAN TARIK EMAS DETAIL',
+          bold: true,
+          size: 14,
+        },
+        {
+          cell: 'A2',
+          val: `Dibuat oleh : ${user?.name || '-'}`,
+        },
         {
           cell: 'A3',
           val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
         },
-        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A4',
+          val: `Total Data : ${rows.length}`,
+        },
         {
           cell: 'A5',
           val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
+        },
+        {
+          cell: 'A6',
+          val: `Status Pembayaran : ${statusText}`,
         },
       ];
 
       metadata.forEach((m, idx) => {
         const rowNum = idx + 1;
+
         worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
-        const c = worksheet.getCell(m.cell);
-        c.value = m.val;
-        c.font = {
+
+        const cell = worksheet.getCell(m.cell);
+
+        cell.value = m.val;
+
+        cell.font = {
           name: 'Calibri',
           bold: !!m.bold,
           size: m.size || 11,
-          color: { argb: 'FF1E293B' },
+          color: {
+            argb: 'FF1E293B',
+          },
         };
-        c.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        cell.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+        };
       });
 
-      worksheet.addRow([]); // Row 6 blank
+      worksheet.addRow([]);
 
       /* ================= HEADER ================= */
+
       const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+
       const headerRow = worksheet.addRow(headerKeys);
-      const headerRowIndex = 7;
+
+      const headerRowIndex = 8;
+
       headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
         cell.font = {
           name: 'Calibri',
           bold: true,
-          color: { argb: 'FFFFFFFF' },
+          color: {
+            argb: 'FFFFFFFF',
+          },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: 'center',
           vertical: 'middle',
           wrapText: true,
         };
+
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          bottom: { style: 'medium', color: { argb: 'FF004397' } },
-          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          top: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
+          left: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
+          bottom: {
+            style: 'medium',
+            color: {
+              argb: 'FF004397',
+            },
+          },
+          right: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FF0057B7' },
+          fgColor: {
+            argb: 'FF0057B7',
+          },
         };
       });
 
       /* ================= DATA ROWS ================= */
-      const dataStartRow = 8;
+
+      const dataStartRow = headerRowIndex + 1;
 
       dataToExport.forEach((row, idx) => {
-        // Menggunakan worksheet.addRow lalu mengisi sel dari 1 sampai totalColumns agar border aman
         const rowValues = headerKeys.map((key) => row[key]);
+
         const newRow = worksheet.addRow(rowValues);
+
         newRow.height = 20;
 
-        const isEven = idx % 2 === 1;
-        const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
+        const rowBgColor = idx % 2 === 1 ? 'FFF8FBFF' : 'FFFFFFFF';
 
         for (let colIndex = 1; colIndex <= totalColumns; colIndex++) {
           const cell = newRow.getCell(colIndex);
+
           const header = headerKeys[colIndex - 1];
+
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
           cell.font = {
             name: 'Calibri',
             size: 10,
-            color: { argb: 'FF334155' },
+            color: {
+              argb: 'FF334155',
+            },
           };
+
           cell.alignment = {
             horizontal: isNumeric ? 'right' : 'left',
             vertical: 'middle',
@@ -309,21 +451,44 @@ const TarikEmasListTable = () => {
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: rowBgColor },
+            fgColor: {
+              argb: rowBgColor,
+            },
           };
 
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            top: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            left: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            bottom: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            right: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
           };
         }
       });
 
       const dataEndRow = dataStartRow + dataToExport.length - 1;
 
-      /* ================= TOTAL ROW (EXCEL FORMULA) ================= */
+      /* ================= TOTAL ROW ================= */
+
       type NumericExportKey =
         | 'Berat (gr)'
         | 'Harga Emas (Rp)'
@@ -338,30 +503,41 @@ const TarikEmasListTable = () => {
       ];
 
       const totalRowValues = headerKeys.map((key, colIdx) => {
-        if (key === 'Tanggal Order') return 'TOTAL';
+        if (key === 'Tanggal Order') {
+          return 'TOTAL';
+        }
+
         if (totalFields.includes(key as NumericExportKey)) {
           const colLetter = getExcelColumnLabel(colIdx + 1);
+
           return {
             formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
           };
         }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.height = 22;
 
       for (let colIndex = 1; colIndex <= totalColumns; colIndex++) {
         const cell = totalRow.getCell(colIndex);
+
         const header = headerKeys[colIndex - 1];
+
         const isNumeric = totalFields.includes(header as NumericExportKey);
 
         cell.font = {
           name: 'Calibri',
           bold: true,
-          color: { argb: 'FF1E293B' },
+          color: {
+            argb: 'FF1E293B',
+          },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: isNumeric ? 'right' : 'left',
           vertical: 'middle',
@@ -374,53 +550,95 @@ const TarikEmasListTable = () => {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFFF59D' },
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
         };
 
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          bottom: { style: 'double', color: { argb: 'FF475569' } },
-          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          top: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
+          left: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
+          bottom: {
+            style: 'double',
+            color: {
+              argb: 'FF475569',
+            },
+          },
+          right: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
         };
       }
 
-      /* ================= AUTOFILTER & FREEZE PANE ================= */
+      /* ================= AUTOFILTER & FREEZE ================= */
+
       worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+
       worksheet.views = [
-        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+        {
+          state: 'frozen',
+          xSplit: 0,
+          ySplit: headerRowIndex,
+        },
       ];
 
       /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
         let maxLen = 0;
-        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
-          if (rowNumber < headerRowIndex) return;
 
-          let strVal = '';
-          if (
-            cell.value &&
-            typeof cell.value === 'object' &&
-            'formula' in cell.value
-          ) {
-            strVal = '123,456,789.00';
-          } else if (cell.value != null) {
-            strVal = cell.value.toString();
+        col.eachCell?.(
+          {
+            includeEmpty: true,
+          },
+          (cell, rowNumber) => {
+            if (rowNumber < headerRowIndex) {
+              return;
+            }
+
+            let strVal = '';
+
+            if (
+              cell.value &&
+              typeof cell.value === 'object' &&
+              'formula' in cell.value
+            ) {
+              strVal = '123,456,789.00';
+            } else if (cell.value != null) {
+              strVal = cell.value.toString();
+            }
+
+            maxLen = Math.max(maxLen, strVal.length);
           }
+        );
 
-          maxLen = Math.max(maxLen, strVal.length);
-        });
         col.width = Math.max(maxLen + 4, 14);
       });
 
       /* ================= SAVE FILE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_tarik_emas_detail_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
       );
     } catch (err) {
       console.error('Export failed:', err);
+
       message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
@@ -428,6 +646,7 @@ const TarikEmasListTable = () => {
   };
 
   /* ================= COLUMNS ================= */
+
   const columns: ColumnsType<IGoldRedeemReport> = useMemo(
     () => [
       {
@@ -436,54 +655,121 @@ const TarikEmasListTable = () => {
         render: (v) => (v ? dayjs(v).format('DD MMM YYYY HH:mm') : '-'),
         width: 180,
       },
-      { title: 'No Order', dataIndex: 'order_number' },
-      { title: 'Nama', dataIndex: 'name' },
-      { title: 'Jenis Emas', dataIndex: 'gold_type' },
-      { title: 'Brand', dataIndex: 'gold_brand' },
-      { title: 'Kode Sertifikat', dataIndex: 'cert_code' },
+
+      {
+        title: 'No Order',
+        dataIndex: 'order_number',
+      },
+
+      {
+        title: 'Nama',
+        dataIndex: 'name',
+      },
+
+      {
+        title: 'Jenis Emas',
+        dataIndex: 'gold_type',
+      },
+
+      {
+        title: 'Brand',
+        dataIndex: 'gold_brand',
+      },
+
+      {
+        title: 'Kode Sertifikat',
+        dataIndex: 'cert_code',
+      },
+
       {
         title: 'Berat (gr)',
         dataIndex: 'weight',
         align: 'right',
         render: formatDecimal,
       },
+
       {
         title: 'Harga Emas',
         dataIndex: 'gold_price',
         align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
+
       {
         title: 'Harga Sertifikat',
         dataIndex: 'cert_price',
         align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
+
       {
         title: 'Total Order',
         dataIndex: 'order_price',
         align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
-      { title: 'Metode Bayar', dataIndex: 'order_payment_method_name' },
-      { title: 'Status Pembayaran', dataIndex: 'order_gold_payment_status' },
-      { title: 'Kurir', dataIndex: 'tracking_courier_name' },
-      { title: 'No Resi', dataIndex: 'tracking_number' },
-      { title: 'Status Pengiriman', dataIndex: 'delivery_status' },
+
+      {
+        title: 'Metode Bayar',
+        dataIndex: 'order_payment_method_name',
+      },
+
+      {
+        title: 'Status Pembayaran',
+        dataIndex: 'order_gold_payment_status',
+        align: 'center',
+      },
+
+      {
+        title: 'Kurir',
+        dataIndex: 'tracking_courier_name',
+      },
+
+      {
+        title: 'No Resi',
+        dataIndex: 'tracking_number',
+      },
+
+      {
+        title: 'Status Pengiriman',
+        dataIndex: 'delivery_status',
+      },
     ],
     []
   );
 
+  /* ================= RENDER ================= */
+
   return (
     <>
       <div className="flex flex-wrap justify-between gap-2 mb-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* DATE */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             value={rangeValue}
             onChange={onRangeChange}
           />
+
+          {/* PAYMENT STATUS */}
+          <select
+            value={params.order_gold_payment_status}
+            onChange={(e) => onPaymentStatusChange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Semua Status</option>
+
+            <option value="CANCELLED">CANCELLED</option>
+
+            <option value="ISSUED">ISSUED</option>
+
+            <option value="PAID">PAID</option>
+
+            <option value="PENDING">PENDING</option>
+          </select>
+
+          {/* SEARCH */}
           <input
             placeholder="Cari data..."
             value={searchText}
@@ -491,14 +777,20 @@ const TarikEmasListTable = () => {
             className="border rounded px-3 h-[40px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {/* EXPORT */}
         <button
           className="btn btn-primary flex items-center gap-2"
           onClick={exportData}
+          disabled={isModalLoading}
         >
           <FileDownload02 />
-          Export Excel
+
+          {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
+
+      {/* ================= TABLE ================= */}
 
       <div className="border border-gray-200 rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <div className="overflow-x-auto">
