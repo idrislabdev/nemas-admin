@@ -42,6 +42,23 @@ export interface IGoldCertPrice {
   upd_time?: string;
 }
 
+export interface IBrand {
+  id?: number;
+  name?: string;
+  description?: string;
+  image?: string;
+  is_delete?: boolean;
+
+  created_by?: string;
+  created_by_name?: string;
+
+  updated_by?: string;
+  updated_by_name?: string;
+
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface IGoldCert {
   cert_id?: number;
   cert_name?: string;
@@ -209,18 +226,29 @@ export interface IGoldPromo {
   gold_promo_id?: number;
   gold_promo_code?: string;
   gold_promo_description?: string;
-  gold_promo_weight?: string;
-  gold_promo_amt_pct?: string;
-  gold_promo_amt?: string;
-  gold_promo_min_weight?: string;
-  gold_promo_max_weight?: string;
-  gold_promo_min_amt?: string;
-  gold_promo_max_amt?: string;
+
+  gold_promo_weight_threshold?: number;
+  gold_promo_weight_amt?: number;
+
+  gold_promo_amt_pct?: number;
+  gold_promo_amt?: number;
+
+  gold_promo_min_weight?: number;
+  gold_promo_max_weight?: number;
+
+  gold_promo_min_amt?: number;
+  gold_promo_max_amt?: number;
+
   gold_promo_start_date?: string;
   gold_promo_end_date?: string;
   gold_promo_active?: boolean;
+
   create_user?: string;
   upd_user?: string;
+
+  gold_promo_type?: string;
+  gold_promo_product_type?: string;
+
   create_user_name?: string;
   upd_user_name?: string;
   create_time?: string;
