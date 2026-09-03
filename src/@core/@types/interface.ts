@@ -106,6 +106,22 @@ export interface IGoldPriceConfig {
   create_time?: string;
 }
 
+export interface IUserTier {
+  user_level_id?: number;
+  user_level_name?: string;
+  user_level_min_point?: number;
+  user_level_description?: string;
+  percentage_discount?: number;
+  topup_limit?: number;
+  disburst_limit?: number;
+  create_time?: string;
+  create_user?: string;
+  create_user_name?: string;
+  update_time?: string;
+  update_user?: string;
+  update_user_name?: string;
+}
+
 export interface IAddressProvince {
   province_id: number;
   province_name: string;

@@ -12,6 +12,9 @@ const PengaturanTabpage = (props: { activeTab: string }) => {
         <li className={`${activeTab === 'admin_fee' ? 'active' : ''}`}>
           <Link href={`/pengaturan/admin-fee`}>Admin Fee</Link>
         </li>
+        <li className={`${activeTab === 'user_tier' ? 'active' : ''}`}>
+          <Link href={`/pengaturan/user-tier`}>User Tier</Link>
+        </li>
         <li className={`${activeTab === 'investment_return' ? 'active' : ''}`}>
           <Link href={`/pengaturan/investment-return`}>Investment Return</Link>
         </li>
