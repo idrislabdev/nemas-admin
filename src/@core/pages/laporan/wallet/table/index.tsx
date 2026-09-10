@@ -123,7 +123,7 @@ const WalletTopupTable = () => {
           : '-',
     },
     {
-      title: 'Admin Fee',
+      title: 'Biaya Admin',
       dataIndex: 'topup_admin',
       key: 'topup_admin',
       width: 150,
@@ -131,6 +131,19 @@ const WalletTopupTable = () => {
       render: (_, record) =>
         record.topup_admin
           ? `Rp${formatDecimal(parseFloat(record.topup_admin.toString()))}`
+          : '-',
+    },
+    {
+      title: 'Diskon Admin',
+      dataIndex: 'discount_user_admin_fee',
+      key: 'discount_user_admin_fee',
+      width: 150,
+      align: 'right',
+      render: (_, record) =>
+        record.discount_user_admin_fee
+          ? `Rp${formatDecimal(
+              parseFloat(record.discount_user_admin_fee.toString())
+            )}`
           : '-',
     },
     {
@@ -308,7 +321,10 @@ const WalletTopupTable = () => {
           'Bank Pembayaran': item.topup_payment_bank_name,
           'Kode Referensi': item.topup_payment_ref_code,
           'Nominal Topup': `Rp${formatDecimal(Number(item.topup_amount) || 0)}`,
-          'Admin Fee': `Rp${formatDecimal(Number(item.topup_admin) || 0)}`,
+          'Biaya Admin': `Rp${formatDecimal(Number(item.topup_admin) || 0)}`,
+          'Diskon Admin': `Rp${formatDecimal(
+            Number(item.discount_user_admin_fee) || 0
+          )}`,
           'Total Topup': `Rp${formatDecimal(
             Number(item.topup_total_amount) || 0
           )}`,
@@ -465,7 +481,7 @@ const WalletTopupTable = () => {
       worksheet.views = [
         {
           state: 'frozen',
-          ySplit: 8,
+          ySplit: 9,
         },
       ];
 
@@ -511,10 +527,11 @@ const WalletTopupTable = () => {
             case 8:
             case 9:
             case 10:
+            case 11:
               horizontal = 'right';
               break;
 
-            case 11:
+            case 12:
               horizontal = 'center';
               break;
 
@@ -558,6 +575,11 @@ const WalletTopupTable = () => {
         0
       );
 
+      const totalDiscountAdmin = rows.reduce(
+        (acc, cur) => acc + (Number(cur.discount_user_admin_fee) || 0),
+        0
+      );
+
       const totalTopup = rows.reduce(
         (acc, cur) => acc + (Number(cur.topup_total_amount) || 0),
         0
@@ -573,6 +595,7 @@ const WalletTopupTable = () => {
         '',
         `Rp${formatDecimal(totalNominal)}`,
         `Rp${formatDecimal(totalAdmin)}`,
+        `Rp${formatDecimal(totalDiscountAdmin)}`,
         `Rp${formatDecimal(totalTopup)}`,
         '',
       ]);
@@ -588,10 +611,11 @@ const WalletTopupTable = () => {
           case 8:
           case 9:
           case 10:
+          case 11:
             horizontal = 'right';
             break;
 
-          case 11:
+          case 12:
             horizontal = 'center';
             break;
 
