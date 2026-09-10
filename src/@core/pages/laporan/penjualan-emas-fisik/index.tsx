@@ -30,14 +30,17 @@ const PenjualanEmasFisikPage = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // 📅 Default tanggal: tanggal 1 bulan aktif - hari ini
+  // =========================================================
+  // DEFAULT TANGGAL
+  // =========================================================
+
   const defaultStart = dayjs().startOf('month').format('YYYY-MM-DD');
 
   const defaultEnd = dayjs().format('YYYY-MM-DD');
 
-  // =============================
-  // Params
-  // =============================
+  // =========================================================
+  // PARAMS
+  // =========================================================
 
   const [params, setParams] = useState({
     format: 'json',
@@ -47,11 +50,12 @@ const PenjualanEmasFisikPage = () => {
     end_date: defaultEnd,
     search: '',
     status: '',
+    order_type: 'buy',
   });
 
-  // =============================
-  // 🔎 Debounce search
-  // =============================
+  // =========================================================
+  // DEBOUNCE SEARCH
+  // =========================================================
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -69,9 +73,33 @@ const PenjualanEmasFisikPage = () => {
     }));
   }, [debouncedSearch]);
 
-  // =============================
-  // Columns
-  // =============================
+  // =========================================================
+  // FORMAT CURRENCY
+  // =========================================================
+
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+
+    return `Rp${formatDecimal(Number(value))}`;
+  };
+
+  // =========================================================
+  // TOTAL NETTO
+  // =========================================================
+
+  const getTotalNetto = (record: ISalesOrder) => {
+    const grandTotal = Number(record.order_grand_total_price || 0);
+
+    const discountTotal = Number(record.order_discount || 0);
+
+    return grandTotal - discountTotal;
+  };
+
+  // =========================================================
+  // COLUMNS
+  // =========================================================
 
   const columns: ColumnsType<ISalesOrder> = [
     {
@@ -80,6 +108,7 @@ const PenjualanEmasFisikPage = () => {
       key: 'order_number',
       width: 150,
     },
+
     {
       title: 'Tanggal Order',
       dataIndex: 'order_timestamp',
@@ -88,12 +117,14 @@ const PenjualanEmasFisikPage = () => {
       render: (_, record) =>
         moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
     },
+
     {
       title: 'User',
       dataIndex: 'user_name',
       key: 'user_name',
       width: 150,
     },
+
     {
       title: 'Berat Emas',
       dataIndex: 'order_item_weight',
@@ -101,88 +132,194 @@ const PenjualanEmasFisikPage = () => {
       width: 150,
       align: 'right',
       render: (_, record) =>
-        record.order_item_weight
-          ? `${formatDecimal(
-              parseFloat(record.order_item_weight.toString())
-            )} Gram`
+        record.order_item_weight !== null &&
+        record.order_item_weight !== undefined
+          ? `${formatDecimal(Number(record.order_item_weight))} Gram`
           : '-',
     },
+
     {
       title: 'Nominal Pesanan',
       dataIndex: 'order_amount',
       key: 'order_amount',
       width: 150,
       align: 'right',
-      render: (_, record) =>
-        record.order_amount
-          ? `Rp${formatDecimal(parseFloat(record.order_amount.toString()))}`
-          : '-',
+      render: (_, record) => formatCurrency(record.order_amount),
     },
+
+    // =======================================================
+    // TOTAL HARGA
+    // =======================================================
+
     {
       title: 'Total Harga',
       dataIndex: 'order_total_price',
       key: 'order_total_price',
       width: 150,
       align: 'right',
-      render: (_, record) =>
-        record.order_total_price
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_total_price.toString())
-            )}`
-          : '-',
+      render: (_, record) => formatCurrency(record.order_total_price),
     },
+
+    // =======================================================
+    // BIAYA ADMIN
+    // =======================================================
+
     {
       title: 'Biaya Admin',
       dataIndex: 'order_admin_amount',
       key: 'order_admin_amount',
       width: 150,
       align: 'right',
-      render: (_, record) =>
-        record.order_admin_amount
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_admin_amount.toString())
-            )}`
-          : '-',
+      render: (_, record) => formatCurrency(record.order_admin_amount),
     },
+
+    // =======================================================
+    // DISKON BIAYA ADMIN
+    // =======================================================
+
+    {
+      title: 'Diskon Biaya Admin',
+      dataIndex: 'discount_user_admin_fee',
+      key: 'discount_user_admin_fee',
+      width: 180,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.discount_user_admin_fee),
+    },
+
+    // =======================================================
+    // BIAYA ASURANSI
+    // =======================================================
+
     {
       title: 'Biaya Asuransi',
-      dataIndex: 'order_tracking_insurance_total_round',
-      key: 'order_tracking_insurance_total_round',
-      width: 150,
+      dataIndex: 'order_tracking_insurance_total',
+      key: 'order_tracking_insurance_total',
+      width: 160,
       align: 'right',
       render: (_, record) =>
-        record.order_tracking_insurance_total_round
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_tracking_insurance_total_round.toString())
-            )}`
-          : '-',
+        formatCurrency(record.order_tracking_insurance_total),
     },
+
+    // =======================================================
+    // DISKON BIAYA ASURANSI
+    // =======================================================
+
+    {
+      title: 'Diskon Biaya Asuransi',
+      dataIndex: 'discount_user_insurance_fee',
+      key: 'discount_user_insurance_fee',
+      width: 190,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.discount_user_insurance_fee),
+    },
+
+    // =======================================================
+    // BIAYA PENGIRIMAN
+    // =======================================================
+
     {
       title: 'Biaya Pengiriman',
-      dataIndex: 'order_tracking_total_amount_round',
-      key: 'order_tracking_total_amount_round',
-      width: 150,
+      dataIndex: 'order_tracking_total_amount',
+      key: 'order_tracking_total_amount',
+      width: 170,
       align: 'right',
-      render: (_, record) =>
-        record.order_tracking_total_amount_round
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_tracking_total_amount_round.toString())
-            )}`
-          : '-',
+      render: (_, record) => formatCurrency(record.order_tracking_total_amount),
     },
+
+    // =======================================================
+    // DISKON BIAYA PENGIRIMAN
+    // =======================================================
+
+    {
+      title: 'Diskon Biaya Pengiriman',
+      dataIndex: 'discount_user_delivery_fee',
+      key: 'discount_user_delivery_fee',
+      width: 200,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.discount_user_delivery_fee),
+    },
+
+    // =======================================================
+    // BIAYA CETAK SERTIFIKAT
+    // =======================================================
+
+    {
+      title: 'Biaya Cetak Sertifikat',
+      dataIndex: 'order_total_redeem_price',
+      key: 'order_total_redeem_price',
+      width: 200,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.order_total_redeem_price),
+    },
+
+    // =======================================================
+    // DISKON BIAYA SERTIFIKAT
+    // =======================================================
+
+    {
+      title: 'Diskon Biaya Sertifikat',
+      dataIndex: 'discount_user_redeem_fee',
+      key: 'discount_user_redeem_fee',
+      width: 200,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.discount_user_redeem_fee),
+    },
+
+    // =======================================================
+    // GRAND TOTAL
+    // =======================================================
+
     {
       title: 'Grand Total',
       dataIndex: 'order_grand_total_price',
       key: 'order_grand_total_price',
+      width: 160,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.order_grand_total_price),
+    },
+
+    // =======================================================
+    // DISKON PROMO
+    // =======================================================
+
+    {
+      title: 'Diskon Promo',
+      dataIndex: 'total_user_level_discount',
+      key: 'total_user_level_discount',
+      width: 160,
+      align: 'right',
+      render: (_, record) => formatCurrency(record.total_user_level_discount),
+    },
+
+    // =======================================================
+    // DISKON TOTAL
+    // =======================================================
+
+    {
+      title: 'Diskon Total',
+      dataIndex: 'order_discount',
+      key: 'order_discount',
       width: 150,
       align: 'right',
-      render: (_, record) =>
-        record.order_grand_total_price
-          ? `Rp${formatDecimal(
-              parseFloat(record.order_grand_total_price.toString())
-            )}`
-          : '-',
+      render: (_, record) => formatCurrency(record.order_discount),
     },
+
+    // =======================================================
+    // TOTAL NETTO PENJUALAN
+    // =======================================================
+
+    {
+      title: 'Total Netto Penjualan',
+      key: 'total_netto_penjualan',
+      width: 200,
+      align: 'right',
+      render: (_, record) => formatCurrency(getTotalNetto(record)),
+    },
+
+    // =======================================================
+    // STATUS PESANAN
+    // =======================================================
+
     {
       title: 'Status Pesanan',
       dataIndex: 'order_status',
@@ -191,6 +328,11 @@ const PenjualanEmasFisikPage = () => {
       align: 'center',
       fixed: 'right',
     },
+
+    // =======================================================
+    // STATUS PEMBAYARAN
+    // =======================================================
+
     {
       title: 'Status Pembayaran',
       dataIndex: 'order_gold_payment_status',
@@ -201,22 +343,29 @@ const PenjualanEmasFisikPage = () => {
     },
   ];
 
-  // =============================
-  // Fetch Data
-  // =============================
+  // =========================================================
+  // FETCH DATA
+  // =========================================================
 
   const fetchData = useCallback(async () => {
-    const resp = await axiosInstance.get(url, {
-      params,
-    });
+    try {
+      const resp = await axiosInstance.get(url, {
+        params,
+      });
 
-    setDataTable(resp.data.results);
-    setTotal(resp.data.count);
+      setDataTable(resp.data.results);
+      setTotal(resp.data.count);
+    } catch (error) {
+      console.error('Gagal mengambil data penjualan emas fisik:', error);
+
+      setDataTable([]);
+      setTotal(0);
+    }
   }, [params, url]);
 
-  // =============================
-  // Pagination
-  // =============================
+  // =========================================================
+  // PAGINATION
+  // =========================================================
 
   const onChangePage = (val: number) => {
     setParams((prev) => ({
@@ -225,9 +374,9 @@ const PenjualanEmasFisikPage = () => {
     }));
   };
 
-  // =============================
-  // Date Range
-  // =============================
+  // =========================================================
+  // DATE RANGE
+  // =========================================================
 
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
@@ -245,9 +394,9 @@ const PenjualanEmasFisikPage = () => {
     }));
   };
 
-  // =============================
-  // Status Filter
-  // =============================
+  // =========================================================
+  // STATUS FILTER
+  // =========================================================
 
   const onStatusChange = (value: string) => {
     setParams((prev) => ({
@@ -257,20 +406,21 @@ const PenjualanEmasFisikPage = () => {
     }));
   };
 
-  // =============================
-  // Fetch All Data
-  // =============================
+  // =========================================================
+  // FETCH ALL DATA
+  // =========================================================
 
-  const fetchAllData = async (url: string, params: any) => {
-    let allRows: any[] = [];
+  const fetchAllData = async (requestUrl: string, requestParams: any) => {
+    let allRows: ISalesOrder[] = [];
 
     const limit = 100;
 
-    const firstResp = await axiosInstance.get(url, {
+    const firstResp = await axiosInstance.get(requestUrl, {
       params: {
-        ...params,
+        ...requestParams,
         limit,
         offset: 0,
+        order_type: 'buy',
       },
     });
 
@@ -281,25 +431,26 @@ const PenjualanEmasFisikPage = () => {
     const totalPages = Math.ceil(totalCount / limit);
 
     for (let i = 1; i < totalPages; i++) {
-      const resp = await axiosInstance.get(url, {
+      const resp = await axiosInstance.get(requestUrl, {
         params: {
-          ...params,
+          ...requestParams,
           limit,
           offset: i * limit,
+          order_type: 'buy',
         },
       });
 
       allRows = allRows.concat(resp.data.results);
 
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
     return allRows;
   };
 
-  // =============================
-  // Get Exported By
-  // =============================
+  // =========================================================
+  // GET EXPORTED BY
+  // =========================================================
 
   const getExportedBy = () => {
     if (typeof window === 'undefined') {
@@ -332,9 +483,9 @@ const PenjualanEmasFisikPage = () => {
     }
   };
 
-  // =============================
-  // Export Excel
-  // =============================
+  // =========================================================
+  // EXPORT EXCEL
+  // =========================================================
 
   const exportData = async () => {
     try {
@@ -344,6 +495,7 @@ const PenjualanEmasFisikPage = () => {
         ...params,
         offset: 0,
         limit: 100,
+        order_type: 'buy',
       };
 
       const rows = await fetchAllData(url, exportParams);
@@ -354,47 +506,131 @@ const PenjualanEmasFisikPage = () => {
         return;
       }
 
-      const dataToExport = rows.map((item: ISalesOrder, index: number) => ({
-        No: index + 1,
+      // =====================================================
+      // DATA EXPORT
+      // =====================================================
 
-        'Nomor Order': item.order_number || '-',
+      const dataToExport = rows.map((item: ISalesOrder, index: number) => {
+        const grandTotal = Number(item.order_grand_total_price || 0);
 
-        'Tanggal Order': moment(item.order_timestamp).format(
-          'DD MMMM YYYY HH:mm'
-        ),
+        const discountTotal = Number(item.order_discount || 0);
 
-        User: item.user_name || '-',
+        const totalNetto = grandTotal - discountTotal;
 
-        'Berat Emas': `${formatDecimal(
-          Number(item.order_item_weight || 0)
-        )} Gram`,
+        return {
+          No: index + 1,
 
-        'Nominal Pesanan': `Rp${formatDecimal(Number(item.order_amount || 0))}`,
+          'Nomor Order': item.order_number || '-',
 
-        'Total Harga': `Rp${formatDecimal(
-          Number(item.order_total_price || 0)
-        )}`,
+          'Tanggal Order': moment(item.order_timestamp).format(
+            'DD MMMM YYYY HH:mm'
+          ),
 
-        'Biaya Admin': `Rp${formatDecimal(
-          Number(item.order_admin_amount || 0)
-        )}`,
+          User: item.user_name || '-',
 
-        'Biaya Asuransi': `Rp${formatDecimal(
-          Number(item.order_tracking_insurance_total_round || 0)
-        )}`,
+          'Berat Emas': `${formatDecimal(
+            Number(item.order_item_weight || 0)
+          )} Gram`,
 
-        'Biaya Pengiriman': `Rp${formatDecimal(
-          Number(item.order_tracking_total_amount_round || 0)
-        )}`,
+          'Nominal Pesanan': `Rp${formatDecimal(
+            Number(item.order_amount || 0)
+          )}`,
 
-        'Grand Total': `Rp${formatDecimal(
-          Number(item.order_grand_total_price || 0)
-        )}`,
+          // =============================================
+          // TOTAL HARGA
+          // =============================================
 
-        'Status Pesanan': item.order_status || '-',
+          'Total Harga': `Rp${formatDecimal(
+            Number(item.order_total_price || 0)
+          )}`,
 
-        'Status Pembayaran': item.order_gold_payment_status || '-',
-      }));
+          // =============================================
+          // ADMIN
+          // =============================================
+
+          'Biaya Admin': `Rp${formatDecimal(
+            Number(item.order_admin_amount || 0)
+          )}`,
+
+          'Diskon Biaya Admin': `Rp${formatDecimal(
+            Number(item.discount_user_admin_fee || 0)
+          )}`,
+
+          // =============================================
+          // ASURANSI
+          // =============================================
+
+          'Biaya Asuransi': `Rp${formatDecimal(
+            Number(item.order_tracking_insurance_total || 0)
+          )}`,
+
+          'Diskon Biaya Asuransi': `Rp${formatDecimal(
+            Number(item.discount_user_insurance_fee || 0)
+          )}`,
+
+          // =============================================
+          // PENGIRIMAN
+          // =============================================
+
+          'Biaya Pengiriman': `Rp${formatDecimal(
+            Number(item.order_tracking_total_amount || 0)
+          )}`,
+
+          'Diskon Biaya Pengiriman': `Rp${formatDecimal(
+            Number(item.discount_user_delivery_fee || 0)
+          )}`,
+
+          // =============================================
+          // SERTIFIKAT
+          // =============================================
+
+          'Biaya Cetak Sertifikat': `Rp${formatDecimal(
+            Number(item.order_total_redeem_price || 0)
+          )}`,
+
+          'Diskon Biaya Sertifikat': `Rp${formatDecimal(
+            Number(item.discount_user_redeem_fee || 0)
+          )}`,
+
+          // =============================================
+          // GRAND TOTAL
+          // =============================================
+
+          'Grand Total': `Rp${formatDecimal(grandTotal)}`,
+
+          // =============================================
+          // DISKON PROMO
+          // =============================================
+
+          'Diskon Promo': `Rp${formatDecimal(
+            Number(item.total_user_level_discount || 0)
+          )}`,
+
+          // =============================================
+          // DISKON TOTAL
+          // =============================================
+
+          'Diskon Total': `Rp${formatDecimal(discountTotal)}`,
+
+          // =============================================
+          // NETTO
+          // =============================================
+
+          'Total Netto Penjualan': `Rp${formatDecimal(totalNetto)}`,
+
+          // =============================================
+          // STATUS
+          // =============================================
+
+          'Status Pesanan': item.order_status || '-',
+
+          'Status Pembayaran': item.order_gold_payment_status || '-',
+        };
+      });
+
+      // =====================================================
+      // WORKBOOK
+      // =====================================================
 
       const workbook = new ExcelJS.Workbook();
 
@@ -408,13 +644,33 @@ const PenjualanEmasFisikPage = () => {
 
       const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
-      const totalColumns = Object.keys(dataToExport[0]).length;
+      const header = Object.keys(dataToExport[0]);
 
-      const lastColumnLetter = String.fromCharCode(64 + totalColumns);
+      // =====================================================
+      // EXCEL COLUMN LETTER
+      // =====================================================
 
-      // =============================
-      // Title
-      // =============================
+      const getExcelColumnLetter = (columnNumber: number) => {
+        let dividend = columnNumber;
+
+        let columnName = '';
+
+        while (dividend > 0) {
+          const modulo = (dividend - 1) % 26;
+
+          columnName = String.fromCharCode(65 + modulo) + columnName;
+
+          dividend = Math.floor((dividend - modulo) / 26);
+        }
+
+        return columnName;
+      };
+
+      const lastColumnLetter = getExcelColumnLetter(header.length);
+
+      // =====================================================
+      // TITLE
+      // =====================================================
 
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
 
@@ -435,9 +691,9 @@ const PenjualanEmasFisikPage = () => {
         vertical: 'middle',
       };
 
-      // =============================
-      // Export Info
-      // =============================
+      // =====================================================
+      // EXPORT INFO
+      // =====================================================
 
       worksheet.getCell('A3').value = 'Dibuat Oleh';
 
@@ -462,10 +718,6 @@ const PenjualanEmasFisikPage = () => {
       worksheet.getCell('A6').value = 'Periode';
 
       worksheet.getCell('B6').value = `: ${periodeText}`;
-
-      // =============================
-      // Status Info
-      // =============================
 
       const statusText = params.status || 'Semua Status';
 
@@ -495,11 +747,9 @@ const PenjualanEmasFisikPage = () => {
 
       worksheet.addRow([]);
 
-      // =============================
-      // Header
-      // =============================
-
-      const header = Object.keys(dataToExport[0]);
+      // =====================================================
+      // HEADER
+      // =====================================================
 
       const headerRow = worksheet.addRow(header);
 
@@ -542,11 +792,10 @@ const PenjualanEmasFisikPage = () => {
         };
       });
 
-      // =============================
-      // Freeze Header
-      // =============================
+      // =====================================================
+      // FREEZE HEADER
+      // =====================================================
 
-      // Header berada di row 9
       worksheet.views = [
         {
           state: 'frozen',
@@ -559,16 +808,15 @@ const PenjualanEmasFisikPage = () => {
         to: `${lastColumnLetter}9`,
       };
 
-      // =============================
-      // Data
-      // =============================
+      // =====================================================
+      // DATA
+      // =====================================================
 
       dataToExport.forEach((row: any) => {
         const values = header.map((key) => row[key]);
 
         const newRow = worksheet.addRow(values);
 
-        // Zebra Row
         if (newRow.number % 2 === 1) {
           newRow.eachCell((cell) => {
             cell.fill = {
@@ -584,31 +832,34 @@ const PenjualanEmasFisikPage = () => {
         newRow.eachCell((cell, colNumber) => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-          switch (colNumber) {
-            case 1:
-              // No
-              horizontal = 'center';
-              break;
+          // No
+          if (colNumber === 1) {
+            horizontal = 'center';
+          }
 
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
-            case 11:
-              // Numeric
-              horizontal = 'right';
-              break;
+          // Numeric columns:
+          // 5 = Berat
+          // 6 = Nominal
+          // 7 = Total Harga
+          // 8 = Admin
+          // 9 = Diskon Admin
+          // 10 = Asuransi
+          // 11 = Diskon Asuransi
+          // 12 = Pengiriman
+          // 13 = Diskon Pengiriman
+          // 14 = Cetak Sertifikat
+          // 15 = Diskon Sertifikat
+          // 16 = Grand Total
+          // 17 = Diskon Promo
+          // 18 = Diskon Total
+          // 19 = Netto
+          if (colNumber >= 5 && colNumber <= 19) {
+            horizontal = 'right';
+          }
 
-            case 12:
-            case 13:
-              // Status
-              horizontal = 'center';
-              break;
-
-            default:
-              horizontal = 'left';
+          // Status
+          if (colNumber === 20 || colNumber === 21) {
+            horizontal = 'center';
           }
 
           cell.alignment = {
@@ -633,9 +884,9 @@ const PenjualanEmasFisikPage = () => {
         });
       });
 
-      // =============================
-      // Total
-      // =============================
+      // =====================================================
+      // TOTAL
+      // =====================================================
 
       const totalWeight = rows.reduce(
         (acc, cur) => acc + Number(cur.order_item_weight || 0),
@@ -657,14 +908,38 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      const totalAdminDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.discount_user_admin_fee || 0),
+        0
+      );
+
       const totalInsurance = rows.reduce(
-        (acc, cur) =>
-          acc + Number(cur.order_tracking_insurance_total_round || 0),
+        (acc, cur) => acc + Number(cur.order_tracking_insurance_total || 0),
+        0
+      );
+
+      const totalInsuranceDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.discount_user_insurance_fee || 0),
         0
       );
 
       const totalShipping = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_tracking_total_amount_round || 0),
+        (acc, cur) => acc + Number(cur.order_tracking_total_amount || 0),
+        0
+      );
+
+      const totalShippingDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.discount_user_delivery_fee || 0),
+        0
+      );
+
+      const totalCertificate = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_total_redeem_price || 0),
+        0
+      );
+
+      const totalCertificateDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.discount_user_redeem_fee || 0),
         0
       );
 
@@ -673,47 +948,81 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      const totalPromoDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.total_user_level_discount || 0),
+        0
+      );
+
+      const totalDiscount = rows.reduce(
+        (acc, cur) => acc + Number(cur.order_discount || 0),
+        0
+      );
+
+      const totalNetto = rows.reduce(
+        (acc, cur) =>
+          acc +
+          Number(cur.order_grand_total_price || 0) -
+          Number(cur.order_discount || 0),
+        0
+      );
+
       const totalRow = worksheet.addRow([
         'TOTAL',
+
         '',
+
         '',
+
         '',
+
         `${formatDecimal(totalWeight)} Gram`,
+
         `Rp${formatDecimal(totalOrder)}`,
+
         `Rp${formatDecimal(totalPrice)}`,
+
         `Rp${formatDecimal(totalAdmin)}`,
+
+        `Rp${formatDecimal(totalAdminDiscount)}`,
+
         `Rp${formatDecimal(totalInsurance)}`,
+
+        `Rp${formatDecimal(totalInsuranceDiscount)}`,
+
         `Rp${formatDecimal(totalShipping)}`,
+
+        `Rp${formatDecimal(totalShippingDiscount)}`,
+
+        `Rp${formatDecimal(totalCertificate)}`,
+
+        `Rp${formatDecimal(totalCertificateDiscount)}`,
+
         `Rp${formatDecimal(totalGrand)}`,
+
+        `Rp${formatDecimal(totalPromoDiscount)}`,
+
+        `Rp${formatDecimal(totalDiscount)}`,
+
+        `Rp${formatDecimal(totalNetto)}`,
+
         '',
+
         '',
       ]);
 
       totalRow.eachCell((cell, colNumber) => {
         let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
-        switch (colNumber) {
-          case 1:
-            horizontal = 'center';
-            break;
+        if (colNumber === 1) {
+          horizontal = 'center';
+        }
 
-          case 5:
-          case 6:
-          case 7:
-          case 8:
-          case 9:
-          case 10:
-          case 11:
-            horizontal = 'right';
-            break;
+        if (colNumber >= 5 && colNumber <= 19) {
+          horizontal = 'right';
+        }
 
-          case 12:
-          case 13:
-            horizontal = 'center';
-            break;
-
-          default:
-            horizontal = 'left';
+        if (colNumber === 20 || colNumber === 21) {
+          horizontal = 'center';
         }
 
         cell.font = {
@@ -749,9 +1058,9 @@ const PenjualanEmasFisikPage = () => {
         };
       });
 
-      // =============================
-      // Auto Width
-      // =============================
+      // =====================================================
+      // AUTO WIDTH
+      // =====================================================
 
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
@@ -770,9 +1079,9 @@ const PenjualanEmasFisikPage = () => {
         column.width = Math.min(maxLength + 3, 40);
       });
 
-      // =============================
-      // Export
-      // =============================
+      // =====================================================
+      // SAVE
+      // =====================================================
 
       const buffer = await workbook.xlsx.writeBuffer();
 
@@ -787,23 +1096,26 @@ const PenjualanEmasFisikPage = () => {
     }
   };
 
-  // =============================
-  // Fetch
-  // =============================
+  // =========================================================
+  // FETCH DATA
+  // =========================================================
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // =========================================================
+  // RENDER
+  // =========================================================
+
   return (
     <>
-      {/* =============================
-          Filter
-          ============================= */}
+      {/* =====================================================
+          FILTER
+      ===================================================== */}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Date Range */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
@@ -811,7 +1123,6 @@ const PenjualanEmasFisikPage = () => {
             value={[dayjs(params.start_date), dayjs(params.end_date)]}
           />
 
-          {/* Status */}
           <select
             value={params.status}
             onChange={(e) => onStatusChange(e.target.value)}
@@ -826,7 +1137,6 @@ const PenjualanEmasFisikPage = () => {
             <option value="unpaid">unpaid</option>
           </select>
 
-          {/* Search */}
           <input
             type="text"
             placeholder="Cari..."
@@ -836,7 +1146,6 @@ const PenjualanEmasFisikPage = () => {
           />
         </div>
 
-        {/* Export */}
         <button
           className="btn !h-[40px] btn-primary"
           onClick={exportData}
@@ -848,9 +1157,9 @@ const PenjualanEmasFisikPage = () => {
         </button>
       </div>
 
-      {/* =============================
-          Table
-          ============================= */}
+      {/* =====================================================
+          TABLE
+      ===================================================== */}
 
       <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px] mt-3">
         <Table
@@ -876,9 +1185,9 @@ const PenjualanEmasFisikPage = () => {
         </div>
       </div>
 
-      {/* =============================
-          Loading
-          ============================= */}
+      {/* =====================================================
+          LOADING
+      ===================================================== */}
 
       <ModalLoading
         isModalOpen={isModalLoading}
