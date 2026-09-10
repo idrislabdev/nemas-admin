@@ -41,19 +41,31 @@ export interface ITransferMemberList {
   transfer_member_transfered_weight: number;
   transfer_member_admin_weight: number;
 
+  // Diskon transfer member
+  transfer_user_level_discount_weight: number;
+
   transfer_member_amount: number;
+
+  // Diskon transfer member
+  transfer_member_user_level_discount_amount: number;
+
   transfer_member_amount_received: number;
+
+  total_user_level_discount: number;
 }
 
-// Helper untuk konversi index angka ke huruf kolom Excel (e.g., 1 -> A, 27 -> AA)
+// Helper untuk konversi index angka ke huruf kolom Excel
+// (e.g., 1 -> A, 27 -> AA)
 const getExcelColumnLabel = (colIndex: number): string => {
   let temp = 0;
   let letter = '';
+
   while (colIndex > 0) {
     temp = (colIndex - 1) % 26;
     letter = String.fromCharCode(65 + temp) + letter;
     colIndex = (colIndex - temp - 1) / 26;
   }
+
   return letter;
 };
 
@@ -66,10 +78,12 @@ const TransferMemberListTable = () => {
   const [dataTable, setDataTable] = useState<ITransferMemberList[]>([]);
   const [total, setTotal] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
+
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     defaultStart,
     defaultEnd,
   ]);
+
   const [searchText, setSearchText] = useState('');
   const [filterPurpose, setPurpose] = useState('');
   const [filterRoleFrom, setFilterRoleFrom] = useState('');
@@ -119,8 +133,13 @@ const TransferMemberListTable = () => {
   /* ================= SEARCH DEBOUNCE ================= */
   useEffect(() => {
     const t = setTimeout(() => {
-      setParams((prev) => ({ ...prev, search: searchText, offset: 0 }));
+      setParams((prev) => ({
+        ...prev,
+        search: searchText,
+        offset: 0,
+      }));
     }, 500);
+
     return () => clearTimeout(t);
   }, [searchText]);
 
@@ -130,7 +149,9 @@ const TransferMemberListTable = () => {
     dateStrings: string[]
   ) => {
     if (!dates || !dates[0] || !dates[1]) return;
+
     setDateRange([dates[0], dates[1]]);
+
     setParams((prev) => ({
       ...prev,
       start_date: dateStrings[0],
@@ -171,6 +192,7 @@ const TransferMemberListTable = () => {
       setIsModalLoading(true);
 
       let user: IUser | null = null;
+
       try {
         const storedUser = localStorage.getItem('user');
         user = storedUser ? JSON.parse(storedUser) : null;
@@ -187,6 +209,7 @@ const TransferMemberListTable = () => {
       });
 
       const rows = (resp.data?.results || []) as ITransferMemberList[];
+
       if (!rows.length) {
         message.warning('Tidak ada data untuk diexport');
         return;
@@ -199,6 +222,7 @@ const TransferMemberListTable = () => {
           dayjs(r.transfer_member_datetime).isValid()
             ? dayjs(r.transfer_member_datetime).format('DD MMMM YYYY HH:mm')
             : '-',
+
         Tujuan: r.purpose || '-',
 
         'Pengirim - Member No': r.user_from_member_number || '-',
@@ -210,10 +234,19 @@ const TransferMemberListTable = () => {
         'Penerima - Nama': r.user_to_user_name || '-',
 
         'Berat Transfer (gr)': Number(r.transfer_member_gold_weight) || 0,
+
         'Admin Weight (gr)': Number(r.transfer_member_admin_weight) || 0,
+
+        'Diskon Transfer Member (gr)':
+          Number(r.transfer_user_level_discount_weight) || 0,
+
         'Berat Diterima (gr)': Number(r.transfer_member_transfered_weight) || 0,
 
         'Nominal Transfer (Rp)': Number(r.transfer_member_amount) || 0,
+
+        'Diskon Transfer Member (Rp)':
+          Number(r.transfer_member_user_level_discount_amount) || 0,
+
         'Nominal Diterima (Rp)': Number(r.transfer_member_amount_received) || 0,
 
         Catatan: r.note || '-',
@@ -233,19 +266,31 @@ const TransferMemberListTable = () => {
         params.start_date && dayjs(params.start_date).isValid()
           ? dayjs(params.start_date).format('DD MMMM YYYY')
           : '-';
+
       const formattedEndDate =
         params.end_date && dayjs(params.end_date).isValid()
           ? dayjs(params.end_date).format('DD MMMM YYYY')
           : '-';
 
       const metadata = [
-        { cell: 'A1', val: 'LAPORAN TRANSFER MEMBER', bold: true, size: 14 },
-        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A1',
+          val: 'LAPORAN TRANSFER MEMBER',
+          bold: true,
+          size: 14,
+        },
+        {
+          cell: 'A2',
+          val: `Dibuat oleh : ${user?.name || '-'}`,
+        },
         {
           cell: 'A3',
           val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
         },
-        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A4',
+          val: `Total Data : ${rows.length}`,
+        },
         {
           cell: 'A5',
           val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
@@ -254,54 +299,87 @@ const TransferMemberListTable = () => {
 
       metadata.forEach((m, idx) => {
         const rowNum = idx + 1;
+
         worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+
         const c = worksheet.getCell(m.cell);
+
         c.value = m.val;
+
         c.font = {
           name: 'Calibri',
           bold: !!m.bold,
           size: m.size || 11,
           color: { argb: 'FF1E293B' },
         };
-        c.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        c.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+        };
       });
 
-      worksheet.addRow([]); // Blank Row
+      worksheet.addRow([]);
 
       /* ================= ACTIVE FILTERS INFO ================= */
       const activeFilters: string[] = [];
-      if (params.purpose) activeFilters.push(`Tujuan: ${params.purpose}`);
-      if (params.user_from_role_name)
+
+      if (params.purpose) {
+        activeFilters.push(`Tujuan: ${params.purpose}`);
+      }
+
+      if (params.user_from_role_name) {
         activeFilters.push(`Role Pengirim: ${params.user_from_role_name}`);
-      if (params.user_from_user_name)
+      }
+
+      if (params.user_from_user_name) {
         activeFilters.push(`Nama Pengirim: ${params.user_from_user_name}`);
-      if (params.user_to_role_name)
+      }
+
+      if (params.user_to_role_name) {
         activeFilters.push(`Role Penerima: ${params.user_to_role_name}`);
-      if (params.user_to_user_name)
+      }
+
+      if (params.user_to_user_name) {
         activeFilters.push(`Nama Penerima: ${params.user_to_user_name}`);
+      }
 
       if (activeFilters.length > 0) {
         const filterTitleRow = worksheet.addRow(['Filter Aktif:']);
-        filterTitleRow.font = { name: 'Calibri', bold: true, size: 10 };
+
+        filterTitleRow.font = {
+          name: 'Calibri',
+          bold: true,
+          size: 10,
+        };
+
         worksheet.mergeCells(
           `A${filterTitleRow.number}:${lastColumnLetter}${filterTitleRow.number}`
         );
 
         activeFilters.forEach((text) => {
           const filterRow = worksheet.addRow([`- ${text}`]);
-          filterRow.font = { name: 'Calibri', size: 10, italic: true };
+
+          filterRow.font = {
+            name: 'Calibri',
+            size: 10,
+            italic: true,
+          };
+
           worksheet.mergeCells(
             `A${filterRow.number}:${lastColumnLetter}${filterRow.number}`
           );
         });
 
-        worksheet.addRow([]); // Blank Row
+        worksheet.addRow([]);
       }
 
       /* ================= TABLE HEADER ================= */
       const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+
       const headerRow = worksheet.addRow(headerKeys);
       const headerRowIndex = headerRow.number;
+
       headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
@@ -311,17 +389,32 @@ const TransferMemberListTable = () => {
           color: { argb: 'FFFFFFFF' },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: 'center',
           vertical: 'middle',
           wrapText: true,
         };
+
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          bottom: { style: 'medium', color: { argb: 'FF004397' } },
-          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          top: {
+            style: 'thin',
+            color: { argb: 'FFCBD5E1' },
+          },
+          left: {
+            style: 'thin',
+            color: { argb: 'FFCBD5E1' },
+          },
+          bottom: {
+            style: 'medium',
+            color: { argb: 'FF004397' },
+          },
+          right: {
+            style: 'thin',
+            color: { argb: 'FFCBD5E1' },
+          },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -334,6 +427,7 @@ const TransferMemberListTable = () => {
 
       dataToExport.forEach((row, idx) => {
         const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+
         newRow.height = 20;
 
         const isEven = idx % 2 === 1;
@@ -341,6 +435,7 @@ const TransferMemberListTable = () => {
 
         newRow.eachCell((cell, colIndex) => {
           const header = headerKeys[colIndex - 1];
+
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
           cell.font = {
@@ -348,13 +443,14 @@ const TransferMemberListTable = () => {
             size: 10,
             color: { argb: 'FF334155' },
           };
+
           cell.alignment = {
             horizontal: isNumeric ? 'right' : 'left',
             vertical: 'middle',
           };
 
           if (isNumeric && typeof cell.value === 'number') {
-            cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+            cell.numFmt = header.includes('(gr)') ? '#,##0.0000' : '#,##0.00';
           }
 
           cell.fill = {
@@ -364,48 +460,71 @@ const TransferMemberListTable = () => {
           };
 
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            top: {
+              style: 'thin',
+              color: { argb: 'FFE2E8F0' },
+            },
+            left: {
+              style: 'thin',
+              color: { argb: 'FFE2E8F0' },
+            },
+            bottom: {
+              style: 'thin',
+              color: { argb: 'FFE2E8F0' },
+            },
+            right: {
+              style: 'thin',
+              color: { argb: 'FFE2E8F0' },
+            },
           };
         });
       });
 
       const dataEndRow = dataStartRow + dataToExport.length - 1;
 
-      /* ================= TOTAL ROW (EXCEL FORMULA) ================= */
+      /* ================= TOTAL ROW ================= */
       type NumericExportKey =
         | 'Berat Transfer (gr)'
         | 'Admin Weight (gr)'
+        | 'Diskon Transfer Member (gr)'
         | 'Berat Diterima (gr)'
         | 'Nominal Transfer (Rp)'
+        | 'Diskon Transfer Member (Rp)'
         | 'Nominal Diterima (Rp)';
 
       const totalFields: NumericExportKey[] = [
         'Berat Transfer (gr)',
         'Admin Weight (gr)',
+        'Diskon Transfer Member (gr)',
         'Berat Diterima (gr)',
         'Nominal Transfer (Rp)',
+        'Diskon Transfer Member (Rp)',
         'Nominal Diterima (Rp)',
       ];
 
       const totalRowValues = headerKeys.map((key, colIdx) => {
-        if (key === 'Tanggal') return 'TOTAL';
+        if (key === 'Tanggal') {
+          return 'TOTAL';
+        }
+
         if (totalFields.includes(key as NumericExportKey)) {
           const colLetter = getExcelColumnLabel(colIdx + 1);
+
           return {
             formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
           };
         }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.height = 22;
 
       totalRow.eachCell((cell, colIndex) => {
         const header = headerKeys[colIndex - 1];
+
         const isNumeric = totalFields.includes(header as NumericExportKey);
 
         cell.font = {
@@ -414,13 +533,14 @@ const TransferMemberListTable = () => {
           color: { argb: 'FF1E293B' },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: isNumeric ? 'right' : 'left',
           vertical: 'middle',
         };
 
         if (isNumeric) {
-          cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+          cell.numFmt = header.includes('(gr)') ? '#,##0.0000' : '#,##0.00';
         }
 
         cell.fill = {
@@ -430,44 +550,66 @@ const TransferMemberListTable = () => {
         };
 
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          bottom: { style: 'double', color: { argb: 'FF475569' } },
-          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          top: {
+            style: 'thin',
+            color: { argb: 'FF94A3B8' },
+          },
+          left: {
+            style: 'thin',
+            color: { argb: 'FF94A3B8' },
+          },
+          bottom: {
+            style: 'double',
+            color: { argb: 'FF475569' },
+          },
+          right: {
+            style: 'thin',
+            color: { argb: 'FF94A3B8' },
+          },
         };
       });
 
       /* ================= AUTOFILTER & FREEZE PANE ================= */
       worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+
       worksheet.views = [
-        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+        {
+          state: 'frozen',
+          xSplit: 0,
+          ySplit: headerRowIndex,
+        },
       ];
 
       /* ================= AUTO WIDTH ================= */
       worksheet.columns.forEach((col) => {
         let maxLen = 0;
+
         col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
-          // Abaikan baris metadata/filter di atas header agar kolom tidak melar berlebihan
+          // Abaikan baris metadata/filter
+          // di atas header agar kolom tidak melar berlebihan
           if (rowNumber < headerRowIndex) return;
 
           let strVal = '';
+
           if (
             cell.value &&
             typeof cell.value === 'object' &&
             'formula' in cell.value
           ) {
-            strVal = '123,456,789.00'; // Fallback estimasi panjang angka hasil SUM
+            strVal = '123,456,789.00';
           } else if (cell.value != null) {
             strVal = cell.value.toString();
           }
 
           maxLen = Math.max(maxLen, strVal.length);
         });
+
         col.width = Math.max(maxLen + 4, 14);
       });
 
       /* ================= SAVE FILE ================= */
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_transfer_member_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
@@ -483,6 +625,7 @@ const TransferMemberListTable = () => {
   /* ================= HANDLERS FILTER ================= */
   const handlePurposeChange = (value: string) => {
     setPurpose(value);
+
     setParams((prev) => ({
       ...prev,
       purpose: value,
@@ -492,6 +635,7 @@ const TransferMemberListTable = () => {
 
   const handleFilterRoleFrom = (value: string) => {
     setFilterRoleFrom(value);
+
     setParams((prev) => ({
       ...prev,
       user_from_role_name: value,
@@ -501,6 +645,7 @@ const TransferMemberListTable = () => {
 
   const handleFilterRoleTo = (value: string) => {
     setFilterRoleTo(value);
+
     setParams((prev) => ({
       ...prev,
       user_to_role_name: value,
@@ -605,6 +750,17 @@ const TransferMemberListTable = () => {
         align: 'right',
         render: (v) => formatDecimal(v),
       },
+
+      // DISKON TRANSFER MEMBER - GRAM
+      {
+        title: 'Diskon Transfer Member (gr)',
+        dataIndex: 'transfer_user_level_discount_weight',
+        key: 'transfer_user_level_discount_weight',
+        sorter: true,
+        align: 'right',
+        render: (v) => formatDecimal(v),
+      },
+
       {
         title: 'Berat Diterima (gr)',
         dataIndex: 'transfer_member_transfered_weight',
@@ -621,6 +777,17 @@ const TransferMemberListTable = () => {
         align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
       },
+
+      // DISKON TRANSFER MEMBER - RUPIAH
+      {
+        title: 'Diskon Transfer Member',
+        dataIndex: 'transfer_member_user_level_discount_amount',
+        key: 'transfer_member_user_level_discount_amount',
+        sorter: true,
+        align: 'right',
+        render: (v) => `Rp${formatDecimal(v)}`,
+      },
+
       {
         title: 'Nominal Diterima',
         dataIndex: 'transfer_member_amount_received',
@@ -649,12 +816,14 @@ const TransferMemberListTable = () => {
               onChange={onRangeChange}
               value={dateRange}
             />
+
             <input
               placeholder="Cari data..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 h-[40px] text-sm"
             />
+
             <Select
               allowClear
               size="large"
@@ -663,15 +832,26 @@ const TransferMemberListTable = () => {
               value={filterPurpose || undefined}
               onChange={handlePurposeChange}
               options={[
-                { value: '', label: 'Semua Tujuan' },
-                { value: 'Retur', label: 'Return' },
-                { value: 'Transfer', label: 'Transfer' },
+                {
+                  value: '',
+                  label: 'Semua Tujuan',
+                },
+                {
+                  value: 'Retur',
+                  label: 'Return',
+                },
+                {
+                  value: 'Transfer',
+                  label: 'Transfer',
+                },
               ]}
             />
           </div>
+
           <div className="flex items-center gap-[40px]">
             <div className="flex items-center gap-2">
               <label className="w-[100px]">Tipe Pengirim</label>
+
               <Select
                 allowClear
                 size="large"
@@ -680,15 +860,29 @@ const TransferMemberListTable = () => {
                 value={filterRoleFrom || undefined}
                 onChange={handleFilterRoleFrom}
                 options={[
-                  { value: '', label: 'Semua' },
-                  { value: 'Admin', label: 'Admin' },
-                  { value: 'Toko', label: 'Toko' },
-                  { value: 'User', label: 'User' },
+                  {
+                    value: '',
+                    label: 'Semua',
+                  },
+                  {
+                    value: 'Admin',
+                    label: 'Admin',
+                  },
+                  {
+                    value: 'Toko',
+                    label: 'Toko',
+                  },
+                  {
+                    value: 'User',
+                    label: 'User',
+                  },
                 ]}
               />
             </div>
+
             <div className="flex items-center gap-2">
               <label className="w-[100px]">Nama Pengirim</label>
+
               <input
                 type="text"
                 className="border rounded px-3 w-[220px] h-[40px] !font-normal"
@@ -697,9 +891,11 @@ const TransferMemberListTable = () => {
               />
             </div>
           </div>
+
           <div className="flex items-center gap-[40px]">
             <div className="flex items-center gap-2">
               <label className="w-[100px]">Tipe Penerima</label>
+
               <Select
                 allowClear
                 size="large"
@@ -708,15 +904,29 @@ const TransferMemberListTable = () => {
                 value={filterRoleTo || undefined}
                 onChange={handleFilterRoleTo}
                 options={[
-                  { value: '', label: 'Semua' },
-                  { value: 'Admin', label: 'Admin' },
-                  { value: 'Toko', label: 'Toko' },
-                  { value: 'User', label: 'User' },
+                  {
+                    value: '',
+                    label: 'Semua',
+                  },
+                  {
+                    value: 'Admin',
+                    label: 'Admin',
+                  },
+                  {
+                    value: 'Toko',
+                    label: 'Toko',
+                  },
+                  {
+                    value: 'User',
+                    label: 'User',
+                  },
                 ]}
               />
             </div>
+
             <div className="flex items-center gap-2">
               <label className="w-[100px]">Nama Penerima</label>
+
               <input
                 type="text"
                 className="border rounded px-3 w-[220px] h-[40px] !font-normal"
@@ -733,17 +943,21 @@ const TransferMemberListTable = () => {
           disabled={isModalLoading}
         >
           <FileDownload02 />
+
           {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
-      <div className=" rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
+      <div className="rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <div className="overflow-x-auto">
           <Table
             columns={columns}
             dataSource={dataTable}
             size="small"
-            scroll={{ x: 1600, y: 550 }}
+            scroll={{
+              x: 1600,
+              y: 550,
+            }}
             pagination={false}
             onChange={handleTableChange}
             rowKey="__row_id"

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DatePicker, Pagination, Table, message } from 'antd';
 import { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -14,6 +15,7 @@ import 'moment/locale/id';
 import { IUser } from '@/@core/@types/interface';
 
 moment.locale('id');
+
 const { RangePicker } = DatePicker;
 
 export interface ITransferMemberSummary {
@@ -23,22 +25,31 @@ export interface ITransferMemberSummary {
   name: string;
   email: string;
   phone_number: string;
+
   transfer_weight: number;
   transfer_weight_received: number;
   admin_weight: number;
+  user_level_discount_weight: number;
+
   transfer_amount: number;
+  user_level_discount_amount: number;
   transfer_amount_received: number;
+
+  total_user_level_discount: number;
 }
 
-// Helper untuk konversi index angka ke huruf kolom Excel (misal: 1 -> A, 27 -> AA)
+// Helper untuk konversi index angka ke huruf kolom Excel
+// Misal: 1 -> A, 26 -> Z, 27 -> AA
 const getExcelColumnLabel = (colIndex: number): string => {
   let temp = 0;
   let letter = '';
+
   while (colIndex > 0) {
     temp = (colIndex - 1) % 26;
     letter = String.fromCharCode(65 + temp) + letter;
     colIndex = (colIndex - temp - 1) / 26;
   }
+
   return letter;
 };
 
@@ -46,10 +57,13 @@ const TransferMemberSummaryTable = () => {
   const url = `/reports/transfer-member/summary`;
 
   const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+
   const today = dayjs().format('YYYY-MM-DD');
 
   const [dataTable, setDataTable] = useState<ITransferMemberSummary[]>([]);
+
   const [total, setTotal] = useState(0);
+
   const [isModalLoading, setIsModalLoading] = useState(false);
 
   const [params, setParams] = useState({
@@ -71,10 +85,15 @@ const TransferMemberSummaryTable = () => {
   const [searchText, setSearchText] = useState('');
 
   /* ================= FETCH ================= */
+
   const fetchData = useCallback(async () => {
     try {
-      const resp = await axiosInstance.get(url, { params });
+      const resp = await axiosInstance.get(url, {
+        params,
+      });
+
       setDataTable(resp.data?.results || []);
+
       setTotal(resp.data?.count || 0);
     } catch (err) {
       console.error('Fetch failed:', err);
@@ -86,6 +105,7 @@ const TransferMemberSummaryTable = () => {
   }, [fetchData]);
 
   /* ================= SEARCH DEBOUNCE ================= */
+
   useEffect(() => {
     const t = setTimeout(() => {
       setParams((prev) => ({
@@ -94,17 +114,22 @@ const TransferMemberSummaryTable = () => {
         offset: 0,
       }));
     }, 500);
+
     return () => clearTimeout(t);
   }, [searchText]);
 
   /* ================= DATE FILTER ================= */
+
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    if (!dates || !dates[0] || !dates[1]) return;
+    if (!dates || !dates[0] || !dates[1]) {
+      return;
+    }
 
     setRangeValue([dates[0], dates[1]]);
+
     setParams((prev) => ({
       ...prev,
       start_date: dateStrings[0],
@@ -114,6 +139,7 @@ const TransferMemberSummaryTable = () => {
   };
 
   /* ================= PAGINATION ================= */
+
   const onChangePage = (page: number) => {
     setParams((prev) => ({
       ...prev,
@@ -122,12 +148,15 @@ const TransferMemberSummaryTable = () => {
   };
 
   /* ================= SORTING ================= */
+
   const handleTableChange = (
     _: TablePaginationConfig,
     __: any,
     sorter: any
   ) => {
-    if (Array.isArray(sorter)) return;
+    if (Array.isArray(sorter)) {
+      return;
+    }
 
     if (sorter.order) {
       setParams((prev) => ({
@@ -140,56 +169,86 @@ const TransferMemberSummaryTable = () => {
   };
 
   /* ================= EXPORT EXCEL ================= */
+
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
       let user: IUser | null = null;
+
       try {
         const storedUser = localStorage.getItem('user');
+
         user = storedUser ? JSON.parse(storedUser) : null;
       } catch (e) {
         console.warn('Failed to parse user from localStorage', e);
       }
 
       const resp = await axiosInstance.get(url, {
-        params: { ...params, offset: 0, limit: 5000 },
+        params: {
+          ...params,
+          offset: 0,
+          limit: 5000,
+        },
       });
 
       const rows = (resp.data?.results || []) as ITransferMemberSummary[];
+
       if (!rows.length) {
         message.warning('Tidak ada data untuk diexport');
+
         return;
       }
 
       /* ================= MAP DATA ================= */
+
       const dataToExport = rows.map((r) => ({
         Nama: r.name || '-',
+
         Role: r.role_name || '-',
+
         'Nomor Member': r.member_number || '-',
+
         Email: r.email || '-',
+
         'No HP': r.phone_number || '-',
+
         'Berat Transfer (gr)': Number(r.transfer_weight) || 0,
+
         'Berat Diterima (gr)': Number(r.transfer_weight_received) || 0,
+
         'Admin Weight (gr)': Number(r.admin_weight) || 0,
+
+        'Diskon Transfer Member (gr)':
+          Number(r.user_level_discount_weight) || 0,
+
         'Nominal Transfer (Rp)': Number(r.transfer_amount) || 0,
+
+        'Diskon Transfer Member (Rp)':
+          Number(r.user_level_discount_amount) || 0,
+
         'Nominal Diterima (Rp)': Number(r.transfer_amount_received) || 0,
       }));
 
       type ExportRow = (typeof dataToExport)[number];
 
       /* ================= EXCEL WORKBOOK ================= */
+
       const workbook = new ExcelJS.Workbook();
+
       const worksheet = workbook.addWorksheet('Summary Transfer Member');
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
       /* ================= TITLE & METADATA ================= */
+
       const formattedStartDate =
         params.start_date && dayjs(params.start_date).isValid()
           ? dayjs(params.start_date).format('DD MMMM YYYY')
           : '-';
+
       const formattedEndDate =
         params.end_date && dayjs(params.end_date).isValid()
           ? dayjs(params.end_date).format('DD MMMM YYYY')
@@ -202,12 +261,18 @@ const TransferMemberSummaryTable = () => {
           bold: true,
           size: 14,
         },
-        { cell: 'A2', val: `Dibuat oleh : ${user?.name || '-'}` },
+        {
+          cell: 'A2',
+          val: `Dibuat oleh : ${user?.name || '-'}`,
+        },
         {
           cell: 'A3',
           val: `Tanggal Export : ${dayjs().format('DD MMMM YYYY HH:mm')}`,
         },
-        { cell: 'A4', val: `Total Data : ${rows.length}` },
+        {
+          cell: 'A4',
+          val: `Total Data : ${rows.length}`,
+        },
         {
           cell: 'A5',
           val: `Periode: ${formattedStartDate} s/d ${formattedEndDate}`,
@@ -216,190 +281,315 @@ const TransferMemberSummaryTable = () => {
 
       metadata.forEach((m, idx) => {
         const rowNum = idx + 1;
+
         worksheet.mergeCells(`A${rowNum}:${lastColumnLetter}${rowNum}`);
+
         const c = worksheet.getCell(m.cell);
+
         c.value = m.val;
+
         c.font = {
           name: 'Calibri',
           bold: !!m.bold,
           size: m.size || 11,
-          color: { argb: 'FF1E293B' },
+          color: {
+            argb: 'FF1E293B',
+          },
         };
-        c.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        c.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+        };
       });
 
-      worksheet.addRow([]); // Row 6 Blank
+      worksheet.addRow([]);
 
       /* ================= HEADER ================= */
+
       const headerKeys = Object.keys(dataToExport[0]) as (keyof ExportRow)[];
+
       const headerRow = worksheet.addRow(headerKeys);
+
       const headerRowIndex = 7;
+
       headerRow.height = 26;
 
       headerRow.eachCell((cell) => {
         cell.font = {
           name: 'Calibri',
           bold: true,
-          color: { argb: 'FFFFFFFF' },
+          color: {
+            argb: 'FFFFFFFF',
+          },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: 'center',
           vertical: 'middle',
           wrapText: true,
         };
+
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          bottom: { style: 'medium', color: { argb: 'FF004397' } },
-          right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          top: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
+          left: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
+          bottom: {
+            style: 'medium',
+            color: {
+              argb: 'FF004397',
+            },
+          },
+          right: {
+            style: 'thin',
+            color: {
+              argb: 'FFCBD5E1',
+            },
+          },
         };
+
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FF0057B7' },
+          fgColor: {
+            argb: 'FF0057B7',
+          },
         };
       });
 
       /* ================= DATA ROWS ================= */
+
       const dataStartRow = 8;
 
       dataToExport.forEach((row, idx) => {
         const newRow = worksheet.addRow(headerKeys.map((key) => row[key]));
+
         newRow.height = 20;
 
         const isEven = idx % 2 === 1;
+
         const rowBgColor = isEven ? 'FFF8FBFF' : 'FFFFFFFF';
 
         newRow.eachCell((cell, colIndex) => {
           const header = headerKeys[colIndex - 1];
+
           const isNumeric = header.includes('(Rp)') || header.includes('(gr)');
 
           cell.font = {
             name: 'Calibri',
             size: 10,
-            color: { argb: 'FF334155' },
+            color: {
+              argb: 'FF334155',
+            },
           };
+
           cell.alignment = {
             horizontal: isNumeric ? 'right' : 'left',
             vertical: 'middle',
           };
 
           if (isNumeric && typeof cell.value === 'number') {
-            cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+            cell.numFmt = header.includes('(gr)') ? '#,##0.0000' : '#,##0.00';
           }
 
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: rowBgColor },
+            fgColor: {
+              argb: rowBgColor,
+            },
           };
 
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+            top: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            left: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            bottom: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
+            right: {
+              style: 'thin',
+              color: {
+                argb: 'FFE2E8F0',
+              },
+            },
           };
         });
       });
 
       const dataEndRow = dataStartRow + dataToExport.length - 1;
 
-      /* ================= TOTAL ROW (EXCEL FORMULA) ================= */
+      /* ================= TOTAL ROW ================= */
+
       type NumericExportKey =
         | 'Berat Transfer (gr)'
         | 'Berat Diterima (gr)'
         | 'Admin Weight (gr)'
+        | 'Diskon Transfer Member (gr)'
         | 'Nominal Transfer (Rp)'
+        | 'Diskon Transfer Member (Rp)'
         | 'Nominal Diterima (Rp)';
 
       const totalFields: NumericExportKey[] = [
         'Berat Transfer (gr)',
         'Berat Diterima (gr)',
         'Admin Weight (gr)',
+        'Diskon Transfer Member (gr)',
         'Nominal Transfer (Rp)',
+        'Diskon Transfer Member (Rp)',
         'Nominal Diterima (Rp)',
       ];
 
       const totalRowValues = headerKeys.map((key, colIdx) => {
-        if (key === 'Nama') return 'TOTAL';
+        if (key === 'Nama') {
+          return 'TOTAL';
+        }
+
         if (totalFields.includes(key as NumericExportKey)) {
           const colLetter = getExcelColumnLabel(colIdx + 1);
+
           return {
             formula: `SUM(${colLetter}${dataStartRow}:${colLetter}${dataEndRow})`,
           };
         }
+
         return '';
       });
 
       const totalRow = worksheet.addRow(totalRowValues);
+
       totalRow.height = 22;
 
       totalRow.eachCell((cell, colIndex) => {
         const header = headerKeys[colIndex - 1];
+
         const isNumeric = totalFields.includes(header as NumericExportKey);
 
         cell.font = {
           name: 'Calibri',
           bold: true,
-          color: { argb: 'FF1E293B' },
+          color: {
+            argb: 'FF1E293B',
+          },
           size: 11,
         };
+
         cell.alignment = {
           horizontal: isNumeric ? 'right' : 'left',
           vertical: 'middle',
         };
 
         if (isNumeric) {
-          cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0';
+          cell.numFmt = header.includes('(gr)') ? '#,##0.0000' : '#,##0.00';
         }
 
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFFF59D' },
+          fgColor: {
+            argb: 'FFFFF59D',
+          },
         };
 
         cell.border = {
-          top: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          left: { style: 'thin', color: { argb: 'FF94A3B8' } },
-          bottom: { style: 'double', color: { argb: 'FF475569' } },
-          right: { style: 'thin', color: { argb: 'FF94A3B8' } },
+          top: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
+          left: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
+          bottom: {
+            style: 'double',
+            color: {
+              argb: 'FF475569',
+            },
+          },
+          right: {
+            style: 'thin',
+            color: {
+              argb: 'FF94A3B8',
+            },
+          },
         };
       });
 
       /* ================= AUTOFILTER & FREEZE PANE ================= */
+
       worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
+
       worksheet.views = [
-        { state: 'frozen', xSplit: 0, ySplit: headerRowIndex },
+        {
+          state: 'frozen',
+          xSplit: 0,
+          ySplit: headerRowIndex,
+        },
       ];
 
       /* ================= AUTO WIDTH ================= */
+
       worksheet.columns.forEach((col) => {
         let maxLen = 0;
-        col.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
-          // Abaikan baris metadata (Row 1-5) agar kolom tidak melebar melebihi batas isi tabel
-          if (rowNumber < headerRowIndex) return;
 
-          let strVal = '';
-          if (
-            cell.value &&
-            typeof cell.value === 'object' &&
-            'formula' in cell.value
-          ) {
-            strVal = '123,456,789.00'; // Estimasi fallback panjang string formula SUM
-          } else if (cell.value != null) {
-            strVal = cell.value.toString();
+        col.eachCell?.(
+          {
+            includeEmpty: true,
+          },
+          (cell, rowNumber) => {
+            if (rowNumber < headerRowIndex) {
+              return;
+            }
+
+            let strVal = '';
+
+            if (
+              cell.value &&
+              typeof cell.value === 'object' &&
+              'formula' in cell.value
+            ) {
+              strVal = '123,456,789.0000';
+            } else if (cell.value != null) {
+              strVal = cell.value.toString();
+            }
+
+            maxLen = Math.max(maxLen, strVal.length);
           }
+        );
 
-          maxLen = Math.max(maxLen, strVal.length);
-        });
         col.width = Math.max(maxLen + 4, 14);
       });
 
       /* ================= SAVE FILE ================= */
+
       const buffer = await workbook.xlsx.writeBuffer();
+
       saveAs(
         new Blob([buffer]),
         `laporan_summary_transfer_member_${dayjs().format(
@@ -408,6 +598,7 @@ const TransferMemberSummaryTable = () => {
       );
     } catch (err) {
       console.error('Export failed:', err);
+
       message.error('Gagal mengunduh laporan Excel');
     } finally {
       setIsModalLoading(false);
@@ -415,9 +606,15 @@ const TransferMemberSummaryTable = () => {
   };
 
   /* ================= COLUMNS ================= */
+
   const columns: ColumnsType<ITransferMemberSummary> = useMemo(
     () => [
-      { title: 'Nama', dataIndex: 'name', key: 'name', sorter: true },
+      {
+        title: 'Nama',
+        dataIndex: 'name',
+        key: 'name',
+        sorter: true,
+      },
       {
         title: 'Role',
         dataIndex: 'role_name',
@@ -430,8 +627,16 @@ const TransferMemberSummaryTable = () => {
         key: 'member_number',
         sorter: true,
       },
-      { title: 'Email', dataIndex: 'email', key: 'email' },
-      { title: 'No HP', dataIndex: 'phone_number', key: 'phone_number' },
+      {
+        title: 'Email',
+        dataIndex: 'email',
+        key: 'email',
+      },
+      {
+        title: 'No HP',
+        dataIndex: 'phone_number',
+        key: 'phone_number',
+      },
       {
         title: 'Berat Transfer (gr)',
         dataIndex: 'transfer_weight',
@@ -457,9 +662,25 @@ const TransferMemberSummaryTable = () => {
         render: (v) => formatDecimal(v),
       },
       {
+        title: 'Diskon Transfer Member (gr)',
+        dataIndex: 'user_level_discount_weight',
+        key: 'user_level_discount_weight',
+        sorter: true,
+        align: 'right',
+        render: (v) => formatDecimal(v),
+      },
+      {
         title: 'Nominal Transfer',
         dataIndex: 'transfer_amount',
         key: 'transfer_amount',
+        sorter: true,
+        align: 'right',
+        render: (v) => `Rp${formatDecimal(v)}`,
+      },
+      {
+        title: 'Diskon Transfer Member',
+        dataIndex: 'user_level_discount_amount',
+        key: 'user_level_discount_amount',
         sorter: true,
         align: 'right',
         render: (v) => `Rp${formatDecimal(v)}`,
@@ -478,6 +699,10 @@ const TransferMemberSummaryTable = () => {
 
   return (
     <>
+      {/* =============================
+          FILTER
+          ============================= */}
+
       <div className="flex flex-wrap justify-between gap-2 mb-4">
         <div className="flex gap-2">
           <RangePicker
@@ -486,6 +711,7 @@ const TransferMemberSummaryTable = () => {
             value={rangeValue}
             onChange={onRangeChange}
           />
+
           <input
             placeholder="Cari data..."
             value={searchText}
@@ -493,17 +719,23 @@ const TransferMemberSummaryTable = () => {
             className="border rounded px-3 h-[40px] text-sm"
           />
         </div>
+
         <button
           className="btn btn-primary !h-[40px]"
           onClick={exportData}
           disabled={isModalLoading}
         >
           <FileDownload02 />
+
           {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
-      <div className=" rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
+      {/* =============================
+          TABLE
+          ============================= */}
+
+      <div className="rounded-tr-[8px] rounded-tl-[8px] overflow-hidden">
         <div className="overflow-x-auto">
           <Table
             columns={columns}
@@ -525,6 +757,10 @@ const TransferMemberSummaryTable = () => {
           </div>
         </div>
       </div>
+
+      {/* =============================
+          LOADING
+          ============================= */}
 
       <ModalLoading
         isModalOpen={isModalLoading}

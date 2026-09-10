@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DatePicker, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -11,6 +12,7 @@ import { saveAs } from 'file-saver';
 import dayjs, { Dayjs } from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/id';
+
 moment.locale('id');
 
 const { RangePicker } = DatePicker;
@@ -19,6 +21,7 @@ export interface IWalletSummaryItem {
   total_transaction: number;
   total_amount: number;
   total_admin: number;
+  total_admin_discount: number;
   total_nett: number;
 }
 
@@ -30,17 +33,32 @@ export interface IWalletFinancialSummary {
 const WalletFinancialSummary = () => {
   const url = `/reports/wallet-transaction/financial-summary`;
 
-  // 🗓️ Default tanggal awal = tanggal 1 bulan aktif, akhir = hari ini
+  // =============================
+  // Default tanggal
+  // =============================
+
   const firstDay = dayjs().startOf('month');
   const today = dayjs();
 
+  // =============================
+  // State
+  // =============================
+
   const [dataSummary, setDataSummary] =
     useState<IWalletFinancialSummary | null>(null);
+
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  // 🔍 Search text + debounce
+  // =============================
+  // Search text + debounce
+  // =============================
+
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // =============================
+  // Params
+  // =============================
 
   const [params, setParams] = useState({
     start_date: firstDay.format('YYYY-MM-DD'),
@@ -48,44 +66,72 @@ const WalletFinancialSummary = () => {
     search: '',
   });
 
-  // ⏳ Debounce pencarian
+  // =============================
+  // Debounce pencarian
+  // =============================
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchText);
     }, 500);
+
     return () => clearTimeout(handler);
   }, [searchText]);
 
-  // 🧭 Update params ketika search berubah
+  // =============================
+  // Update params ketika search berubah
+  // =============================
+
   useEffect(() => {
-    setParams((prev) => ({ ...prev, search: debouncedSearch }));
+    setParams((prev) => ({
+      ...prev,
+      search: debouncedSearch,
+    }));
   }, [debouncedSearch]);
 
-  // 🧭 Ambil data dari API
+  // =============================
+  // Fetch data dari API
+  // =============================
+
   const fetchData = useCallback(async () => {
     try {
-      const resp = await axiosInstance.get(url, { params });
+      const resp = await axiosInstance.get(url, {
+        params,
+      });
+
       setDataSummary(resp.data);
     } catch (error) {
       console.error('Fetch summary failed:', error);
     }
   }, [params, url]);
 
-  // 📆 Filter tanggal
+  // =============================
+  // Filter tanggal
+  // =============================
+
   const onRangeChange = (
     dates: null | (Dayjs | null)[],
     dateStrings: string[]
   ) => {
-    setParams({
-      ...params,
+    if (!dates || !dates[0] || !dates[1]) {
+      return;
+    }
+
+    setParams((prev) => ({
+      ...prev,
       start_date: dateStrings[0],
       end_date: dateStrings[1],
-    });
+    }));
   };
 
-  // 📦 Export Excel
+  // =============================
+  // Get Exported By
+  // =============================
+
   const getExportedBy = () => {
-    if (typeof window === 'undefined') return '-';
+    if (typeof window === 'undefined') {
+      return '-';
+    }
 
     try {
       const rawUser =
@@ -93,7 +139,9 @@ const WalletFinancialSummary = () => {
         localStorage.getItem('auth_user') ||
         localStorage.getItem('profile');
 
-      if (!rawUser) return '-';
+      if (!rawUser) {
+        return '-';
+      }
 
       const parsedUser = JSON.parse(rawUser);
 
@@ -106,15 +154,23 @@ const WalletFinancialSummary = () => {
       );
     } catch (error) {
       console.error('Gagal membaca user dari localStorage:', error);
+
       return '-';
     }
   };
+
+  // =============================
+  // Export Excel
+  // =============================
 
   const exportData = async () => {
     try {
       setIsModalLoading(true);
 
-      const resp = await axiosInstance.get(url, { params });
+      const resp = await axiosInstance.get(url, {
+        params,
+      });
+
       const rows: IWalletFinancialSummary = resp.data;
 
       const formatRupiah = (num: number) =>
@@ -129,25 +185,44 @@ const WalletFinancialSummary = () => {
       const worksheet = workbook.addWorksheet('Ringkasan Keuangan Wallet');
 
       const exportedBy = getExportedBy();
+
       const exportedAt = dayjs().format('DD MMMM YYYY HH:mm:ss');
 
+      // =============================
+      // Mapping Data
+      // =============================
+
       const mapData = [
-        { type: 'Topup', ...rows.topup },
-        { type: 'Disburst', ...rows.disburst },
+        {
+          type: 'Topup',
+          ...rows.topup,
+        },
+        {
+          type: 'Disburst',
+          ...rows.disburst,
+        },
       ];
 
       const dataToExport = mapData.map((item, index) => ({
         No: index + 1,
+
         'Tipe Transaksi': item.type,
+
         'Total Transaksi': formatDecimal(item.total_transaction || 0),
+
         'Total Amount': formatRupiah(item.total_amount || 0),
+
         'Biaya Admin': formatRupiah(item.total_admin || 0),
+
+        'Diskon Admin': formatRupiah(item.total_admin_discount || 0),
+
         'Total Nett (Total Amount - Biaya Admin)': formatRupiah(
           item.total_nett || 0
         ),
       }));
 
       const totalColumns = Object.keys(dataToExport[0]).length;
+
       const lastColumnLetter = String.fromCharCode(64 + totalColumns);
 
       // =============================
@@ -178,12 +253,15 @@ const WalletFinancialSummary = () => {
       // =============================
 
       worksheet.getCell('A3').value = 'Dibuat Oleh';
+
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
+
       worksheet.getCell('B4').value = `: ${exportedAt}`;
 
       worksheet.getCell('A5').value = 'Total Data';
+
       worksheet.getCell('B5').value = `: ${mapData.length}`;
 
       let periodeText = 'Semua Periode';
@@ -195,12 +273,24 @@ const WalletFinancialSummary = () => {
       }
 
       worksheet.getCell('A6').value = 'Periode';
+
       worksheet.getCell('B6').value = `: ${periodeText}`;
 
-      worksheet.getCell('A3').font = { bold: true };
-      worksheet.getCell('A4').font = { bold: true };
-      worksheet.getCell('A5').font = { bold: true };
-      worksheet.getCell('A6').font = { bold: true };
+      worksheet.getCell('A3').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A4').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A5').font = {
+        bold: true,
+      };
+
+      worksheet.getCell('A6').font = {
+        bold: true,
+      };
 
       worksheet.addRow([]);
 
@@ -236,10 +326,18 @@ const WalletFinancialSummary = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -285,14 +383,24 @@ const WalletFinancialSummary = () => {
           let horizontal: ExcelJS.Alignment['horizontal'] = 'left';
 
           switch (colNumber) {
-            case 1: // No
+            case 1:
+              // No
               horizontal = 'center';
               break;
 
-            case 4: // Total Transaksi
-            case 5: // Total Amount
-            case 6: // Biaya Admin
-            case 7: // Total Nett
+            case 3:
+              // Total Transaksi
+              horizontal = 'right';
+              break;
+
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+              // Total Amount
+              // Biaya Admin
+              // Diskon Admin
+              // Total Nett
               horizontal = 'right';
               break;
 
@@ -306,10 +414,18 @@ const WalletFinancialSummary = () => {
           };
 
           cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
+            top: {
+              style: 'thin',
+            },
+            left: {
+              style: 'thin',
+            },
+            bottom: {
+              style: 'thin',
+            },
+            right: {
+              style: 'thin',
+            },
           };
         });
       });
@@ -333,6 +449,11 @@ const WalletFinancialSummary = () => {
         0
       );
 
+      const totalAdminDiscount = mapData.reduce(
+        (acc, item) => acc + (item.total_admin_discount || 0),
+        0
+      );
+
       const totalNett = mapData.reduce(
         (acc, item) => acc + (item.total_nett || 0),
         0
@@ -344,6 +465,7 @@ const WalletFinancialSummary = () => {
         formatDecimal(totalTransaction),
         formatRupiah(totalAmount),
         formatRupiah(totalAdmin),
+        formatRupiah(totalAdminDiscount),
         formatRupiah(totalNett),
       ]);
 
@@ -355,9 +477,11 @@ const WalletFinancialSummary = () => {
             horizontal = 'center';
             break;
 
+          case 3:
           case 4:
           case 5:
           case 6:
+          case 7:
             horizontal = 'right';
             break;
 
@@ -383,10 +507,18 @@ const WalletFinancialSummary = () => {
         };
 
         cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
+          top: {
+            style: 'thin',
+          },
+          left: {
+            style: 'thin',
+          },
+          bottom: {
+            style: 'thin',
+          },
+          right: {
+            style: 'thin',
+          },
         };
       });
 
@@ -397,10 +529,16 @@ const WalletFinancialSummary = () => {
       worksheet.columns.forEach((column: any) => {
         let maxLength = 10;
 
-        column.eachCell({ includeEmpty: true }, (cell: any) => {
-          const value = cell.value ? cell.value.toString() : '';
-          maxLength = Math.max(maxLength, value.length);
-        });
+        column.eachCell(
+          {
+            includeEmpty: true,
+          },
+          (cell: any) => {
+            const value = cell.value ? cell.value.toString() : '';
+
+            maxLength = Math.max(maxLength, value.length);
+          }
+        );
 
         column.width = Math.min(maxLength + 3, 40);
       });
@@ -422,11 +560,18 @@ const WalletFinancialSummary = () => {
     }
   };
 
+  // =============================
+  // Fetch ketika params berubah
+  // =============================
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // 🧱 Data tabel tampilan
+  // =============================
+  // Data tabel
+  // =============================
+
   const tableData = useMemo(
     () =>
       dataSummary
@@ -437,6 +582,7 @@ const WalletFinancialSummary = () => {
               total_transaction: dataSummary.topup.total_transaction,
               total_amount: dataSummary.topup.total_amount,
               total_admin: dataSummary.topup.total_admin,
+              total_admin_discount: dataSummary.topup.total_admin_discount,
               total_nett: dataSummary.topup.total_nett,
             },
             {
@@ -445,12 +591,17 @@ const WalletFinancialSummary = () => {
               total_transaction: dataSummary.disburst.total_transaction,
               total_amount: dataSummary.disburst.total_amount,
               total_admin: dataSummary.disburst.total_admin,
+              total_admin_discount: dataSummary.disburst.total_admin_discount,
               total_nett: dataSummary.disburst.total_nett,
             },
           ]
         : [],
     [dataSummary]
   );
+
+  // =============================
+  // Columns
+  // =============================
 
   const columns: ColumnsType<any> = useMemo(
     () => [
@@ -484,6 +635,14 @@ const WalletFinancialSummary = () => {
         render: (val) => `Rp${formatDecimal(val)}`,
       },
       {
+        title: 'Diskon Admin',
+        dataIndex: 'total_admin_discount',
+        key: 'total_admin_discount',
+        width: 180,
+        align: 'right',
+        render: (val) => `Rp${formatDecimal(val)}`,
+      },
+      {
         title: 'Total Nett',
         dataIndex: 'total_nett',
         key: 'total_nett',
@@ -494,16 +653,24 @@ const WalletFinancialSummary = () => {
     ],
     []
   );
+
   return (
     <>
+      {/* =============================
+          Filter
+          ============================= */}
+
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
+          {/* Date Range */}
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
             onChange={onRangeChange}
             value={[dayjs(params.start_date), dayjs(params.end_date)]}
           />
+
+          {/* Search */}
           <input
             type="text"
             placeholder="Cari data..."
@@ -513,17 +680,23 @@ const WalletFinancialSummary = () => {
           />
         </div>
 
+        {/* Export */}
         <button
           className="btn !h-[40px] btn-primary"
           onClick={exportData}
           disabled={isModalLoading}
         >
           <FileDownload02 />
+
           {isModalLoading ? 'Mengunduh...' : 'Export Excel'}
         </button>
       </div>
 
-      <div className="flex flex-col  rounded-tr-[8px] rounded-tl-[8px]">
+      {/* =============================
+          Table
+          ============================= */}
+
+      <div className="flex flex-col rounded-tr-[8px] rounded-tl-[8px]">
         <Table
           columns={columns}
           dataSource={tableData}
@@ -533,6 +706,10 @@ const WalletFinancialSummary = () => {
           className="table-basic"
         />
       </div>
+
+      {/* =============================
+          Loading
+          ============================= */}
 
       <ModalLoading
         isModalOpen={isModalLoading}
