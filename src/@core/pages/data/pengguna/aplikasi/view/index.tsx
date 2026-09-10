@@ -9,6 +9,7 @@ import PengggunaProfile from './profile';
 import ProfileTransaction from './transaction';
 import { UndoOutlineIcon } from '@/@core/my-icons';
 import ProfileTransactionFailed from '@/@core/pages/data/pengguna/aplikasi/view/transaction-failed';
+import ProfileLimitTopUp from '@/@core/pages/data/pengguna/aplikasi/view/limit-topup';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
@@ -27,6 +28,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
     { label: 'Profil Pengguna', value: 'profile' },
     { label: 'Transaksi', value: 'transaction' },
     { label: 'Transaksi Gagal', value: 'transaction_failed' },
+    { label: 'Limit Top up', value: 'limit_top_up' },
   ];
 
   const fetchData = useCallback(async () => {
@@ -81,6 +83,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
           {tab == 'transaction_failed' && (
             <ProfileTransactionFailed id={detail.id} />
           )}
+          {tab == 'limit_top_up' && <ProfileLimitTopUp id={detail.id} />}
         </>
       )}
     </>
