@@ -20,17 +20,24 @@ const { RangePicker } = DatePicker;
 export interface IReportWalletDisburst {
   disburst_transaction_id: string;
   disburst_timestamp: string;
+
   user_id: string;
   user_name: string;
   user_member_number: string;
+
   disburst_number: string;
+
   disburst_payment_bank_number: string;
   disburst_payment_bank_code: string;
   disburst_payment_bank_account_holder_name: string;
+
   disburst_total_amount: number;
   disburst_admin: number;
+  discount_user_admin_fee: number;
   disburst_amount: number;
+
   disburst_status: string;
+
   disburst_payment_ref: string;
 }
 
@@ -151,7 +158,7 @@ const WalletDisburstTable = () => {
           : '-',
     },
     {
-      title: 'Admin Fee',
+      title: 'Biaya Admin',
       dataIndex: 'disburst_admin',
       key: 'disburst_admin',
       width: 150,
@@ -159,6 +166,19 @@ const WalletDisburstTable = () => {
       render: (_, record) =>
         record.disburst_admin
           ? `Rp${formatDecimal(parseFloat(record.disburst_admin.toString()))}`
+          : '-',
+    },
+    {
+      title: 'Diskon Admin',
+      dataIndex: 'discount_user_admin_fee',
+      key: 'discount_user_admin_fee',
+      width: 150,
+      align: 'right',
+      render: (_, record) =>
+        record.discount_user_admin_fee
+          ? `Rp${formatDecimal(
+              parseFloat(record.discount_user_admin_fee.toString())
+            )}`
           : '-',
     },
     {
@@ -368,7 +388,11 @@ const WalletDisburstTable = () => {
             Number(item.disburst_amount) || 0
           )}`,
 
-          'Admin Fee': `Rp${formatDecimal(Number(item.disburst_admin) || 0)}`,
+          'Biaya Admin': `Rp${formatDecimal(Number(item.disburst_admin) || 0)}`,
+
+          'Diskon Admin': `Rp${formatDecimal(
+            Number(item.discount_user_admin_fee) || 0
+          )}`,
 
           'Total Disburst': `Rp${formatDecimal(
             Number(item.disburst_total_amount) || 0
@@ -424,15 +448,12 @@ const WalletDisburstTable = () => {
       // =============================
 
       worksheet.getCell('A3').value = 'Dibuat Oleh';
-
       worksheet.getCell('B3').value = `: ${exportedBy}`;
 
       worksheet.getCell('A4').value = 'Diexport Pada';
-
       worksheet.getCell('B4').value = `: ${exportedAt}`;
 
       worksheet.getCell('A5').value = 'Total Data';
-
       worksheet.getCell('B5').value = `: ${rows.length}`;
 
       let periodeText = 'Semua Periode';
@@ -444,13 +465,11 @@ const WalletDisburstTable = () => {
       }
 
       worksheet.getCell('A6').value = 'Periode';
-
       worksheet.getCell('B6').value = `: ${periodeText}`;
 
       const statusText = params.disburst_status || 'Semua Status';
 
       worksheet.getCell('A7').value = 'Status';
-
       worksheet.getCell('B7').value = `: ${statusText}`;
 
       worksheet.getCell('A3').font = {
@@ -526,7 +545,6 @@ const WalletDisburstTable = () => {
       // Freeze Header
       // =============================
 
-      // Header berada di row 9
       worksheet.views = [
         {
           state: 'frozen',
@@ -583,13 +601,15 @@ const WalletDisburstTable = () => {
             case 9:
             case 10:
             case 11:
+            case 12:
               // Nominal
-              // Admin
-              // Total
+              // Biaya Admin
+              // Diskon Admin
+              // Total Disburst
               horizontal = 'right';
               break;
 
-            case 12:
+            case 13:
               // Status
               horizontal = 'center';
               break;
@@ -634,6 +654,11 @@ const WalletDisburstTable = () => {
         0
       );
 
+      const totalDiscountAdmin = rows.reduce(
+        (acc, cur) => acc + Number(cur.discount_user_admin_fee || 0),
+        0
+      );
+
       const totalDisburst = rows.reduce(
         (acc, cur) => acc + Number(cur.disburst_total_amount || 0),
         0
@@ -650,6 +675,7 @@ const WalletDisburstTable = () => {
         '',
         `Rp${formatDecimal(totalNominal)}`,
         `Rp${formatDecimal(totalAdmin)}`,
+        `Rp${formatDecimal(totalDiscountAdmin)}`,
         `Rp${formatDecimal(totalDisburst)}`,
         '',
         '',
@@ -666,10 +692,11 @@ const WalletDisburstTable = () => {
           case 9:
           case 10:
           case 11:
+          case 12:
             horizontal = 'right';
             break;
 
-          case 12:
+          case 13:
             horizontal = 'center';
             break;
 
