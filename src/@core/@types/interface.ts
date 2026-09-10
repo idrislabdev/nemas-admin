@@ -690,24 +690,89 @@ export interface IMenu {
 
 export interface ISalesOrder {
   order_gold_id: string;
+
   order_number: string;
+
   order_timestamp: string;
+
   order_item_weight: number;
+
   order_amount: number;
+
   order_total_price: number;
+
+  // =====================================================
+  // ADMIN
+  // =====================================================
+
   order_admin_amount: number;
+
+  discount_user_admin_fee: number;
+
+  // =====================================================
+  // ASURANSI
+  // =====================================================
+
+  order_tracking_insurance_total: number;
+
   order_tracking_insurance_total_round: number;
+
+  discount_user_insurance_fee: number;
+
+  // =====================================================
+  // PENGIRIMAN
+  // =====================================================
+
+  order_tracking_amount: number;
+
+  order_tracking_total_amount: number;
+
   order_tracking_total_amount_round: number;
+
+  order_tracking_insurance: number;
+
+  order_tracking_insurance_admin: number;
+
+  order_tracking_packing: number;
+
+  discount_user_delivery_fee: number;
+
+  // =====================================================
+  // KHUSUS TARIK EMAS / REDEEM
+  // =====================================================
+
+  order_total_redeem_price: number;
+
+  discount_user_redeem_fee: number;
+
+  order_discount_weight: number;
+
+  total_user_level_discount: number;
+
+  order_discount: number;
+
   order_grand_total_price: number;
-  user_id: string;
-  user_name: string;
+
+  order_third_party_fee: number;
+
   order_type: string;
+
   order_gold_payment_status: string;
+
   order_status: string;
+
+  user_id: string;
+
+  user_name: string;
+
   create_user_name?: string;
+
   upd_user_name?: string;
+
   create_time?: string;
+
   upd_time?: string;
+
   is_picked_up: boolean;
 }
 

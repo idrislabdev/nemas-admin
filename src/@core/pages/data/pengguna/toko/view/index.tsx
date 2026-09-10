@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PengggunaProfile from './profile';
 import ProfileTransaction from './transaction';
 import { UndoOutlineIcon } from '@/@core/my-icons';
+import ProfileLimitTopUp from '@/@core/pages/data/pengguna/aplikasi/view/limit-topup';
 
 const DataPenggunaPageView = (props: { paramsId: string }) => {
   const { paramsId } = props;
@@ -26,6 +27,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
   const tabs = [
     { label: 'Profil Pengguna', value: 'profile' },
     { label: 'Transaksi', value: 'transaction' },
+    { label: 'Limit Top up', value: 'limit_top_up' },
   ];
 
   const fetchData = useCallback(async () => {
@@ -74,6 +76,7 @@ const DataPenggunaPageView = (props: { paramsId: string }) => {
             <PengggunaProfile detail={detail} setRefresData={setRefresData} />
           )}
           {tab == 'transaction' && <ProfileTransaction id={detail.id} />}
+          {tab == 'limit_top_up' && <ProfileLimitTopUp id={detail.id} />}
         </>
       )}
     </>
