@@ -14,11 +14,9 @@ const InformationsTabPage = (props: { activeTab: string }) => {
         <li className={`${activeTab === 'educational' ? 'active' : ''}`}>
           <Link href={`/data/informations/educational`}>FaQ</Link>
         </li>
-        <li className={`${activeTab === 'promo' ? 'active' : ''}`}>
-          <Link href={`/data/informations/promo`}>Promo</Link>
-        </li>
+
         <li className={`${activeTab === 'gold_promo' ? 'active' : ''}`}>
-          <Link href={`/data/informations/gold-promo`}>Promo Emas</Link>
+          <Link href={`/data/informations/gold-promo`}>Promo</Link>
         </li>
         {/* <li className={`${activeTab === 'rating' ? 'active' : ''}`}><Link href={`/data/informations/rating`}>Rating</Link></li> */}
       </ul>
