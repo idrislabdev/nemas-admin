@@ -378,6 +378,7 @@ export interface IPenggunaAplikasi {
     invest_gold_wgt: number;
     loan_wgt: number;
     loan_amt: number;
+    level_topup_limit: number;
     photo: string;
     bank_account_code: string;
     bank_account_number: string;
@@ -389,6 +390,7 @@ export interface IPenggunaAplikasi {
     address_post_code: string;
     create_time: string;
     create_user: string;
+    level_auto_edit: boolean;
     gold_stock: {
       weight: number;
     };

@@ -1,4 +1,5 @@
 import { IPenggunaAplikasi } from '@/@core/@types/interface';
+import ModalLimitTopup from '@/@core/components/modal/modal-limit-topup';
 import ModalLock from '@/@core/components/modal/modal-lock';
 import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
@@ -17,9 +18,12 @@ const PengggunaProfile = (props: {
   setRefresData: Dispatch<SetStateAction<boolean>>;
 }) => {
   const { detail, setRefresData } = props;
+
   const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
   const [isModalStatusOpen, setIsModalStatusOpen] = useState(false);
   const [isModalLockOpen, setIsModalLockOpen] = useState(false);
+  const [isModalLimitTopupOpen, setIsModalLimitTopupOpen] = useState(false);
+  const [loadingLimitTopup, setLoadingLimitTopup] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -50,17 +54,39 @@ const PengggunaProfile = (props: {
     fetchGoldPrice();
   }, [fetchGoldPrice]);
 
+  const handleUpdateLimitTopup = async (value: number) => {
+    try {
+      setLoadingLimitTopup(true);
+
+      await axiosInstance.patch(`/users/admin/${detail.id}/topup-limit`, {
+        level_topup_limit: value,
+      });
+
+      setIsModalLimitTopupOpen(false);
+
+      // Refresh detail profile agar:
+      // - level_topup_limit terbaru tampil
+      // - level_auto_edit berubah menjadi false / Edit
+      setRefresData((prev) => !prev);
+    } catch (error) {
+      console.error('Failed to update top up limit:', error);
+    } finally {
+      setLoadingLimitTopup(false);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col">
         <div className="flex">
           <div className="w-full flex border border-gray-200 rounded-tr-[6px] rounded-tl-[6px]">
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-r rounded-tr-[6px] rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+              <div className="flex items-center border-b border-r rounded-tr-[6px] rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Pengguna
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama
@@ -69,6 +95,7 @@ const PengggunaProfile = (props: {
                   : {detail.name ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Username
@@ -77,6 +104,7 @@ const PengggunaProfile = (props: {
                   : {detail.user_name ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Email
@@ -85,6 +113,7 @@ const PengggunaProfile = (props: {
                   : {detail.email ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nomor Telepon
@@ -93,6 +122,7 @@ const PengggunaProfile = (props: {
                   : {detail.phone_number ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Level
@@ -104,6 +134,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nomor Member
@@ -115,6 +146,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Verifikasi 2FA
@@ -123,6 +155,7 @@ const PengggunaProfile = (props: {
                   : {detail.is_2fa_verified ? 'Aktif' : 'Tidak Aktif'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Status Akun
@@ -131,6 +164,7 @@ const PengggunaProfile = (props: {
                   :
                   <span className="flex items-center gap-[4px]">
                     {detail.is_active ? 'Aktif' : 'Tidak Aktif'}
+
                     <a
                       className="cursor-pointer"
                       onClick={() => setIsModalStatusOpen(true)}
@@ -142,6 +176,7 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Status Akun
@@ -150,6 +185,7 @@ const PengggunaProfile = (props: {
                   :
                   <span className="flex items-center gap-[4px]">
                     {detail.is_locked ? 'Terkunci' : 'Tidak Terkunci'}
+
                     <a
                       className="cursor-pointer"
                       onClick={() => setIsModalLockOpen(true)}
@@ -161,11 +197,14 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
-              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+
+              {/* DATA SALDO / WALLET */}
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Saldo / Wallet
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Wallet Nemas
@@ -177,6 +216,7 @@ const PengggunaProfile = (props: {
                     : 'Rp0'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Tabungan Emas
@@ -184,10 +224,11 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.gold_stock.weight
-                    ? `${formatGramWithValue(detail.props.gold_stock.weight)}`
+                    ? formatGramWithValue(detail.props.gold_stock.weight)
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Deposito Emas
@@ -195,10 +236,11 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.invest_gold_wgt
-                    ? `${formatGramWithValue(detail.props.invest_gold_wgt)}`
+                    ? formatGramWithValue(detail.props.invest_gold_wgt)
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Berat Emas yg Digadaikan
@@ -206,17 +248,57 @@ const PengggunaProfile = (props: {
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
                   {detail.props && detail.props.loan_wgt
-                    ? `${formatGramWithValue(detail.props.loan_wgt)}`
+                    ? formatGramWithValue(detail.props.loan_wgt)
                     : '-'}
                 </p>
               </div>
+
+              {/* LIMIT TOP UP */}
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Limit Top Up
+                </label>
+
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  <span>:</span>
+
+                  <span className="flex items-center gap-[8px]">
+                    {detail.props?.level_topup_limit
+                      ? formatterNumber(detail.props.level_topup_limit)
+                      : '-'}
+
+                    <a
+                      className="cursor-pointer"
+                      onClick={() => setIsModalLimitTopupOpen(true)}
+                    >
+                      <span className="my-icon icon-sm">
+                        <Edit05 />
+                      </span>
+                    </a>
+                  </span>
+                </p>
+              </div>
+
+              {/* STATUS TOP UP */}
+              <div className="flex items-center border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Status Top Up
+                </label>
+
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  : {detail.props?.level_auto_edit ? ' Auto' : ' Edit'}
+                </p>
+              </div>
             </div>
+
+            {/* RIGHT SIDE */}
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Rekening Bank
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama Bank
@@ -228,6 +310,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   No. Rekening
@@ -239,6 +322,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   A.n Rekening
@@ -250,12 +334,14 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Alamat
                 </h5>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] h-[60px]">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] h-[60px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Alamat
                 </label>
@@ -266,7 +352,8 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kelurahan
                 </label>
@@ -277,6 +364,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kecamatan
@@ -288,6 +376,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kab / Kota
@@ -299,6 +388,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Provinsi
@@ -312,7 +402,8 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-gray-200 border-b px-[10px] py-[4px] min-h-[30px]">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kode Pos
                 </label>
@@ -323,6 +414,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-gray-200 border-b px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Latitude, Longitude
@@ -334,26 +426,30 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
+
+              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]" />
             </div>
           </div>
         </div>
+
         <div className="flex">
           <div className="w-full flex border border-t-0 border-gray-200 rounded-br-[6px] rounded-bl-[6px]">
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data KTP Pengguna
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   NIK
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  : {detail.ktp && detail.ktp.nik ? detail.ktp.nik : '-'}
+                  :{detail.ktp && detail.ktp.nik ? detail.ktp.nik : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama
@@ -365,6 +461,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Tgl. Lahir
@@ -376,6 +473,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Tempat Lahir
@@ -387,6 +485,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Status Perkawainan
@@ -398,6 +497,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Jenis Kelamin
@@ -407,6 +507,7 @@ const PengggunaProfile = (props: {
                   {detail.ktp && detail.ktp.gender ? detail.ktp.gender : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Golongan Darah
@@ -419,8 +520,10 @@ const PengggunaProfile = (props: {
                 </p>
               </div>
             </div>
+
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 "></div>
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50" />
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Agama
@@ -432,6 +535,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kewarganegaraan
@@ -443,6 +547,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Pekerjaan
@@ -454,6 +559,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Alamat (Domisili)
@@ -463,6 +569,7 @@ const PengggunaProfile = (props: {
                   {detail.ktp && detail.ktp.address ? detail.ktp.address : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kelurahan (Domisili)
@@ -474,6 +581,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kecamatan (Domisili)
@@ -485,30 +593,43 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kota (Domisili)
                 </label>
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  : {detail.ktp && detail.ktp.city ? detail.ktp.city : '-'}
+                  <span>:</span>
+                  {detail.ktp && detail.ktp.city ? detail.ktp.city : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
+
+              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]" />
             </div>
           </div>
         </div>
       </div>
+
       <Modalstatus
         isModalOpen={isModalStatusOpen}
         setIsModalOpen={setIsModalStatusOpen}
         userDetail={detail}
         setRefresData={setRefresData}
       />
+
       <ModalLock
         isModalOpen={isModalLockOpen}
         setIsModalOpen={setIsModalLockOpen}
         userDetail={detail}
         setRefresData={setRefresData}
+      />
+
+      <ModalLimitTopup
+        open={isModalLimitTopupOpen}
+        defaultValue={detail.props?.level_topup_limit ?? null}
+        loading={loadingLimitTopup}
+        onCancel={() => setIsModalLimitTopupOpen(false)}
+        onSubmit={handleUpdateLimitTopup}
       />
     </>
   );

@@ -16,12 +16,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
+
 import ModalBank from './modal-bank';
 import Modalstatus from '@/@core/components/modal/modal-status';
 import axiosInstance from '@/@core/utils/axios';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import ModalstatusVerify from '@/@core/components/modal/modal-status-verifikasi';
 import ModalDataToko from '@/@core/pages/data/pengguna/toko/view/profile/modal-data-toko';
+import ModalLimitTopup from '@/@core/components/modal/modal-limit-topup';
 
 const ModalAddress = dynamic(
   () => import('@/@core/components/modal/modal-address'),
@@ -33,21 +35,31 @@ const PengggunaProfile = (props: {
   setRefresData: Dispatch<SetStateAction<boolean>>;
 }) => {
   const { detail, setRefresData } = props;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalBankOpen, setIsModalBankOpen] = useState(false);
   const [isModalStatusOpen, setIsModalStatusOpen] = useState(false);
   const [isModalDataTokoOpen, setIsModalDataTokoOpen] = useState(false);
   const [isModalStatusOpenVerify, setIsModalStatusOpenVerify] = useState(false);
+
+  const [isModalLimitTopupOpen, setIsModalLimitTopupOpen] = useState(false);
+
+  const [loadingLimitTopup, setLoadingLimitTopup] = useState(false);
+
   const [userAddress, setUserAddress] = useState<IUserAddress>(
     {} as IUserAddress
   );
+
   const [userBank, setUserBank] = useState<IUserBank>({} as IUserBank);
+
   const inputFile = useRef<HTMLInputElement>(null);
+
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [goldPriceBase, setGoldPriceBase] = useState<number>(0);
 
   const showModalAddress = () => {
     setUserAddress(detail.address ? detail.address : ({} as IUserAddress));
+
     setIsModalOpen(true);
   };
 
@@ -58,6 +70,7 @@ const PengggunaProfile = (props: {
       bank_account_holder_name: detail.props.bank_account_holder_name,
       bank_account_number: detail.props.bank_account_number,
     });
+
     setIsModalBankOpen(true);
   };
 
@@ -67,18 +80,24 @@ const PengggunaProfile = (props: {
 
   const onChangeKTP = () => {
     const files = inputFile.current?.files;
+
     if (files) {
       const body = new FormData();
+
       body.append('file', files[0]);
+
       setIsModalLoading(true);
+
       axiosInstance
         .post(`users/admin/${detail.id}/upload_ktp`, body)
         .then((resp) => {
           const { data } = resp;
           const dataKTP = data.result.data;
+
           delete dataKTP.image_quality;
           delete dataKTP.status_code;
           delete dataKTP.reference_id;
+
           axiosInstance
             .put(`users/admin/${detail.id}/verify_ktp`, dataKTP)
             .then(() => {
@@ -108,6 +127,7 @@ const PengggunaProfile = (props: {
   const fetchGoldPrice = useCallback(async () => {
     try {
       const resp = await axiosInstance.get('/core/gold/price/active');
+
       setGoldPriceBase(resp.data.gold_price_base || 0);
     } catch (error) {
       console.error('Failed fetch gold price', error);
@@ -126,17 +146,42 @@ const PengggunaProfile = (props: {
     fetchGoldPrice();
   }, [fetchGoldPrice]);
 
+  const handleUpdateLimitTopup = async (value: number) => {
+    try {
+      setLoadingLimitTopup(true);
+
+      await axiosInstance.patch(`/users/admin/${detail.id}/topup-limit`, {
+        level_topup_limit: value,
+      });
+
+      setIsModalLimitTopupOpen(false);
+
+      // Refresh detail profile.
+      // Setelah berhasil update:
+      // level_topup_limit akan mengambil nilai terbaru
+      // dan level_auto_edit akan mengikuti response backend.
+      setRefresData((prev) => !prev);
+    } catch (error) {
+      console.error('Failed to update top up limit:', error);
+    } finally {
+      setLoadingLimitTopup(false);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col">
         <div className="flex">
           <div className="w-full flex border border-gray-200 rounded-tr-[6px] rounded-tl-[6px]">
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-r rounded-tr-[6px] rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+              {/* DATA PENGGUNA */}
+
+              <div className="flex items-center border-b border-r rounded-tr-[6px] rounded-tl-[6px] border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Pengguna
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama
@@ -145,6 +190,7 @@ const PengggunaProfile = (props: {
                   : {detail.name ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Username
@@ -153,6 +199,7 @@ const PengggunaProfile = (props: {
                   : {detail.user_name ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Email
@@ -161,6 +208,7 @@ const PengggunaProfile = (props: {
                   : {detail.email ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nomor Telepon
@@ -169,6 +217,7 @@ const PengggunaProfile = (props: {
                   : {detail.phone_number ?? '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Level
@@ -180,6 +229,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nomor Member
@@ -191,6 +241,7 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Verifikasi 2FA
@@ -199,14 +250,19 @@ const PengggunaProfile = (props: {
                   : {detail.is_2fa_verified ? 'Aktif' : 'Tidak Aktif'}
                 </p>
               </div>
+
+              {/* STATUS AKUN */}
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Status Akun
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :
                   <span className="flex items-center gap-[4px]">
                     {detail.is_active ? 'Aktif' : 'Tidak Aktif'}
+
                     <a
                       className="cursor-pointer"
                       onClick={() => setIsModalStatusOpen(true)}
@@ -218,10 +274,14 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
+
+              {/* STATUS VERIFIKASI */}
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Status Verifikasi
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :
                   <span className="flex items-center gap-[4px]">
@@ -230,6 +290,7 @@ const PengggunaProfile = (props: {
                     ) : (
                       <span className="text-red-600">Belum Verifikasi</span>
                     )}
+
                     {!detail.is_verified && (
                       <a
                         className="cursor-pointer"
@@ -243,19 +304,21 @@ const PengggunaProfile = (props: {
                   </span>
                 </p>
               </div>
-              <div className="flex justify-between items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+
+              {/* DATA TOKO */}
+
+              <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Toko
                 </h5>
-                <a
-                  className="cursor-pointer"
-                  onClick={() => showModalDataToko()}
-                >
+
+                <a className="cursor-pointer" onClick={showModalDataToko}>
                   <span className="my-icon icon-sm">
                     <Edit05 />
                   </span>
                 </a>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama Toko
@@ -266,6 +329,7 @@ const PengggunaProfile = (props: {
                     '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Alamat Toko
@@ -276,6 +340,7 @@ const PengggunaProfile = (props: {
                     '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   No. Telepon Toko
@@ -286,18 +351,12 @@ const PengggunaProfile = (props: {
                     '-'}
                 </p>
               </div>
-              {/* <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
-                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
-                  SIUP
-                </label>
-                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
-                  : {(detail.seller_props && detail.seller_props.siup) ?? '-'}
-                </p>
-              </div> */}
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   NIB
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :{' '}
                   {detail.seller_props && detail.seller_props.nib ? (
@@ -307,6 +366,7 @@ const PengggunaProfile = (props: {
                       target="_blank"
                     >
                       {detail.seller_props.nib}
+
                       <span className="my-icon icon-sm">
                         <ArrowSquareUpRight />
                       </span>
@@ -316,10 +376,12 @@ const PengggunaProfile = (props: {
                   )}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   NPWP
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :{' '}
                   {detail.seller_props && detail.seller_props.npwp ? (
@@ -329,6 +391,7 @@ const PengggunaProfile = (props: {
                       target="_blank"
                     >
                       {detail.seller_props.npwp}
+
                       <span className="my-icon icon-sm">
                         <ArrowSquareUpRight />
                       </span>
@@ -338,10 +401,12 @@ const PengggunaProfile = (props: {
                   )}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kontak Person
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :{' '}
                   {detail.seller_props &&
@@ -361,13 +426,15 @@ const PengggunaProfile = (props: {
                   )}
                 </p>
               </div>
-              <div className="flex items-center border-b  border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Foto KTP
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   :{' '}
-                  {detail.photo_ktp_url && detail.photo_ktp_url ? (
+                  {detail.photo_ktp_url ? (
                     <a
                       href={detail.photo_ktp_url}
                       className="text-blue-600 flex items-center gap-[4px]"
@@ -383,164 +450,249 @@ const PengggunaProfile = (props: {
                   )}
                 </p>
               </div>
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]" />
             </div>
+
+            {/* RIGHT SIDE */}
+
             <div className="flex w-1/2 flex-col">
-              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+              {/* DATA SALDO / WALLET */}
+
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Saldo / Wallet
                 </h5>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Wallet Nemas
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.wallet.balance
                     ? `Rp${formatterNumber(detail.props.wallet.balance)}`
                     : 'Rp0'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Tabungan Emas
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.gold_stock.weight
-                    ? `${formatGramWithValue(detail.props.gold_stock.weight)}`
+                    ? formatGramWithValue(detail.props.gold_stock.weight)
                     : '0'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Saldo Deposito Emas
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.invest_gold_wgt
-                    ? `${formatGramWithValue(detail.props.invest_gold_wgt)}`
+                    ? formatGramWithValue(detail.props.invest_gold_wgt)
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-r border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Berat Emas yg Digadaikan
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.loan_wgt
-                    ? `${formatGramWithValue(detail.props.loan_wgt)}`
+                    ? formatGramWithValue(detail.props.loan_wgt)
                     : '-'}
                 </p>
               </div>
-              <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+
+              {/* LIMIT TOP UP */}
+
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Limit Top Up
+                </label>
+
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  <span>:</span>
+
+                  <span className="flex items-center gap-[8px]">
+                    {detail.props?.level_topup_limit
+                      ? formatterNumber(detail.props.level_topup_limit)
+                      : '-'}
+
+                    <a
+                      className="cursor-pointer"
+                      onClick={() => setIsModalLimitTopupOpen(true)}
+                    >
+                      <span className="my-icon icon-sm">
+                        <Edit05 />
+                      </span>
+                    </a>
+                  </span>
+                </p>
+              </div>
+
+              {/* STATUS TOP UP */}
+
+              <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+                <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
+                  Status Top Up
+                </label>
+
+                <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
+                  :{detail.props?.level_auto_edit ? 'Auto' : 'Edit'}
+                </p>
+              </div>
+
+              {/* REKENING BANK */}
+
+              <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Rekening Bank
                 </h5>
-                <a className="cursor-pointer" onClick={() => showModalBank()}>
+
+                <a className="cursor-pointer" onClick={showModalBank}>
                   <span className="my-icon icon-sm">
                     <Edit05 />
                   </span>
                 </a>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Nama Bank
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.bank_name
                     ? detail.props.bank_name
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   No. Rekening
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.bank_account_number
                     ? detail.props.bank_account_number
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   A.n Rekening
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.props && detail.props.bank_account_holder_name
                     ? detail.props.bank_account_holder_name
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
-              <div className="flex justify-between items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+
+              {/* DATA ALAMAT */}
+
+              <div className="flex justify-between items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+                <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                   Data Alamat
                 </h5>
-                <a
-                  className="cursor-pointer"
-                  onClick={() => showModalAddress()}
-                >
+
+                <a className="cursor-pointer" onClick={showModalAddress}>
                   <span className="my-icon icon-sm">
                     <Edit05 />
                   </span>
                 </a>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] h-[30px]">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Alamat
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.address != ''
                     ? detail.address.address
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-b  border-gray-200 px-[10px] py-[4px] min-h-[30px]">
+
+              <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kelurahan
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.subdistrict != ''
                     ? detail.address.subdistrict
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kecamatan
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.district != ''
                     ? detail.address.district
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kab / Kota
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.city != ''
                     ? detail.address.city
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Provinsi
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address &&
                   detail.address.province != '' &&
                   detail.address.province != null
@@ -548,38 +700,49 @@ const PengggunaProfile = (props: {
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-gray-200 border-b px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Kode Pos
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.postal_code != ''
                     ? detail.address.postal_code
                     : '-'}
                 </p>
               </div>
+
               <div className="flex items-center border-gray-200 border-b px-[10px] py-[4px] min-h-[30px]">
                 <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                   Latitude, Longitude
                 </label>
+
                 <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                   <span>:</span>
+
                   {detail.address && detail.address.latitude
                     ? `${detail.address.latitude}, ${detail.address.longtitude}`
                     : '-'}
                 </p>
               </div>
-              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
+
+              <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]" />
             </div>
           </div>
         </div>
+
+        {/* DATA KTP */}
+
         <div className="flex">
           <div className="w-full flex-col flex border border-t-0 border-gray-200 rounded-br-[6px] rounded-bl-[6px]">
-            <div className="flex items-center justify-between border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50 ">
-              <h5 className="font-semibold text-neutral-700 text-[17px]/[17px] ">
+            <div className="flex items-center justify-between border-b border-gray-200 px-[10px] py-[4px] min-h-[30px] bg-gray-50">
+              <h5 className="font-semibold text-neutral-700 text-[17px]/[17px]">
                 Data KTP Pengguna
               </h5>
+
               <div>
                 <input
                   id="file-upload"
@@ -590,6 +753,7 @@ const PengggunaProfile = (props: {
                   className="hidden"
                   onChange={onChangeKTP}
                 />
+
                 <label
                   className="flex items-center gap-[4px] text-blue-600 text-sm cursor-pointer"
                   htmlFor="file-upload"
@@ -601,162 +765,206 @@ const PengggunaProfile = (props: {
                 </label>
               </div>
             </div>
+
             <div className="flex">
               <div className="flex w-1/2 flex-col">
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     NIK
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     : {detail.ktp && detail.ktp.nik ? detail.ktp.nik : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Nama
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.full_name
                       ? detail.ktp.full_name
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Tgl. Lahir
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.date_of_birth
                       ? detail.ktp.date_of_birth
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Tempat Lahir
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.place_of_birth
                       ? detail.ktp.place_of_birth
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Status Perkawainan
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.marital_status
                       ? detail.ktp.marital_status
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Jenis Kelamin
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.gender ? detail.ktp.gender : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-r border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Golongan Darah
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.blood_type
                       ? detail.ktp.blood_type
                       : '-'}
                   </p>
                 </div>
               </div>
+
               <div className="flex w-1/2 flex-col">
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Agama
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.religion
                       ? detail.ktp.religion
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kewarganegaraan
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.nationality
                       ? detail.ktp.nationality
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Pekerjaan
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.occupation
                       ? detail.ktp.occupation
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Alamat (Domisili)
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.address
                       ? detail.ktp.address
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kelurahan (Domisili)
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.administrative_village
                       ? detail.ktp.administrative_village
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kecamatan (Domisili)
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     <span>:</span>
+
                     {detail.ktp && detail.ktp.district
                       ? detail.ktp.district
                       : '-'}
                   </p>
                 </div>
+
                 <div className="flex items-center border-b border-gray-200 px-[10px] py-[4px] min-h-[30px]">
                   <label className="w-[200px] text-[14px]/[14px] text-neutral-500">
                     Kota (Domisili)
                   </label>
+
                   <p className="text-[14px]/[14px] text-neutral-700 font-medium flex items-center gap-[4px] flex-1">
                     : {detail.ktp && detail.ktp.city ? detail.ktp.city : '-'}
                   </p>
                 </div>
-                <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]"></div>
+
+                <div className="flex items-center border-gray-200 px-[10px] py-[4px] min-h-[30px]" />
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* MODALS */}
+
       <ModalAddress
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
@@ -765,6 +973,7 @@ const PengggunaProfile = (props: {
         userId={detail.id}
         setRefresData={setRefresData}
       />
+
       <ModalBank
         isModalOpen={isModalBankOpen}
         setIsModalOpen={setIsModalBankOpen}
@@ -773,6 +982,7 @@ const PengggunaProfile = (props: {
         userId={detail.id}
         setRefresData={setRefresData}
       />
+
       <ModalDataToko
         isModalOpen={isModalDataTokoOpen}
         setIsModalOpen={setIsModalDataTokoOpen}
@@ -780,18 +990,29 @@ const PengggunaProfile = (props: {
         userId={detail.id}
         setRefreshData={setRefresData}
       />
+
       <Modalstatus
         isModalOpen={isModalStatusOpen}
         setIsModalOpen={setIsModalStatusOpen}
         userDetail={detail}
         setRefresData={setRefresData}
       />
+
       <ModalstatusVerify
         isModalOpen={isModalStatusOpenVerify}
         setIsModalOpen={setIsModalStatusOpenVerify}
         userDetail={detail}
         setRefresData={setRefresData}
       />
+
+      <ModalLimitTopup
+        open={isModalLimitTopupOpen}
+        defaultValue={detail.props?.level_topup_limit ?? null}
+        loading={loadingLimitTopup}
+        onCancel={() => setIsModalLimitTopupOpen(false)}
+        onSubmit={handleUpdateLimitTopup}
+      />
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang dalam proses"

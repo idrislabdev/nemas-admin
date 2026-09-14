@@ -27,7 +27,7 @@ const ProfileLimitTopUp = (props: { id: string }) => {
 
   const [params, setParams] = useState({
     offset: 0,
-    limit: 10,
+    limit: 1000,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,13 +40,13 @@ const ProfileLimitTopUp = (props: { id: string }) => {
         `/users/admin/${id}/topup-limit/history`,
         {
           params: {
-            fetch: params.limit,
+            limit: params.limit,
             offset: params.offset,
           },
         }
       );
 
-      setHistories(resp.data ?? []);
+      setHistories(resp.data.results ?? []);
     } catch (error) {
       console.error('Failed to fetch top up limit history:', error);
     }
