@@ -286,7 +286,9 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                   className={`base ${required.gold_promo_type ? 'error' : ''}`}
                 >
                   <option value="PERCENTAGE">Percentage</option>
-                  <option value="AMOUNT">Amount</option>
+                  <option value="FIXED_AMOUNT">Fixed Amount</option>
+                  <option value="WEIGHT_BASED">Weight Based</option>
+                  <option value="WEIGHT_PERCENTAGE">Weight Percentage</option>
                 </select>
               </div>
 
