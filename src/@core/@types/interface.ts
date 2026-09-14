@@ -240,34 +240,71 @@ export interface IPromo {
 
 export interface IGoldPromo {
   gold_promo_id?: number;
+
   gold_promo_code?: string;
+
   gold_promo_description?: string;
 
   gold_promo_weight_threshold?: number;
+
   gold_promo_weight_amt?: number;
 
   gold_promo_amt_pct?: number;
+
   gold_promo_amt?: number;
 
   gold_promo_min_weight?: number;
+
   gold_promo_max_weight?: number;
 
   gold_promo_min_amt?: number;
+
   gold_promo_max_amt?: number;
 
   gold_promo_start_date?: string;
+
   gold_promo_end_date?: string;
+
   gold_promo_active?: boolean;
 
-  create_user?: string;
-  upd_user?: string;
-
   gold_promo_type?: string;
+
   gold_promo_product_type?: string;
 
+  leveling_user?: string;
+
+  leveling_user_id?: number;
+
+  promo_content?: string;
+
+  promo_url?: string;
+
+  promo_url_background?: string;
+
+  promo_tag?: string;
+
+  promo_cashback?: number;
+
+  promo_cashback_tipe_user?: string;
+
+  merchant_cashback?: string;
+
+  show_banner?: boolean;
+
+  // =========================================================
+  // AUDIT
+  // =========================================================
+
+  create_user?: string;
+
+  upd_user?: string;
+
   create_user_name?: string;
+
   upd_user_name?: string;
+
   create_time?: string;
+
   upd_time?: string;
 }
 

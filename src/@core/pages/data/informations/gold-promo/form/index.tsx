@@ -1,6 +1,7 @@
 'use client';
 
 import { IGoldPromo } from '@/@core/@types/interface';
+import UploadForm from '@/@core/components/forms/upload-form';
 import ModalLoading from '@/@core/components/modal/modal-loading';
 import axiosInstance from '@/@core/utils/axios';
 import { AxiosError } from 'axios';
@@ -8,26 +9,46 @@ import React, { useEffect, useState } from 'react';
 import CurrencyInput from 'react-currency-input-field';
 import { notification } from 'antd';
 
+const levelOptions: Record<number, string> = {
+  6: 'Opulence King',
+  5: 'Gold Sovereign',
+  4: 'Treasure Voyager',
+  3: 'Fortune Rider',
+  2: 'Coin Digger',
+  1: 'Novice Saver',
+  0: 'All',
+};
+
 const GoldPromoPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
+
   const url = `/core/gold/gold_promo`;
+
+  // =========================================================
+  // GOLD PROMO
+  // =========================================================
 
   const [goldPromoCode, setGoldPromoCode] = useState('');
   const [goldPromoDescription, setGoldPromoDescription] = useState('');
 
   const [goldPromoWeightThreshold, setGoldPromoWeightThreshold] = useState('0');
+
   const [goldPromoWeightAmt, setGoldPromoWeightAmt] = useState('0');
 
-  const [goldPromoAmt, setGoldPromoAmt] = useState('0');
   const [goldPromoAmtPct, setGoldPromoAmtPct] = useState('0');
 
+  const [goldPromoAmt, setGoldPromoAmt] = useState('0');
+
   const [goldPromoMinWeight, setGoldPromoMinWeight] = useState('0');
+
   const [goldPromoMaxWeight, setGoldPromoMaxWeight] = useState('0');
 
   const [goldPromoMinAmt, setGoldPromoMinAmt] = useState('0');
+
   const [goldPromoMaxAmt, setGoldPromoMaxAmt] = useState('0');
 
   const [goldPromoStartDate, setGoldPromoStartDate] = useState('');
+
   const [goldPromoEndDate, setGoldPromoEndDate] = useState('');
 
   const [goldPromoActive, setGoldPromoActive] = useState(true);
@@ -38,14 +59,75 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
   const [goldPromoProductType, setGoldPromoProductType] =
     useState<IGoldPromo['gold_promo_product_type']>('DIGITAL_GOLD');
 
+  // =========================================================
+  // PROMO INFORMATION
+  // =========================================================
+
+  const [levelingUser, setLevelingUser] = useState('0');
+
+  const [levelingUserId, setLevelingUserId] = useState('0');
+
+  const [promoContent, setPromoContent] = useState('');
+
+  const [promoUrl, setPromoUrl] = useState('');
+
+  const [promoUrlBackground, setPromoUrlBackground] = useState('');
+
+  const [promoTag, setPromoTag] = useState('');
+
+  const [promoCashback, setPromoCashback] = useState('0');
+
+  const [promoCashbackTipeUser, setPromoCashbackTipeUser] = useState('');
+
+  const [merchantCashback, setMerchantCashback] = useState('');
+
+  const [showBanner, setShowBanner] = useState(true);
+
+  // =========================================================
+  // FILE
+  // =========================================================
+
+  const [fileData, setFileData] = useState<File | null>(null);
+
+  // =========================================================
+  // OTHER
+  // =========================================================
+
   const [required, setRequired] = useState<IGoldPromo>({} as IGoldPromo);
 
   const [api, contextHolder] = notification.useNotification();
+
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  const parseNumber = (value: string) => {
+  // =========================================================
+  // HELPERS
+  // =========================================================
+
+  const parseNumber = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+
     return parseFloat(value.toString().replace(/\./g, '').replace(',', '.'));
   };
+
+  const formatDate = (value: string | null | undefined): string => {
+    if (!value) {
+      return '';
+    }
+
+    // Kalau sudah YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value;
+    }
+
+    // Kalau ISO datetime
+    return value.substring(0, 10);
+  };
+
+  // =========================================================
+  // CANCEL
+  // =========================================================
 
   const onCancel = () => {
     if (paramsId === 'form') {
@@ -55,9 +137,18 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
     }
   };
 
+  // =========================================================
+  // SAVE
+  // =========================================================
+
   const onSave = async () => {
     const body = {
+      // -----------------------------------------------------
+      // GOLD PROMO
+      // -----------------------------------------------------
+
       gold_promo_code: goldPromoCode,
+
       gold_promo_description: goldPromoDescription,
 
       gold_promo_weight_threshold: parseNumber(goldPromoWeightThreshold),
@@ -77,12 +168,42 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
       gold_promo_max_amt: parseNumber(goldPromoMaxAmt),
 
       gold_promo_start_date: goldPromoStartDate,
+
       gold_promo_end_date: goldPromoEndDate,
 
       gold_promo_active: goldPromoActive,
 
       gold_promo_type: goldPromoType,
+
       gold_promo_product_type: goldPromoProductType,
+
+      // -----------------------------------------------------
+      // LEVELING
+      // -----------------------------------------------------
+
+      leveling_user: levelingUser,
+
+      leveling_user_id: parseInt(levelingUserId || '0', 10),
+
+      // -----------------------------------------------------
+      // PROMO INFORMATION
+      // -----------------------------------------------------
+
+      promo_content: promoContent,
+
+      promo_url: promoUrl,
+
+      promo_url_background: promoUrlBackground,
+
+      promo_tag: promoTag,
+
+      promo_cashback: parseNumber(promoCashback),
+
+      promo_cashback_tipe_user: promoCashbackTipeUser,
+
+      merchant_cashback: merchantCashback,
+
+      show_banner: showBanner,
     };
 
     setRequired({});
@@ -92,13 +213,41 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
       let desc = '';
 
       if (paramsId === 'form') {
-        await axiosInstance.post(`${url}/create`, body);
+        // ===================================================
+        // CREATE
+        // ===================================================
+
+        const resp = await axiosInstance.post(`${url}/create`, body);
+
+        const { data } = resp;
+
+        /*
+         * Sesuaikan dengan response API.
+         *
+         * Support beberapa kemungkinan response:
+         * - { id: 123 }
+         * - { gold_promo_id: 123 }
+         */
+
+        const promoId = data?.gold_promo_id ?? data?.id;
+
+        if (fileData != null && promoId) {
+          await uploadFile(promoId);
+        }
 
         desc = 'Data Promo Telah Disimpan';
 
         clearForm();
       } else {
+        // ===================================================
+        // UPDATE
+        // ===================================================
+
         await axiosInstance.patch(`${url}/${paramsId}/`, body);
+
+        if (fileData != null) {
+          await uploadFile(paramsId);
+        }
 
         desc = 'Data Promo Telah Diupdate';
       }
@@ -116,57 +265,145 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
       const err = error as AxiosError;
 
       if (err.response && err.response.data) {
-        const data: IGoldPromo = err.response.data;
+        const data = err.response.data as IGoldPromo;
 
         setRequired(data);
       }
     }
   };
 
-  const fetchData = async () => {
-    const resp = await axiosInstance.get(`${url}/${paramsId}/`);
-    const { data } = resp;
+  // =========================================================
+  // UPLOAD
+  // =========================================================
 
-    setGoldPromoCode(data.gold_promo_code ?? '');
-    setGoldPromoDescription(data.gold_promo_description ?? '');
+  const uploadFile = async (id: string | number) => {
+    if (fileData == null) {
+      return;
+    }
 
-    setGoldPromoWeightThreshold(
-      data.gold_promo_weight_threshold?.toString() ?? '0'
-    );
+    const body = new FormData();
 
-    setGoldPromoWeightAmt(data.gold_promo_weight_amt?.toString() ?? '0');
+    body.append('file', fileData);
 
-    setGoldPromoAmt(data.gold_promo_amt?.toString() ?? '0');
-
-    setGoldPromoAmtPct(data.gold_promo_amt_pct?.toString() ?? '0');
-
-    setGoldPromoMinWeight(data.gold_promo_min_weight?.toString() ?? '0');
-
-    setGoldPromoMaxWeight(data.gold_promo_max_weight?.toString() ?? '0');
-
-    setGoldPromoMinAmt(data.gold_promo_min_amt?.toString() ?? '0');
-
-    setGoldPromoMaxAmt(data.gold_promo_max_amt?.toString() ?? '0');
-
-    setGoldPromoStartDate(data.gold_promo_start_date ?? '');
-    setGoldPromoEndDate(data.gold_promo_end_date ?? '');
-
-    setGoldPromoActive(data.gold_promo_active ?? true);
-
-    setGoldPromoType(data.gold_promo_type ?? 'PERCENTAGE');
-
-    setGoldPromoProductType(data.gold_promo_product_type ?? 'DIGITAL_GOLD');
+    await axiosInstance.post(`${url}/upload/${id}/`, body);
   };
 
+  // =========================================================
+  // FETCH DETAIL
+  // =========================================================
+
+  const fetchData = async () => {
+    setIsModalLoading(true);
+
+    try {
+      const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+
+      const { data } = resp;
+
+      // ===================================================
+      // GOLD PROMO
+      // ===================================================
+
+      setGoldPromoCode(data.gold_promo_code ?? '');
+
+      setGoldPromoDescription(data.gold_promo_description ?? '');
+
+      setGoldPromoWeightThreshold(
+        data.gold_promo_weight_threshold?.toString() ?? '0'
+      );
+
+      setGoldPromoWeightAmt(data.gold_promo_weight_amt?.toString() ?? '0');
+
+      setGoldPromoAmtPct(data.gold_promo_amt_pct?.toString() ?? '0');
+
+      setGoldPromoAmt(data.gold_promo_amt?.toString() ?? '0');
+
+      setGoldPromoMinWeight(data.gold_promo_min_weight?.toString() ?? '0');
+
+      setGoldPromoMaxWeight(data.gold_promo_max_weight?.toString() ?? '0');
+
+      setGoldPromoMinAmt(data.gold_promo_min_amt?.toString() ?? '0');
+
+      setGoldPromoMaxAmt(data.gold_promo_max_amt?.toString() ?? '0');
+
+      setGoldPromoStartDate(formatDate(data.gold_promo_start_date));
+
+      setGoldPromoEndDate(formatDate(data.gold_promo_end_date));
+
+      setGoldPromoActive(data.gold_promo_active ?? true);
+
+      setGoldPromoType(data.gold_promo_type ?? 'PERCENTAGE');
+
+      setGoldPromoProductType(data.gold_promo_product_type ?? 'DIGITAL_GOLD');
+
+      // ===================================================
+      // LEVELING
+      // ===================================================
+
+      setLevelingUser(data.leveling_user?.toString() ?? '0');
+
+      setLevelingUserId(data.leveling_user_id?.toString() ?? '0');
+
+      // ===================================================
+      // PROMO INFORMATION
+      // ===================================================
+
+      setPromoContent(data.promo_content ?? '');
+
+      setPromoUrl(data.promo_url ?? '');
+
+      setPromoUrlBackground(data.promo_url_background ?? '');
+
+      setPromoTag(data.promo_tag ?? '');
+
+      setPromoCashback(data.promo_cashback?.toString() ?? '0');
+
+      setPromoCashbackTipeUser(data.promo_cashback_tipe_user ?? '');
+
+      setMerchantCashback(data.merchant_cashback?.toString() ?? '');
+
+      setShowBanner(data.show_banner ?? true);
+    } catch (error) {
+      const err = error as AxiosError;
+
+      if (err.response && err.response.data) {
+        const data = err.response.data as IGoldPromo;
+
+        setRequired(data);
+      }
+    } finally {
+      setIsModalLoading(false);
+    }
+  };
+
+  // =========================================================
+  // FILE CHANGE
+  // =========================================================
+
+  const changeFile = (val: File | null) => {
+    if (val != null) {
+      setPromoUrlBackground(URL.createObjectURL(val));
+    } else {
+      setPromoUrlBackground('');
+    }
+
+    setFileData(val);
+  };
+
+  // =========================================================
+  // CLEAR FORM
+  // =========================================================
+
   const clearForm = () => {
+    // GOLD PROMO
     setGoldPromoCode('');
     setGoldPromoDescription('');
 
     setGoldPromoWeightThreshold('0');
     setGoldPromoWeightAmt('0');
 
-    setGoldPromoAmt('0');
     setGoldPromoAmtPct('0');
+    setGoldPromoAmt('0');
 
     setGoldPromoMinWeight('0');
     setGoldPromoMaxWeight('0');
@@ -182,14 +419,41 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
     setGoldPromoType('PERCENTAGE');
     setGoldPromoProductType('DIGITAL_GOLD');
 
+    // LEVELING
+    setLevelingUser('0');
+    setLevelingUserId('0');
+
+    // PROMO INFORMATION
+    setPromoContent('');
+    setPromoUrl('');
+    setPromoUrlBackground('');
+    setPromoTag('');
+
+    setPromoCashback('0');
+    setPromoCashbackTipeUser('');
+    setMerchantCashback('');
+
+    setShowBanner(true);
+
+    // FILE
+    setFileData(null);
+
     setRequired({});
   };
+
+  // =========================================================
+  // EFFECT
+  // =========================================================
 
   useEffect(() => {
     if (paramsId !== 'form') {
       fetchData();
     }
-  }, []);
+  }, [paramsId]);
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <>
@@ -198,9 +462,41 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
       {!isModalLoading && (
         <div className="form-input">
           <div className="flex items-start gap-[10px]">
-            {/* LEFT */}
+            {/* =================================================
+                LEFT
+            ================================================= */}
+
             <div className="form-area w-1/2">
-              {/* KODE PROMO */}
+              {/* ===============================
+                  IMAGE / BACKGROUND
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Gambar / Background{' '}
+                  {required.promo_url_background && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_url_background.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <UploadForm
+                  index={1}
+                  withFile={false}
+                  label=""
+                  isOptional={true}
+                  initFile={fileData}
+                  initUrl={promoUrlBackground}
+                  height={102}
+                  onChange={(val) => changeFile(val)}
+                />
+              </div>
+
+              {/* ===============================
+                  KODE PROMO
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Kode Promo{' '}
@@ -218,7 +514,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* DESKRIPSI */}
+              {/* ===============================
+                  DESKRIPSI
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Deskripsi Promo{' '}
@@ -238,7 +537,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* PRODUCT TYPE */}
+              {/* ===============================
+                  PRODUCT TYPE
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Product Type{' '}
@@ -261,11 +563,15 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                   }`}
                 >
                   <option value="DIGITAL_GOLD">Digital Gold</option>
+
                   <option value="PHYSICAL_GOLD">Physical Gold</option>
                 </select>
               </div>
 
-              {/* PROMO TYPE */}
+              {/* ===============================
+                  PROMO TYPE
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Tipe Promo{' '}
@@ -286,13 +592,19 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                   className={`base ${required.gold_promo_type ? 'error' : ''}`}
                 >
                   <option value="PERCENTAGE">Percentage</option>
+
                   <option value="FIXED_AMOUNT">Fixed Amount</option>
+
                   <option value="WEIGHT_BASED">Weight Based</option>
+
                   <option value="WEIGHT_PERCENTAGE">Weight Percentage</option>
                 </select>
               </div>
 
-              {/* WEIGHT THRESHOLD */}
+              {/* ===============================
+                  WEIGHT THRESHOLD
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Weight Threshold{' '}
@@ -321,7 +633,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 </div>
               </div>
 
-              {/* WEIGHT AMOUNT */}
+              {/* ===============================
+                  WEIGHT AMOUNT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Weight Amount{' '}
@@ -350,7 +665,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 </div>
               </div>
 
-              {/* AMOUNT */}
+              {/* ===============================
+                  AMOUNT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Jumlah{' '}
@@ -371,7 +689,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* AMOUNT PERCENTAGE */}
+              {/* ===============================
+                  AMOUNT PERCENTAGE
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Jumlah PCT{' '}
@@ -398,7 +719,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 </div>
               </div>
 
-              {/* STATUS */}
+              {/* ===============================
+                  STATUS
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Status Promo{' '}
@@ -423,11 +747,70 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                   <option value="not_active">Tidak Aktif</option>
                 </select>
               </div>
+
+              {/* ===============================
+                  LEVEL USER
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Level User{' '}
+                  {required.leveling_user && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.leveling_user.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <select
+                  value={levelingUser}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setLevelingUser(value);
+                    setLevelingUserId(value);
+                  }}
+                  className={`base ${required.leveling_user ? 'error' : ''}`}
+                >
+                  {Object.entries(levelOptions).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ===============================
+                  PROMO CONTENT
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Promo Content{' '}
+                  {required.promo_content && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_content.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <input
+                  value={promoContent}
+                  onChange={(e) => setPromoContent(e.target.value)}
+                  className={`base ${required.promo_content ? 'error' : ''}`}
+                />
+              </div>
             </div>
 
-            {/* RIGHT */}
+            {/* =================================================
+                RIGHT
+            ================================================= */}
+
             <div className="form-area w-1/2">
-              {/* MIN WEIGHT */}
+              {/* ===============================
+                  MIN WEIGHT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Berat Minimal{' '}
@@ -450,7 +833,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* MAX WEIGHT */}
+              {/* ===============================
+                  MAX WEIGHT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Berat Maksimal{' '}
@@ -473,7 +859,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* MIN AMOUNT */}
+              {/* ===============================
+                  MIN AMOUNT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Minimal Amount{' '}
@@ -497,7 +886,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* MAX AMOUNT */}
+              {/* ===============================
+                  MAX AMOUNT
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Maksimal Amount{' '}
@@ -521,7 +913,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* START DATE */}
+              {/* ===============================
+                  START DATE
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Tanggal Mulai Promo{' '}
@@ -542,7 +937,10 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                 />
               </div>
 
-              {/* END DATE */}
+              {/* ===============================
+                  END DATE
+              =============================== */}
+
               <div className="input-area">
                 <label>
                   Tanggal Berakhir Promo{' '}
@@ -562,10 +960,152 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
                   }`}
                 />
               </div>
+
+              {/* ===============================
+                  PROMO URL
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Promo URL{' '}
+                  {required.promo_url && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_url.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <input
+                  value={promoUrl}
+                  onChange={(e) => setPromoUrl(e.target.value)}
+                  className={`base ${required.promo_url ? 'error' : ''}`}
+                />
+              </div>
+
+              {/* ===============================
+                  PROMO TAG
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Promo Tag{' '}
+                  {required.promo_tag && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_tag.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <input
+                  value={promoTag}
+                  onChange={(e) => setPromoTag(e.target.value)}
+                  type="text"
+                  className={`base ${required.promo_tag ? 'error' : ''}`}
+                />
+              </div>
+
+              {/* ===============================
+                  PROMO CASHBACK
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Promo Cashback{' '}
+                  {required.promo_cashback && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_cashback.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <CurrencyInput
+                  value={promoCashback}
+                  decimalsLimit={2}
+                  decimalSeparator=","
+                  groupSeparator="."
+                  onValueChange={(value) => setPromoCashback(value || '0')}
+                  className={`base ${required.promo_cashback ? 'error' : ''}`}
+                  placeholder="0"
+                />
+              </div>
+
+              {/* ===============================
+                  CASHBACK USER TYPE
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Tipe User Cashback{' '}
+                  {required.promo_cashback_tipe_user && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.promo_cashback_tipe_user.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <input
+                  value={promoCashbackTipeUser}
+                  onChange={(e) => setPromoCashbackTipeUser(e.target.value)}
+                  className={`base ${
+                    required.promo_cashback_tipe_user ? 'error' : ''
+                  }`}
+                />
+              </div>
+
+              {/* ===============================
+                  MERCHANT CASHBACK
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Merchant Cashback{' '}
+                  {required.merchant_cashback && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.merchant_cashback.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <input
+                  value={merchantCashback}
+                  onChange={(e) => setMerchantCashback(e.target.value)}
+                  className={`base ${
+                    required.merchant_cashback ? 'error' : ''
+                  }`}
+                />
+              </div>
+
+              {/* ===============================
+                  SHOW BANNER
+              =============================== */}
+
+              <div className="input-area">
+                <label>
+                  Show Banner{' '}
+                  {required.show_banner && (
+                    <span className="text-red-500 text-[10px]/[14px] italic">
+                      ({required.show_banner.toString()})
+                    </span>
+                  )}
+                </label>
+
+                <select
+                  value={showBanner ? 'true' : 'false'}
+                  onChange={(e) => setShowBanner(e.target.value === 'true')}
+                  className={`base ${required.show_banner ? 'error' : ''}`}
+                >
+                  <option value="true">Ya</option>
+
+                  <option value="false">Tidak</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* BUTTON */}
+          {/* =================================================
+              BUTTON
+          ================================================= */}
+
           <div className="form-button">
             <button className="btn btn-outline-secondary" onClick={onCancel}>
               Batal
