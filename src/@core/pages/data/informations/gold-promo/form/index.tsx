@@ -221,14 +221,6 @@ const GoldPromoPageForm = (props: { paramsId: string }) => {
 
         const { data } = resp;
 
-        /*
-         * Sesuaikan dengan response API.
-         *
-         * Support beberapa kemungkinan response:
-         * - { id: 123 }
-         * - { gold_promo_id: 123 }
-         */
-
         const promoId = data?.gold_promo_id ?? data?.id;
 
         if (fileData != null && promoId) {
