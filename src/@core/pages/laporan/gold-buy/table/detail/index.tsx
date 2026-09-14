@@ -30,6 +30,7 @@ export interface IGoldBuyTransaction {
   weight: number;
   gold_history_price_buy: number;
   total_price: number;
+  total_user_level_discount: number;
   status: string;
   weight_before: string;
   weight_after: string;
@@ -230,7 +231,7 @@ const GoldBuyDigitalDetailTable = () => {
 
       const worksheet = workbook.addWorksheet('Laporan Pembelian Emas');
 
-      const totalColumns = 15;
+      const totalColumns = 16;
 
       // =============================
       // TITLE
@@ -319,6 +320,7 @@ const GoldBuyDigitalDetailTable = () => {
         'Berat Sesudah',
         'Harga Emas /gr',
         'Total Harga',
+        'Diskon Promo',
         'Status',
         'Kode Seller',
         'Komisi (%)',
@@ -406,6 +408,8 @@ const GoldBuyDigitalDetailTable = () => {
 
           Number(item.total_price || 0),
 
+          Number(item.total_user_level_discount || 0),
+
           item.status || '-',
 
           item.user_seller_unique_code || '-',
@@ -418,6 +422,7 @@ const GoldBuyDigitalDetailTable = () => {
         const newRow = worksheet.addRow(rowValues);
 
         // Zebra
+
         if (index % 2 === 1) {
           newRow.eachCell((cell) => {
             cell.fill = {
@@ -435,8 +440,8 @@ const GoldBuyDigitalDetailTable = () => {
 
           switch (colNumber) {
             case 1:
-            case 12:
             case 13:
+            case 14:
               horizontal = 'center';
               break;
 
@@ -446,20 +451,24 @@ const GoldBuyDigitalDetailTable = () => {
               horizontal = 'right';
 
               cell.numFmt = weightFormat;
+
               break;
 
             case 10:
             case 11:
-            case 15:
+            case 12:
+            case 16:
               horizontal = 'right';
 
               cell.numFmt = currencyFormat;
+
               break;
 
-            case 14:
+            case 15:
               horizontal = 'right';
 
               cell.numFmt = percentFormat;
+
               break;
 
             default:
@@ -498,31 +507,49 @@ const GoldBuyDigitalDetailTable = () => {
 
       const totalRow = worksheet.addRow([
         'TOTAL',
+
         '',
+
         '',
+
         '',
+
         '',
+
         '',
+
         {
           formula: `SUM(G${startRow}:G${endRow})`,
         },
+
         {
           formula: `SUM(H${startRow}:H${endRow})`,
         },
+
         {
           formula: `SUM(I${startRow}:I${endRow})`,
         },
+
         {
           formula: `AVERAGE(J${startRow}:J${endRow})`,
         },
+
         {
           formula: `SUM(K${startRow}:K${endRow})`,
         },
-        '',
-        '',
-        '',
+
         {
-          formula: `SUM(O${startRow}:O${endRow})`,
+          formula: `SUM(L${startRow}:L${endRow})`,
+        },
+
+        '',
+
+        '',
+
+        '',
+
+        {
+          formula: `SUM(P${startRow}:P${endRow})`,
         },
       ]);
 
@@ -535,9 +562,9 @@ const GoldBuyDigitalDetailTable = () => {
 
         if (colNumber === 1) {
           horizontal = 'center';
-        } else if ((colNumber >= 7 && colNumber <= 11) || colNumber === 15) {
+        } else if ((colNumber >= 7 && colNumber <= 12) || colNumber === 16) {
           horizontal = 'right';
-        } else if (colNumber >= 12) {
+        } else if (colNumber >= 13) {
           horizontal = 'center';
         }
 
@@ -545,7 +572,12 @@ const GoldBuyDigitalDetailTable = () => {
           cell.numFmt = weightFormat;
         }
 
-        if (colNumber === 10 || colNumber === 11 || colNumber === 15) {
+        if (
+          colNumber === 10 ||
+          colNumber === 11 ||
+          colNumber === 12 ||
+          colNumber === 16
+        ) {
           cell.numFmt = currencyFormat;
         }
 
@@ -659,6 +691,7 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => (val ? moment(val).format('DD MMM YYYY HH:mm') : '-'),
       },
+
       {
         title: 'Nomor Transaksi',
         dataIndex: 'gold_buy_number',
@@ -666,6 +699,7 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => val || '-',
       },
+
       {
         title: 'Nama User',
         dataIndex: 'user_name',
@@ -673,6 +707,7 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => val || '-',
       },
+
       {
         title: 'Nomor Member',
         dataIndex: 'user_member_number',
@@ -680,18 +715,21 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => val || '-',
       },
+
       {
         title: 'Email',
         dataIndex: 'user_email',
         key: 'user_email',
         render: (val) => val || '-',
       },
+
       {
         title: 'No. HP',
         dataIndex: 'user_phone_number',
         key: 'user_phone_number',
         render: (val) => val || '-',
       },
+
       {
         title: 'Berat (gram)',
         dataIndex: 'weight',
@@ -706,6 +744,7 @@ const GoldBuyDigitalDetailTable = () => {
               })
             : '0,0000',
       },
+
       {
         title: 'Berat Sebelum',
         dataIndex: 'weight_before',
@@ -720,6 +759,7 @@ const GoldBuyDigitalDetailTable = () => {
               })
             : '-',
       },
+
       {
         title: 'Berat Sesudah',
         dataIndex: 'weight_after',
@@ -734,6 +774,7 @@ const GoldBuyDigitalDetailTable = () => {
               })
             : '-',
       },
+
       {
         title: 'Harga Emas /gr',
         dataIndex: 'gold_history_price_buy',
@@ -742,6 +783,7 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => (val ? `Rp ${formatDecimal(val)}` : 'Rp 0'),
       },
+
       {
         title: 'Total Harga',
         dataIndex: 'total_price',
@@ -750,6 +792,20 @@ const GoldBuyDigitalDetailTable = () => {
         sorter: true,
         render: (val) => (val ? `Rp ${formatDecimal(val)}` : 'Rp 0'),
       },
+
+      /* =========================================
+           DISKON PROMO
+        ========================================= */
+
+      {
+        title: 'Diskon Promo',
+        dataIndex: 'total_user_level_discount',
+        key: 'total_user_level_discount',
+        align: 'right',
+        sorter: true,
+        render: (val) => (val ? `Rp ${formatDecimal(val)}` : 'Rp 0'),
+      },
+
       {
         title: 'Status',
         dataIndex: 'status',
@@ -774,6 +830,7 @@ const GoldBuyDigitalDetailTable = () => {
           return <Tag color={color}>{status.toUpperCase()}</Tag>;
         },
       },
+
       {
         title: 'Kode Seller',
         dataIndex: 'user_seller_unique_code',
@@ -781,6 +838,7 @@ const GoldBuyDigitalDetailTable = () => {
         align: 'center',
         render: (val) => val || '-',
       },
+
       {
         title: 'Komisi (%)',
         dataIndex: 'commission_percentage',
@@ -794,6 +852,7 @@ const GoldBuyDigitalDetailTable = () => {
               })}%`
             : '0,0000%',
       },
+
       {
         title: 'Jumlah Komisi',
         dataIndex: 'commission_amount',
@@ -814,6 +873,7 @@ const GoldBuyDigitalDetailTable = () => {
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
           {/* Date Range */}
+
           <RangePicker
             size="small"
             className="w-[320px] h-[40px]"
@@ -822,6 +882,7 @@ const GoldBuyDigitalDetailTable = () => {
           />
 
           {/* Status Filter */}
+
           <select
             value={params.status}
             onChange={(e) => onStatusChange(e.target.value)}
@@ -837,6 +898,7 @@ const GoldBuyDigitalDetailTable = () => {
           </select>
 
           {/* Search */}
+
           <input
             type="text"
             placeholder="Cari data..."
@@ -847,6 +909,7 @@ const GoldBuyDigitalDetailTable = () => {
         </div>
 
         {/* Export */}
+
         <button
           className="btn !h-[40px] btn-primary"
           onClick={exportData}

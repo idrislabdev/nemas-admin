@@ -51,8 +51,6 @@ export interface IGoldRedeemReport {
 
   gold_price: number;
 
-  cert_price: number;
-
   order_price: number;
 
   order_payment_method_name: string;
@@ -81,7 +79,7 @@ export interface IGoldRedeemReport {
 
   order_grand_total_price: number;
 
-  order_total_redeem_price: number;
+  cert_price: number;
 
   order_admin_amount: number;
 
@@ -103,9 +101,7 @@ export interface IGoldRedeemReport {
 
   discount_user_delivery_fee: number;
 
-  order_discount: number;
-
-  order_discount_weight: number;
+  total_user_level_discount_weight: number;
 
   discount_user_redeem_fee: number;
 
@@ -207,7 +203,7 @@ const TarikEmasListTable = () => {
   const getTotalNetto = (record: IGoldRedeemReport) => {
     const grandTotal = Number(record.order_grand_total_price || 0);
 
-    const discountTotal = Number(record.order_discount || 0);
+    const discountTotal = Number(record.total_user_level_discount || 0);
 
     return grandTotal - discountTotal;
   };
@@ -557,9 +553,9 @@ const TarikEmasListTable = () => {
       {
         title: 'Biaya Cetak Sertifikat',
 
-        dataIndex: 'order_total_redeem_price',
+        dataIndex: 'cert_price',
 
-        key: 'order_total_redeem_price',
+        key: 'cert_price',
 
         width: 210,
 
@@ -629,9 +625,9 @@ const TarikEmasListTable = () => {
       {
         title: 'Diskon Total',
 
-        dataIndex: 'order_discount',
+        dataIndex: 'total_user_level_discount',
 
-        key: 'order_discount',
+        key: 'total_user_level_discount',
 
         width: 150,
 
@@ -842,7 +838,7 @@ const TarikEmasListTable = () => {
       const dataToExport = rows.map((r) => {
         const grandTotal = Number(r.order_grand_total_price || 0);
 
-        const discountTotal = Number(r.order_discount || 0);
+        const discountTotal = Number(r.total_user_level_discount || 0);
 
         const totalNetto = grandTotal - discountTotal;
 
@@ -902,9 +898,7 @@ const TarikEmasListTable = () => {
                    SERTIFIKAT
                 ========================================= */
 
-          'Biaya Cetak Sertifikat (Rp)': Number(
-            r.order_total_redeem_price || 0
-          ),
+          'Biaya Cetak Sertifikat (Rp)': Number(r.cert_price || 0),
 
           'Diskon Biaya Sertifikat (Rp)': Number(
             r.discount_user_redeem_fee || 0
