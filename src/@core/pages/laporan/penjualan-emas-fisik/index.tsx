@@ -92,7 +92,7 @@ const PenjualanEmasFisikPage = () => {
   const getTotalNetto = (record: ISalesOrder) => {
     const grandTotal = Number(record.order_grand_total_price || 0);
 
-    const discountTotal = Number(record.order_discount || 0);
+    const discountTotal = Number(record.total_user_level_discount || 0);
 
     return grandTotal - discountTotal;
   };
@@ -297,11 +297,11 @@ const PenjualanEmasFisikPage = () => {
 
     {
       title: 'Diskon Total',
-      dataIndex: 'order_discount',
-      key: 'order_discount',
+      dataIndex: 'total_user_level_discount',
+      key: 'total_user_level_discount',
       width: 150,
       align: 'right',
-      render: (_, record) => formatCurrency(record.order_discount),
+      render: (_, record) => formatCurrency(record.total_user_level_discount),
     },
 
     // =======================================================
@@ -513,7 +513,7 @@ const PenjualanEmasFisikPage = () => {
       const dataToExport = rows.map((item: ISalesOrder, index: number) => {
         const grandTotal = Number(item.order_grand_total_price || 0);
 
-        const discountTotal = Number(item.order_discount || 0);
+        const discountTotal = Number(item.total_user_level_discount || 0);
 
         const totalNetto = grandTotal - discountTotal;
 
@@ -954,7 +954,7 @@ const PenjualanEmasFisikPage = () => {
       );
 
       const totalDiscount = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_discount || 0),
+        (acc, cur) => acc + Number(cur.total_user_level_discount || 0),
         0
       );
 
@@ -962,7 +962,7 @@ const PenjualanEmasFisikPage = () => {
         (acc, cur) =>
           acc +
           Number(cur.order_grand_total_price || 0) -
-          Number(cur.order_discount || 0),
+          Number(cur.total_user_level_discount || 0),
         0
       );
 
