@@ -70,7 +70,7 @@ export interface IGoldRedeemReport {
   delivery_status: string;
 
   /* =====================================================
-     BIAYA
+     HARGA / TOTAL
   ===================================================== */
 
   order_total_price: number;
@@ -79,13 +79,33 @@ export interface IGoldRedeemReport {
 
   order_grand_total_price: number;
 
+  /* =====================================================
+     SERTIFIKAT
+  ===================================================== */
+
   cert_price: number;
+
+  order_total_redeem_price: number;
+
+  discount_user_redeem_fee: number;
+
+  /* =====================================================
+     ADMIN
+  ===================================================== */
 
   order_admin_amount: number;
 
+  order_admin_amount_gross: number;
+
   discount_user_admin_fee: number;
 
+  /* =====================================================
+     ASURANSI
+  ===================================================== */
+
   order_tracking_insurance: number;
+
+  order_tracking_insurance_gross: number;
 
   order_tracking_insurance_admin: number;
 
@@ -95,17 +115,29 @@ export interface IGoldRedeemReport {
 
   discount_user_insurance_fee: number;
 
+  /* =====================================================
+     PENGIRIMAN
+  ===================================================== */
+
+  order_tracking_amount: number;
+
   order_tracking_total_amount: number;
 
   order_tracking_total_amount_round: number;
 
   discount_user_delivery_fee: number;
 
+  /* =====================================================
+     DISKON
+  ===================================================== */
+
   total_user_level_discount_weight: number;
 
-  discount_user_redeem_fee: number;
-
   total_user_level_discount: number;
+
+  order_discount: number;
+
+  order_discount_weight: number;
 }
 
 /* =========================================================
@@ -317,7 +349,7 @@ const TarikEmasListTable = () => {
     () => [
       /* ===============================================
            TANGGAL ORDER
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Tanggal Order',
@@ -334,7 +366,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            NO ORDER
-        =============================================== */
+      =============================================== */
 
       {
         title: 'No Order',
@@ -348,7 +380,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            NAMA
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Nama',
@@ -362,7 +394,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            JENIS EMAS
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Jenis Emas',
@@ -376,7 +408,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BRAND
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Brand',
@@ -390,7 +422,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            KODE SERTIFIKAT
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Kode Sertifikat',
@@ -404,7 +436,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BERAT
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Berat (gr)',
@@ -422,7 +454,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            HARGA EMAS
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Harga Emas',
@@ -440,14 +472,15 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BIAYA ADMIN
-        =============================================== */
+           SOURCE: order_admin_amount_gross
+      =============================================== */
 
       {
         title: 'Biaya Admin',
 
-        dataIndex: 'order_admin_amount',
+        dataIndex: 'order_admin_amount_gross',
 
-        key: 'order_admin_amount',
+        key: 'order_admin_amount_gross',
 
         width: 150,
 
@@ -458,7 +491,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON BIAYA ADMIN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Diskon Biaya Admin',
@@ -476,14 +509,15 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BIAYA ASURANSI
-        =============================================== */
+           SOURCE: order_tracking_insurance_gross
+      =============================================== */
 
       {
         title: 'Biaya Asuransi',
 
-        dataIndex: 'order_tracking_insurance_total',
+        dataIndex: 'order_tracking_insurance_gross',
 
-        key: 'order_tracking_insurance_total',
+        key: 'order_tracking_insurance_gross',
 
         width: 160,
 
@@ -494,7 +528,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON BIAYA ASURANSI
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Diskon Biaya Asuransi',
@@ -512,14 +546,15 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BIAYA PENGIRIMAN
-        =============================================== */
+           SOURCE: order_tracking_amount
+      =============================================== */
 
       {
         title: 'Biaya Pengiriman',
 
-        dataIndex: 'order_tracking_total_amount',
+        dataIndex: 'order_tracking_amount',
 
-        key: 'order_tracking_total_amount',
+        key: 'order_tracking_amount',
 
         width: 170,
 
@@ -530,7 +565,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON BIAYA PENGIRIMAN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Diskon Biaya Pengiriman',
@@ -548,7 +583,8 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            BIAYA CETAK SERTIFIKAT
-        =============================================== */
+           SOURCE: cert_price
+      =============================================== */
 
       {
         title: 'Biaya Cetak Sertifikat',
@@ -566,7 +602,8 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON BIAYA SERTIFIKAT
-        =============================================== */
+           SOURCE: discount_user_redeem_fee
+      =============================================== */
 
       {
         title: 'Diskon Biaya Sertifikat',
@@ -584,14 +621,15 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON PROMO
-        =============================================== */
+           SOURCE: order_discount
+      =============================================== */
 
       {
         title: 'Diskon Promo',
 
-        dataIndex: 'total_user_level_discount',
+        dataIndex: 'order_discount',
 
-        key: 'total_user_level_discount',
+        key: 'order_discount',
 
         width: 160,
 
@@ -602,7 +640,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            GRAND TOTAL
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Grand Total',
@@ -620,7 +658,8 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            DISKON TOTAL
-        =============================================== */
+           SOURCE: total_user_level_discount
+      =============================================== */
 
       {
         title: 'Diskon Total',
@@ -638,7 +677,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            TOTAL NETTO
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Total Netto Biaya',
@@ -654,7 +693,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            METODE PEMBAYARAN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Metode Bayar',
@@ -670,7 +709,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            NO PEMBAYARAN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'No Pembayaran',
@@ -688,7 +727,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            STATUS PEMBAYARAN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Status Pembayaran',
@@ -704,7 +743,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            KURIR
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Kurir',
@@ -720,7 +759,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            NO RESI
-        =============================================== */
+      =============================================== */
 
       {
         title: 'No Resi',
@@ -738,7 +777,7 @@ const TarikEmasListTable = () => {
 
       /* ===============================================
            STATUS PENGIRIMAN
-        =============================================== */
+      =============================================== */
 
       {
         title: 'Status Pengiriman',
@@ -832,8 +871,8 @@ const TarikEmasListTable = () => {
       }
 
       /* =================================================
-           DATA EXPORT
-        ================================================= */
+         DATA EXPORT
+      ================================================= */
 
       const dataToExport = rows.map((r) => {
         const grandTotal = Number(r.order_grand_total_price || 0);
@@ -861,42 +900,46 @@ const TarikEmasListTable = () => {
           'Berat (gr)': Number(r.weight || 0),
 
           /* =========================================
-                   HARGA EMAS
-                ========================================= */
+             HARGA EMAS
+          ========================================= */
 
           'Harga Emas (Rp)': Number(r.gold_price || 0),
 
           /* =========================================
-                   BIAYA ADMIN
-                ========================================= */
+             BIAYA ADMIN
+             SOURCE: order_admin_amount_gross
+          ========================================= */
 
-          'Biaya Admin (Rp)': Number(r.order_admin_amount || 0),
+          'Biaya Admin (Rp)': Number(r.order_admin_amount_gross || 0),
 
           'Diskon Biaya Admin (Rp)': Number(r.discount_user_admin_fee || 0),
 
           /* =========================================
-                   ASURANSI
-                ========================================= */
+             ASURANSI
+             SOURCE: order_tracking_insurance_gross
+          ========================================= */
 
-          'Biaya Asuransi (Rp)': Number(r.order_tracking_insurance_total || 0),
+          'Biaya Asuransi (Rp)': Number(r.order_tracking_insurance_gross || 0),
 
           'Diskon Biaya Asuransi (Rp)': Number(
             r.discount_user_insurance_fee || 0
           ),
 
           /* =========================================
-                   PENGIRIMAN
-                ========================================= */
+             PENGIRIMAN
+             SOURCE: order_tracking_amount
+          ========================================= */
 
-          'Biaya Pengiriman (Rp)': Number(r.order_tracking_total_amount || 0),
+          'Biaya Pengiriman (Rp)': Number(r.order_tracking_amount || 0),
 
           'Diskon Biaya Pengiriman (Rp)': Number(
             r.discount_user_delivery_fee || 0
           ),
 
           /* =========================================
-                   SERTIFIKAT
-                ========================================= */
+             SERTIFIKAT
+             SOURCE: cert_price
+          ========================================= */
 
           'Biaya Cetak Sertifikat (Rp)': Number(r.cert_price || 0),
 
@@ -905,14 +948,15 @@ const TarikEmasListTable = () => {
           ),
 
           /* =========================================
-                   DISKON PROMO
-                ========================================= */
+             DISKON PROMO
+             SOURCE: order_discount
+          ========================================= */
 
-          'Diskon Promo (Rp)': Number(r.total_user_level_discount || 0),
+          'Diskon Promo (Rp)': Number(r.order_discount || 0),
 
           /* =========================================
-                   TOTAL
-                ========================================= */
+             TOTAL
+          ========================================= */
 
           'Grand Total (Rp)': grandTotal,
 
@@ -921,8 +965,8 @@ const TarikEmasListTable = () => {
           'Total Netto Biaya (Rp)': totalNetto,
 
           /* =========================================
-                   PEMBAYARAN
-                ========================================= */
+             PEMBAYARAN
+          ========================================= */
 
           'Metode Pembayaran': r.order_payment_method_name || '-',
 
@@ -931,8 +975,8 @@ const TarikEmasListTable = () => {
           'Status Pembayaran': r.order_gold_payment_status || '-',
 
           /* =========================================
-                   PENGIRIMAN
-                ========================================= */
+             PENGIRIMAN
+          ========================================= */
 
           Kurir: r.tracking_courier_name || '-',
 
@@ -943,8 +987,8 @@ const TarikEmasListTable = () => {
       });
 
       /* =================================================
-           WORKBOOK
-        ================================================= */
+         WORKBOOK
+      ================================================= */
 
       const workbook = new ExcelJS.Workbook();
 
@@ -961,8 +1005,8 @@ const TarikEmasListTable = () => {
       const lastColumnLetter = getExcelColumnLabel(totalColumns);
 
       /* =================================================
-           TITLE
-        ================================================= */
+         TITLE
+      ================================================= */
 
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
 
@@ -987,8 +1031,8 @@ const TarikEmasListTable = () => {
       };
 
       /* =================================================
-           METADATA
-        ================================================= */
+         METADATA
+      ================================================= */
 
       const formattedStartDate =
         params.start_date && dayjs(params.start_date).isValid()
@@ -1043,8 +1087,8 @@ const TarikEmasListTable = () => {
       worksheet.addRow([]);
 
       /* =================================================
-           HEADER
-        ================================================= */
+         HEADER
+      ================================================= */
 
       const headerRowIndex = 8;
 
@@ -1119,8 +1163,8 @@ const TarikEmasListTable = () => {
       });
 
       /* =================================================
-           DATA
-        ================================================= */
+         DATA
+      ================================================= */
 
       const dataStartRow = headerRowIndex + 1;
 
@@ -1158,11 +1202,7 @@ const TarikEmasListTable = () => {
             vertical: 'middle',
           };
 
-          if (isCurrency && typeof cell.value === 'number') {
-            cell.numFmt = '#,##0.00';
-          }
-
-          if (isWeight && typeof cell.value === 'number') {
+          if ((isCurrency || isWeight) && typeof cell.value === 'number') {
             cell.numFmt = '#,##0.00';
           }
 
@@ -1215,8 +1255,8 @@ const TarikEmasListTable = () => {
       const dataEndRow = dataStartRow + dataToExport.length - 1;
 
       /* =================================================
-           TOTAL ROW
-        ================================================= */
+         TOTAL ROW
+      ================================================= */
 
       type NumericExportKey =
         | 'Berat (gr)'
@@ -1310,7 +1350,7 @@ const TarikEmasListTable = () => {
         };
 
         if (isNumeric) {
-          cell.numFmt = header.includes('(gr)') ? '#,##0.00' : '#,##0.00';
+          cell.numFmt = '#,##0.00';
         }
 
         cell.fill = {
@@ -1359,8 +1399,8 @@ const TarikEmasListTable = () => {
       }
 
       /* =================================================
-           FREEZE PANE EXCEL
-        ================================================= */
+         FREEZE PANE EXCEL
+      ================================================= */
 
       worksheet.views = [
         {
@@ -1373,14 +1413,14 @@ const TarikEmasListTable = () => {
       ];
 
       /* =================================================
-           AUTOFILTER
-        ================================================= */
+         AUTOFILTER
+      ================================================= */
 
       worksheet.autoFilter = `A${headerRowIndex}:${lastColumnLetter}${dataEndRow}`;
 
       /* =================================================
-           AUTO WIDTH
-        ================================================= */
+         AUTO WIDTH
+      ================================================= */
 
       worksheet.columns.forEach((column) => {
         let maxLength = 0;
@@ -1411,8 +1451,8 @@ const TarikEmasListTable = () => {
       });
 
       /* =================================================
-           SAVE
-        ================================================= */
+         SAVE
+      ================================================= */
 
       const buffer = await workbook.xlsx.writeBuffer();
 

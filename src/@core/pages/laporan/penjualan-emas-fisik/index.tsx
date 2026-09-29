@@ -102,12 +102,20 @@ const PenjualanEmasFisikPage = () => {
   // =========================================================
 
   const columns: ColumnsType<ISalesOrder> = [
+    // =======================================================
+    // NOMOR ORDER
+    // =======================================================
+
     {
       title: 'Nomor Order',
       dataIndex: 'order_number',
       key: 'order_number',
       width: 150,
     },
+
+    // =======================================================
+    // TANGGAL ORDER
+    // =======================================================
 
     {
       title: 'Tanggal Order',
@@ -118,12 +126,20 @@ const PenjualanEmasFisikPage = () => {
         moment(record.order_timestamp).format('DD MMMM YYYY HH:mm'),
     },
 
+    // =======================================================
+    // USER
+    // =======================================================
+
     {
       title: 'User',
       dataIndex: 'user_name',
       key: 'user_name',
       width: 150,
     },
+
+    // =======================================================
+    // BERAT EMAS
+    // =======================================================
 
     {
       title: 'Berat Emas',
@@ -137,6 +153,10 @@ const PenjualanEmasFisikPage = () => {
           ? `${formatDecimal(Number(record.order_item_weight))} Gram`
           : '-',
     },
+
+    // =======================================================
+    // NOMINAL PESANAN
+    // =======================================================
 
     {
       title: 'Nominal Pesanan',
@@ -161,16 +181,16 @@ const PenjualanEmasFisikPage = () => {
     },
 
     // =======================================================
-    // BIAYA ADMIN
+    // BIAYA ADMIN - GROSS
     // =======================================================
 
     {
       title: 'Biaya Admin',
-      dataIndex: 'order_admin_amount',
-      key: 'order_admin_amount',
+      dataIndex: 'order_admin_amount_gross',
+      key: 'order_admin_amount_gross',
       width: 150,
       align: 'right',
-      render: (_, record) => formatCurrency(record.order_admin_amount),
+      render: (_, record) => formatCurrency(record.order_admin_amount_gross),
     },
 
     // =======================================================
@@ -187,17 +207,17 @@ const PenjualanEmasFisikPage = () => {
     },
 
     // =======================================================
-    // BIAYA ASURANSI
+    // BIAYA ASURANSI - GROSS
     // =======================================================
 
     {
       title: 'Biaya Asuransi',
-      dataIndex: 'order_tracking_insurance_total',
-      key: 'order_tracking_insurance_total',
+      dataIndex: 'order_tracking_insurance_gross',
+      key: 'order_tracking_insurance_gross',
       width: 160,
       align: 'right',
       render: (_, record) =>
-        formatCurrency(record.order_tracking_insurance_total),
+        formatCurrency(record.order_tracking_insurance_gross),
     },
 
     // =======================================================
@@ -219,11 +239,11 @@ const PenjualanEmasFisikPage = () => {
 
     {
       title: 'Biaya Pengiriman',
-      dataIndex: 'order_tracking_total_amount',
-      key: 'order_tracking_total_amount',
+      dataIndex: 'order_tracking_amount',
+      key: 'order_tracking_amount',
       width: 170,
       align: 'right',
-      render: (_, record) => formatCurrency(record.order_tracking_total_amount),
+      render: (_, record) => formatCurrency(record.order_tracking_amount),
     },
 
     // =======================================================
@@ -245,11 +265,11 @@ const PenjualanEmasFisikPage = () => {
 
     {
       title: 'Biaya Cetak Sertifikat',
-      dataIndex: 'order_total_redeem_price',
-      key: 'order_total_redeem_price',
+      dataIndex: 'cert_price',
+      key: 'cert_price',
       width: 200,
       align: 'right',
-      render: (_, record) => formatCurrency(record.order_total_redeem_price),
+      render: (_, record) => formatCurrency(record.cert_price),
     },
 
     // =======================================================
@@ -284,11 +304,11 @@ const PenjualanEmasFisikPage = () => {
 
     {
       title: 'Diskon Promo',
-      dataIndex: 'total_user_level_discount',
-      key: 'total_user_level_discount',
+      dataIndex: 'order_discount',
+      key: 'order_discount',
       width: 160,
       align: 'right',
-      render: (_, record) => formatCurrency(record.total_user_level_discount),
+      render: (_, record) => formatCurrency(record.order_discount),
     },
 
     // =======================================================
@@ -549,7 +569,7 @@ const PenjualanEmasFisikPage = () => {
           // =============================================
 
           'Biaya Admin': `Rp${formatDecimal(
-            Number(item.order_admin_amount || 0)
+            Number(item.order_admin_amount_gross || 0)
           )}`,
 
           'Diskon Biaya Admin': `Rp${formatDecimal(
@@ -561,7 +581,7 @@ const PenjualanEmasFisikPage = () => {
           // =============================================
 
           'Biaya Asuransi': `Rp${formatDecimal(
-            Number(item.order_tracking_insurance_total || 0)
+            Number(item.order_tracking_insurance_gross || 0)
           )}`,
 
           'Diskon Biaya Asuransi': `Rp${formatDecimal(
@@ -573,7 +593,7 @@ const PenjualanEmasFisikPage = () => {
           // =============================================
 
           'Biaya Pengiriman': `Rp${formatDecimal(
-            Number(item.order_tracking_total_amount || 0)
+            Number(item.order_tracking_amount || 0)
           )}`,
 
           'Diskon Biaya Pengiriman': `Rp${formatDecimal(
@@ -585,7 +605,7 @@ const PenjualanEmasFisikPage = () => {
           // =============================================
 
           'Biaya Cetak Sertifikat': `Rp${formatDecimal(
-            Number(item.order_total_redeem_price || 0)
+            Number(item.cert_price || 0)
           )}`,
 
           'Diskon Biaya Sertifikat': `Rp${formatDecimal(
@@ -603,7 +623,7 @@ const PenjualanEmasFisikPage = () => {
           // =============================================
 
           'Diskon Promo': `Rp${formatDecimal(
-            Number(item.total_user_level_discount || 0)
+            Number(item.order_discount || 0)
           )}`,
 
           // =============================================
@@ -838,21 +858,22 @@ const PenjualanEmasFisikPage = () => {
           }
 
           // Numeric columns:
-          // 5 = Berat
-          // 6 = Nominal
-          // 7 = Total Harga
-          // 8 = Admin
-          // 9 = Diskon Admin
+          // 5  = Berat
+          // 6  = Nominal
+          // 7  = Total Harga
+          // 8  = Admin
+          // 9  = Diskon Admin
           // 10 = Asuransi
           // 11 = Diskon Asuransi
           // 12 = Pengiriman
           // 13 = Diskon Pengiriman
-          // 14 = Cetak Sertifikat
+          // 14 = Sertifikat
           // 15 = Diskon Sertifikat
           // 16 = Grand Total
           // 17 = Diskon Promo
           // 18 = Diskon Total
           // 19 = Netto
+
           if (colNumber >= 5 && colNumber <= 19) {
             horizontal = 'right';
           }
@@ -903,8 +924,12 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      // =====================================================
+      // TOTAL ADMIN - GROSS
+      // =====================================================
+
       const totalAdmin = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_admin_amount || 0),
+        (acc, cur) => acc + Number(cur.order_admin_amount_gross || 0),
         0
       );
 
@@ -913,8 +938,12 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      // =====================================================
+      // TOTAL INSURANCE - GROSS
+      // =====================================================
+
       const totalInsurance = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_tracking_insurance_total || 0),
+        (acc, cur) => acc + Number(cur.order_tracking_insurance_gross || 0),
         0
       );
 
@@ -923,8 +952,12 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      // =====================================================
+      // TOTAL SHIPPING
+      // =====================================================
+
       const totalShipping = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_tracking_total_amount || 0),
+        (acc, cur) => acc + Number(cur.order_tracking_amount || 0),
         0
       );
 
@@ -933,8 +966,12 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      // =====================================================
+      // TOTAL CERTIFICATE
+      // =====================================================
+
       const totalCertificate = rows.reduce(
-        (acc, cur) => acc + Number(cur.order_total_redeem_price || 0),
+        (acc, cur) => acc + Number(cur.cert_price || 0),
         0
       );
 
@@ -943,20 +980,36 @@ const PenjualanEmasFisikPage = () => {
         0
       );
 
+      // =====================================================
+      // TOTAL GRAND
+      // =====================================================
+
       const totalGrand = rows.reduce(
         (acc, cur) => acc + Number(cur.order_grand_total_price || 0),
         0
       );
 
+      // =====================================================
+      // TOTAL PROMO
+      // =====================================================
+
       const totalPromoDiscount = rows.reduce(
-        (acc, cur) => acc + Number(cur.total_user_level_discount || 0),
+        (acc, cur) => acc + Number(cur.order_discount || 0),
         0
       );
+
+      // =====================================================
+      // TOTAL DISCOUNT
+      // =====================================================
 
       const totalDiscount = rows.reduce(
         (acc, cur) => acc + Number(cur.total_user_level_discount || 0),
         0
       );
+
+      // =====================================================
+      // TOTAL NETTO
+      // =====================================================
 
       const totalNetto = rows.reduce(
         (acc, cur) =>
@@ -965,6 +1018,10 @@ const PenjualanEmasFisikPage = () => {
           Number(cur.total_user_level_discount || 0),
         0
       );
+
+      // =====================================================
+      // TOTAL ROW
+      // =====================================================
 
       const totalRow = worksheet.addRow([
         'TOTAL',

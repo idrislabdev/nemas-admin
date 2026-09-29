@@ -746,11 +746,19 @@ export interface ISalesOrder {
 
   order_admin_amount: number;
 
+  order_admin_amount_gross: number;
+
   discount_user_admin_fee: number;
 
   // =====================================================
   // ASURANSI
   // =====================================================
+
+  order_tracking_insurance: number;
+
+  order_tracking_insurance_gross: number;
+
+  order_tracking_insurance_admin: number;
 
   order_tracking_insurance_total: number;
 
@@ -768,10 +776,6 @@ export interface ISalesOrder {
 
   order_tracking_total_amount_round: number;
 
-  order_tracking_insurance: number;
-
-  order_tracking_insurance_admin: number;
-
   order_tracking_packing: number;
 
   discount_user_delivery_fee: number;
@@ -780,19 +784,33 @@ export interface ISalesOrder {
   // KHUSUS TARIK EMAS / REDEEM
   // =====================================================
 
+  cert_price: number;
+
   order_total_redeem_price: number;
 
   discount_user_redeem_fee: number;
 
   order_discount_weight: number;
 
-  total_user_level_discount: number;
+  // =====================================================
+  // DISCOUNT
+  // =====================================================
 
   order_discount: number;
+
+  total_user_level_discount: number;
+
+  // =====================================================
+  // TOTAL
+  // =====================================================
 
   order_grand_total_price: number;
 
   order_third_party_fee: number;
+
+  // =====================================================
+  // ORDER
+  // =====================================================
 
   order_type: string;
 
@@ -800,9 +818,17 @@ export interface ISalesOrder {
 
   order_status: string;
 
+  // =====================================================
+  // USER
+  // =====================================================
+
   user_id: string;
 
   user_name: string;
+
+  // =====================================================
+  // AUDIT
+  // =====================================================
 
   create_user_name?: string;
 
@@ -811,6 +837,10 @@ export interface ISalesOrder {
   create_time?: string;
 
   upd_time?: string;
+
+  // =====================================================
+  // PICKUP
+  // =====================================================
 
   is_picked_up: boolean;
 }
