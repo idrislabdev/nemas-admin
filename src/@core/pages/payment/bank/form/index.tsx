@@ -10,11 +10,13 @@ import UploadForm from '@/@core/components/forms/upload-form';
 
 const PaymentBankPageForm = (props: { paramsId: string }) => {
   const { paramsId } = props;
+
   const url = `/core/payment/bank`;
+
   const [bankName, setBankName] = useState('');
   const [bankCode, setBankCode] = useState('');
   const [bankMerchantCode, setBankMerchantCode] = useState('');
-  const [bankActive, setBankActive] = useState(true);
+  const [bankActive, setBankActive] = useState<boolean>(true);
   const [bankLogoUrl, setBankLogoUrl] = useState('');
 
   const [fileData, setFileData] = useState<File | null>(null);
@@ -23,7 +25,7 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
   const [isModalLoading, setIsModalLoading] = useState(false);
 
   const onCancel = () => {
-    if (paramsId == 'form') {
+    if (paramsId === 'form') {
       clearForm();
     } else {
       fetchData();
@@ -34,28 +36,38 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
     const body = {
       bank_name: bankName,
       bank_code: bankCode,
-      // "bank_logo_url": "-",
       bank_merchant_code: bankMerchantCode,
       bank_active: bankActive,
-      // "information_background": informationBackground,
     };
+
     setRequired({});
     setIsModalLoading(true);
+
     try {
       let desc = '';
-      if (paramsId == 'form') {
+
+      if (paramsId === 'form') {
         const resp = await axiosInstance.post(`${url}/create`, body);
         const { data } = resp;
-        if (fileData != null) await uploadFile(data.bank_id);
+
+        if (fileData != null) {
+          await uploadFile(data.bank_id);
+        }
 
         desc = 'Data bank Telah Disimpan';
         clearForm();
       } else {
-        desc = 'Data bank Telah Diupdate';
         await axiosInstance.patch(`${url}/${paramsId}/`, body);
-        if (fileData != null) await uploadFile(paramsId);
+
+        if (fileData != null) {
+          await uploadFile(paramsId);
+        }
+
+        desc = 'Data bank Telah Diupdate';
       }
+
       setIsModalLoading(false);
+
       api.info({
         message: 'Data bank',
         description: desc,
@@ -63,7 +75,9 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
       });
     } catch (error) {
       setIsModalLoading(false);
+
       const err = error as AxiosError;
+
       if (err.response && err.response.data) {
         const data: IBank = err.response.data;
         setRequired(data);
@@ -72,21 +86,31 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
   };
 
   const uploadFile = async (id: string) => {
-    if (fileData != null) {
-      const body = new FormData();
-      body.append('file', fileData);
-      await axiosInstance.post(`${url}/upload/${id}/`, body);
-    }
+    if (fileData == null) return;
+
+    const body = new FormData();
+
+    body.append('file', fileData);
+
+    await axiosInstance.post(`${url}/upload/${id}/`, body);
   };
 
   const fetchData = async () => {
-    const resp = await axiosInstance.get(`${url}/${paramsId}/`);
-    const { data } = resp;
-    setBankName(data.bank_name);
-    setBankCode(data.bank_code);
-    setBankMerchantCode(data.bank_merchant_code);
-    setBankActive(data.bank_active);
-    setBankLogoUrl(data.bank_logo_url);
+    try {
+      const resp = await axiosInstance.get(`${url}/${paramsId}/`);
+      const { data } = resp;
+
+      setBankName(data.bank_name ?? '');
+      setBankCode(data.bank_code ?? '');
+      setBankMerchantCode(data.bank_merchant_code ?? '');
+
+      // Backend mengembalikan boolean true / false
+      setBankActive(data.bank_active === true);
+
+      setBankLogoUrl(data.bank_logo_url ?? '');
+    } catch (error) {
+      console.error('Failed to fetch bank data:', error);
+    }
   };
 
   const clearForm = () => {
@@ -96,18 +120,24 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
     setBankActive(true);
     setBankLogoUrl('');
     setFileData(null);
+    setRequired({} as IBank);
   };
 
   useEffect(() => {
-    if (paramsId != 'form') fetchData();
-  }, []);
+    if (paramsId !== 'form') {
+      fetchData();
+    }
+  }, [paramsId]);
+
   return (
     <>
       {contextHolder}
+
       <div className="form-input">
         <div className="form-area">
           <div className="input-area">
             <label>Gambar / Background</label>
+
             <UploadForm
               index={1}
               withFile={false}
@@ -118,6 +148,7 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
               onChange={(val) => setFileData(val)}
             />
           </div>
+
           <div className="input-area">
             <label>
               Nama Bank{' '}
@@ -127,12 +158,14 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
                 </span>
               )}
             </label>
+
             <input
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
               className={`base ${required.bank_name ? 'error' : ''}`}
             />
           </div>
+
           <div className="input-area">
             <label>
               Kode Bank{' '}
@@ -142,12 +175,14 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
                 </span>
               )}
             </label>
+
             <input
               value={bankCode}
               onChange={(e) => setBankCode(e.target.value)}
               className={`base ${required.bank_code ? 'error' : ''}`}
             />
           </div>
+
           <div className="input-area">
             <label>
               Kode Merchant{' '}
@@ -157,12 +192,14 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
                 </span>
               )}
             </label>
+
             <input
               value={bankMerchantCode}
               onChange={(e) => setBankMerchantCode(e.target.value)}
               className={`base ${required.bank_merchant_code ? 'error' : ''}`}
             />
           </div>
+
           <div className="input-area">
             <label>
               Status Bank{' '}
@@ -172,29 +209,36 @@ const PaymentBankPageForm = (props: { paramsId: string }) => {
                 </span>
               )}
             </label>
+
             <select
-              defaultValue={bankActive ? 'active' : 'not_active'}
-              onChange={(e) =>
-                setBankActive(e.target.value == 'active' ? true : false)
-              }
+              value={bankActive ? 'active' : 'not_active'}
+              onChange={(e) => {
+                setBankActive(e.target.value === 'active');
+              }}
             >
-              <option value={`active`}>Aktif</option>
-              <option value={`not_active`}>Tidak Aktif</option>
+              <option value="active">Aktif</option>
+              <option value="not_active">Tidak Aktif</option>
             </select>
           </div>
         </div>
+
         <div className="form-button">
           <button
             className="btn btn-outline-secondary"
-            onClick={() => onCancel()}
+            onClick={onCancel}
           >
             Batal
           </button>
-          <button className="btn btn-primary" onClick={() => onSave()}>
+
+          <button
+            className="btn btn-primary"
+            onClick={onSave}
+          >
             Simpan
           </button>
         </div>
       </div>
+
       <ModalLoading
         isModalOpen={isModalLoading}
         textInfo="Harap tunggu, data sedang diproses"
